@@ -1,0 +1,25 @@
+{
+  "name": "@nusoma/common",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
+  },
+  "dependencies": {
+    "sharp": "0.34.2"
+  },
+  "devDependencies": {
+    "@nusoma/typescript-config": "0.0.0",
+    "@types/node": "22.15.21",
+    "typescript": "^5.8.3"
+  },
+  "exports": {
+    "./app": "./src/app.ts",
+    "./errors": "./src/errors.ts",
+    "./http": "./src/http.ts",
+    "./image": "./src/image.ts",
+    "./maybe": "./src/maybe.ts",
+    "./type-guards": "./src/type-guards.ts"
+  }
+}

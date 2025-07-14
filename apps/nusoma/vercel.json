@@ -1,0 +1,22 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/schedules/execute",
+      "schedule": "*/1 * * * *"
+    },
+    {
+      "path": "/api/tasks/process",
+      "schedule": "*/1 * * * *"
+    },
+    {
+      "path": "/api/webhooks/poll/gmail",
+      "schedule": "*/1 * * * *"
+    },
+    {
+      "path": "/api/logs/cleanup",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
