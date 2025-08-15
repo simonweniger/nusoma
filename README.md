@@ -1,8 +1,8 @@
 ![Tersa image](/app/opengraph-image.png)
 
-# Tersa
+# nusoma
 
-A visual AI playground. Tersa is an open source canvas for building AI workflows. Drag, drop connect and run nodes to build your own workflows powered by various industry-leading AI models.
+A visual AI playground. nusoma is an open source canvas for building AI workflows. Drag, drop connect and run nodes to build your own workflows powered by various industry-leading AI models.
 
 ## Features
 
@@ -38,12 +38,14 @@ A visual AI playground. Tersa is an open source canvas for building AI workflows
 ### Installation
 
 1. Clone the repository
+
    ```sh
-   git clone https://github.com/haydenbleasel/tersa.git
-   cd tersa
+   git clone https://github.com/simonweniger/nusoma.git
+   cd nusoma
    ```
 
 2. Install dependencies
+
    ```sh
    pnpm install
    ```
@@ -51,6 +53,7 @@ A visual AI playground. Tersa is an open source canvas for building AI workflows
 3. Create a `.env.local` file in the root directory with your environment variables. Check the `lib/env.ts` file for all the variables you need to set.
 
 4. Run the development server
+
    ```sh
    pnpm dev
    ```
@@ -68,8 +71,4 @@ A visual AI playground. Tersa is an open source canvas for building AI workflows
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-Made with ❤️ and 🤖 by [Hayden Bleasel](https://x.com/haydenbleasel).
+This project is licensed under the Apache License - see the LICENSE file for details.
