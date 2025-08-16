@@ -65,8 +65,8 @@ const generateGptImage1Image = async ({
 
   const image: Experimental_GenerateImageResult['image'] = {
     base64: json,
-    uint8Array: Buffer.from(json, 'base64'),
-    mimeType: 'image/png',
+    uint8Array: new Uint8Array(Buffer.from(json, 'base64')),
+    mediaType: 'image/png',
   };
 
   return {
@@ -128,7 +128,7 @@ export const generateImageAction = async ({
     } else {
       let aspectRatio: `${number}:${number}` | undefined;
       if (size) {
-        const [width, height] = size.split('x').map(Number);
+        const [width, height] = size.split('x').map(Number) ?? [];
         const divisor = gcd(width, height);
         aspectRatio = `${width / divisor}:${height / divisor}`;
       }
@@ -158,7 +158,7 @@ export const generateImageAction = async ({
       image = generatedImageResponse.image;
     }
 
-    let extension = image.mimeType.split('/').pop();
+    let extension = image.mediaType.split('/').pop();
 
     if (extension === 'jpeg') {
       extension = 'jpg';
@@ -166,8 +166,8 @@ export const generateImageAction = async ({
 
     const name = `${nanoid()}.${extension}`;
 
-    const file: File = new File([image.uint8Array], name, {
-      type: image.mimeType,
+    const file: File = new File([new Uint8Array(image.uint8Array)], name, {
+      type: image.mediaType,
     });
 
     const blob = await client.storage
@@ -187,7 +187,7 @@ export const generateImageAction = async ({
     const url =
       process.env.NODE_ENV === 'production'
         ? downloadUrl.publicUrl
-        : `data:${image.mimeType};base64,${Buffer.from(image.uint8Array).toString('base64')}`;
+        : `data:${image.mediaType};base64,${Buffer.from(image.uint8Array).toString('base64')}`;
 
     const project = await database.query.projects.findFirst({
       where: eq(projects.id, projectId),
@@ -205,7 +205,7 @@ export const generateImageAction = async ({
 
     const openai = new OpenAI();
     const response = await openai.chat.completions.create({
-      model: visionModel.providers[0].model.modelId,
+      model: visionModel.providers[0].model as string,
       messages: [
         {
           role: 'user',
@@ -245,7 +245,7 @@ export const generateImageAction = async ({
       updatedAt: new Date().toISOString(),
       generated: {
         url: downloadUrl.publicUrl,
-        type: image.mimeType,
+        type: image.mediaType,
       },
       description,
     };

@@ -5,8 +5,16 @@ import { env } from '@/lib/env';
 import { parseError } from '@/lib/error/parse';
 import { stripe } from '@/lib/stripe';
 
-const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-const successUrl = `${protocol}://${env.VERCEL_PROJECT_PRODUCTION_URL}`;
+const getBaseUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : 'https://nusoma.com'; // fallback to your production domain
+  }
+  return 'http://localhost:3000';
+};
+
+const successUrl = getBaseUrl();
 
 const getFrequencyPrice = async (
   productId: string,
