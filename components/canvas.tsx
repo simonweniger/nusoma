@@ -45,8 +45,8 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
   const project = useProject();
   const {
     onConnect,
-    onConnectStart,
-    onConnectEnd,
+    // onConnectStart,
+    // onConnectEnd,
     onEdgesChange,
     onNodesChange,
     nodes: initialNodes,
@@ -168,7 +168,7 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
         return;
       }
 
-      const { id: oldId, ...rest } = node;
+      const { ...rest } = node;
 
       const newId = addNode(node.type, {
         ...rest,

@@ -10,7 +10,7 @@ import { vercel } from '@ai-sdk/vercel';
 import { xai } from '@ai-sdk/xai';
 import {
   extractReasoningMiddleware,
-  type LanguageModelV1,
+  type LanguageModel,
   wrapLanguageModel,
 } from 'ai';
 import {
@@ -29,7 +29,7 @@ const thousand = 1000;
 
 type NusomaTextModel = NusomaModel & {
   providers: (NusomaProvider & {
-    model: LanguageModelV1;
+    model: LanguageModel;
     getCost: ({ input, output }: { input: number; output: number }) => number;
   })[];
 };

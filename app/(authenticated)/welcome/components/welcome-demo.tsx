@@ -43,13 +43,76 @@ export const WelcomeDemo = ({ title, description }: WelcomeDemoProps) => {
   const user = useUser();
   const router = useRouter();
 
+  const handleNodesChange = useCallback(() => {
+    setTimeout(() => {
+      const newEdges = getEdges();
+      const newNodes = getNodes();
+
+      const textNodes = newNodes.filter((node) => node.type === 'text');
+
+      if (!textNodes.length) {
+        setHasTextNode(false);
+        return;
+      }
+
+      setHasTextNode(true);
+
+      const textNode = textNodes.at(0);
+
+      if (!textNode) {
+        return;
+      }
+
+      const text = (textNode as unknown as TextNodeProps).data.text;
+
+      if (text && text.length > 10) {
+        setHasFilledTextNode(true);
+      } else {
+        setHasFilledTextNode(false);
+      }
+
+      const imageNodes = newNodes.filter((node) => node.type === 'image');
+      const imageNode = imageNodes.at(0);
+
+      if (!imageNode) {
+        setHasImageNode(false);
+        return;
+      }
+
+      setHasImageNode(true);
+
+      const sources = getIncomers(imageNode, newNodes, newEdges);
+      const textSource = sources.find((source) => source.id === textNode.id);
+
+      if (!textSource) {
+        setHasConnectedImageNode(false);
+        return;
+      }
+
+      setHasConnectedImageNode(true);
+
+      const image = imageNode as unknown as ImageNodeProps;
+      const instructions = image.data.instructions;
+
+      if (instructions && instructions.length > 5) {
+        setHasImageInstructions(true);
+      } else {
+        setHasImageInstructions(false);
+      }
+
+      if (!image.data.generated?.url) {
+        setHasGeneratedImage(false);
+        return;
+      }
+
+      setHasGeneratedImage(true);
+    }, 50);
+  }, [getNodes, getEdges]);
+
   useEffect(() => {
     // Run on mount to set initial state
     handleNodesChange();
-  }, [
-    // Run on mount to set initial state
-    handleNodesChange,
-  ]);
+  }, [handleNodesChange]);
 
   const handleFinishWelcome = async () => {
     if (!(user && project?.id)) {
@@ -204,74 +267,16 @@ export const WelcomeDemo = ({ title, description }: WelcomeDemoProps) => {
     }
   }, [activeStep.instructions]);
 
-  const handleNodesChange = useCallback(() => {
-    setTimeout(() => {
-      const newEdges = getEdges();
-      const newNodes = getNodes();
-
-      const textNodes = newNodes.filter((node) => node.type === 'text');
-
-      if (!textNodes.length) {
-        setHasTextNode(false);
-        return;
-      }
-
-      setHasTextNode(true);
-
-      const textNode = textNodes.at(0);
-
-      if (!textNode) {
-        return;
-      }
-
-      const text = (textNode as unknown as TextNodeProps).data.text;
-
-      if (text && text.length > 10) {
-        setHasFilledTextNode(true);
-      } else {
-        setHasFilledTextNode(false);
-      }
-
-      const imageNodes = newNodes.filter((node) => node.type === 'image');
-      const imageNode = imageNodes.at(0);
-
-      if (!imageNode) {
-        setHasImageNode(false);
-        return;
-      }
-
-      setHasImageNode(true);
-
-      const sources = getIncomers(imageNode, newNodes, newEdges);
-      const textSource = sources.find((source) => source.id === textNode.id);
-
-      if (!textSource) {
-        setHasConnectedImageNode(false);
-        return;
-      }
-
-      setHasConnectedImageNode(true);
-
-      const image = imageNode as unknown as ImageNodeProps;
-      const instructions = image.data.instructions;
-
-      if (instructions && instructions.length > 5) {
-        setHasImageInstructions(true);
-      } else {
-        setHasImageInstructions(false);
-      }
-
-      if (!image.data.generated?.url) {
-        setHasGeneratedImage(false);
-        return;
-      }
-
-      setHasGeneratedImage(true);
-    }, 50);
-  }, [getNodes, getEdges]);
-
   return (
-    <div className="grid h-screen w-screen grid-rows-3 lg:grid-cols-3 lg:grid-rows-1">
+    <div
+      className="grid h-screen w-screen grid-rows-3 lg:grid-cols-3 lg:grid-rows-1"
+      style={
+        {
+          overscrollBehavior: 'none',
+          touchAction: 'pan-y pinch-zoom',
+        } as React.CSSProperties
+      }
+    >
       <div
         className="size-full overflow-auto p-8 lg:p-16"
         ref={stepsContainerRef}
@@ -279,7 +284,10 @@ export const WelcomeDemo = ({ title, description }: WelcomeDemoProps) => {
         <div className="prose flex flex-col items-start gap-4">
           <h1 className="font-semibold! text-3xl!">{title}</h1>
           {previousSteps.map((step, index) => (
-            <p className="lead opacity-50" key={index}>
+            <p
+              className="lead opacity-50"
+              key={`step-${index}-${step.instructions}`}
+            >
               {step.instructions}
             </p>
           ))}

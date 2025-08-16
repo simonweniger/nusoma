@@ -28,16 +28,34 @@ export const currentUserProfile = async () => {
   let userProfile = userProfiles.at(0);
 
   if (!userProfile && user.email) {
-    const response = await database
-      .insert(profile)
-      .values({ id: user.id })
-      .returning();
+    try {
+      const response = await database
+        .insert(profile)
+        .values({ id: user.id })
+        .returning();
 
-    if (!response.length) {
-      throw new Error('Failed to create user profile');
+      if (!response.length) {
+        throw new Error('Failed to create user profile');
+      }
+
+      userProfile = response[0];
+    } catch (error) {
+      // If we get a duplicate key error, the profile was created by another request
+      // Let's fetch it again
+      if (error instanceof Error && error.message.includes('23505')) {
+        const retryProfiles = await database
+          .select()
+          .from(profile)
+          .where(eq(profile.id, user.id));
+        userProfile = retryProfiles.at(0);
+
+        if (!userProfile) {
+          throw new Error('Profile creation failed due to race condition');
+        }
+      } else {
+        throw error;
+      }
     }
-
-    userProfile = response[0];
   }
 
   return userProfile;
@@ -54,6 +72,13 @@ export const getSubscribedUser = async () => {
 
   if (!profile) {
     throw new Error('User profile not found');
+  }
+
+  const isDevMode = process.env.NODE_ENV === 'development';
+
+  // Skip subscription checks in development mode
+  if (isDevMode) {
+    return user;
   }
 
   if (!profile.subscriptionId) {

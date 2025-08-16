@@ -63,17 +63,18 @@ export const POST = async (req: Request) => {
       'Do not format the code as Markdown, just return the code as is.',
     ].join('\n'),
     messages,
+    // biome-ignore lint/suspicious/noEmptyBlockStatements: we don't need to do anything with the error
     onError: (_error) => {},
     onFinish: async ({ usage }) => {
       await trackCreditUsage({
         action: 'code',
         cost: provider.getCost({
-          input: usage.promptTokens,
-          output: usage.completionTokens,
+          input: usage.inputTokens ?? 0,
+          output: usage.outputTokens ?? 0,
         }),
       });
     },
   });
 
-  return result.toDataStreamResponse();
+  return result.toUIMessageStreamResponse();
 };

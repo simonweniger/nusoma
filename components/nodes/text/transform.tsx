@@ -76,17 +76,17 @@ export const TextTransform = ({
   const modelId = data.model ?? getDefaultModel(textModels);
   const analytics = useAnalytics();
   const [reasoning, setReasoning] = useReasoning();
-  const { append, messages, setMessages, status, stop } = useChat({
-    body: {
-      modelId,
-    },
+  const { sendMessage, messages, setMessages, status, stop } = useChat({
     onError: (error) => handleError('Error generating text', error),
-    onFinish: (message) => {
+    onFinish: ({ message }) => {
+      const text = message.parts
+        .filter((part) => part.type === 'text')
+        .map((part) => ('text' in part ? part.text : ''))
+        .join('');
+
       updateNodeData(id, {
         generated: {
-          text: message.content,
-          sources:
-            message.parts?.filter((part) => part.type === 'source') ?? [],
+          text,
         },
         updatedAt: new Date().toISOString(),
       });
@@ -102,7 +102,7 @@ export const TextTransform = ({
     },
   });
 
-  const handleGenerate = useCallback(async () => {
+  const handleGenerate = useCallback(() => {
     const incomers = getIncomers({ id }, getNodes(), getEdges());
     const textPrompts = getTextFromTextNodes(incomers);
     const audioPrompts = getTranscriptionFromAudioNodes(incomers);
@@ -148,23 +148,35 @@ export const TextTransform = ({
     });
 
     setMessages([]);
-    append({
-      role: 'user',
-      content: content.join('\n'),
-      experimental_attachments: [
-        ...images.map((image) => ({
-          url: image.url,
-          contentType: image.type,
-        })),
-        ...files.map((file) => ({
-          url: file.url,
-          contentType: file.type,
-          name: file.name,
-        })),
-      ],
-    });
+    const parts: Array<
+      | { type: 'text'; text: string }
+      | { type: 'file'; url: string; mediaType: string; name?: string }
+    > = [
+      { type: 'text', text: content.join('\n') },
+      ...images.map((image) => ({
+        type: 'file' as const,
+        url: image.url,
+        mediaType: image.type,
+      })),
+      ...files.map((file) => ({
+        type: 'file' as const,
+        url: file.url,
+        mediaType: file.type,
+        name: file.name,
+      })),
+    ];
+
+    sendMessage(
+      {
+        role: 'user',
+        parts,
+      },
+      {
+        body: { modelId },
+      } as unknown as never
+    );
   }, [
-    append,
+    sendMessage,
     data.instructions,
     getEdges,
     getNodes,
@@ -217,7 +229,12 @@ export const TextTransform = ({
       const text = messages.length
         ? messages
             .filter((message) => message.role === 'assistant')
-            .map((message) => message.content)
+            .map((message) =>
+              message.parts
+                .filter((part) => part.type === 'text')
+                .map((part) => ('text' in part ? part.text : ''))
+                .join('')
+            )
             .join('\n')
         : data.generated?.text;
 
@@ -338,30 +355,59 @@ export const TextTransform = ({
               key={message.id}
             >
               <div>
-                {message.parts.filter((part) => part.type === 'source')
-                  ?.length && (
+                {message.parts.filter(
+                  (part) =>
+                    part.type === 'source-url' ||
+                    part.type === 'source-document'
+                )?.length && (
                   <AISources>
                     <AISourcesTrigger
                       count={
-                        message.parts.filter((part) => part.type === 'source')
-                          .length
+                        message.parts.filter(
+                          (part) =>
+                            part.type === 'source-url' ||
+                            part.type === 'source-document'
+                        ).length
                       }
                     />
                     <AISourcesContent>
                       {message.parts
-                        .filter((part) => part.type === 'source')
-                        .map(({ source }) => (
-                          <AISource
-                            href={source.url}
-                            key={source.url}
-                            title={source.title ?? new URL(source.url).hostname}
-                          />
-                        ))}
+                        .filter(
+                          (part) =>
+                            part.type === 'source-url' ||
+                            part.type === 'source-document'
+                        )
+                        .map((part, index) => {
+                          let url: string | undefined;
+                          if ('url' in part) {
+                            url = part.url;
+                          }
+                          let title: string;
+                          if ('title' in part && part.title) {
+                            title = part.title;
+                          } else if (url) {
+                            title = new URL(url).hostname;
+                          } else {
+                            title = 'Source';
+                          }
+                          return (
+                            <AISource
+                              href={url ?? '#'}
+                              key={url ?? String(index)}
+                              title={title}
+                            />
+                          );
+                        })}
                     </AISourcesContent>
                   </AISources>
                 )}
                 <AIMessageContent className="bg-transparent p-0">
-                  <AIResponse>{message.content}</AIResponse>
+                  <AIResponse>
+                    {message.parts
+                      .filter((part) => part.type === 'text')
+                      .map((part) => ('text' in part ? part.text : ''))
+                      .join('')}
+                  </AIResponse>
                 </AIMessageContent>
               </div>
             </AIMessage>
@@ -377,11 +423,7 @@ export const TextTransform = ({
         {messages.flatMap((message) =>
           message.parts
             .filter((part) => part.type === 'reasoning')
-            .flatMap((part) =>
-              part.details
-                .filter((detail) => detail.type === 'text')
-                .map((detail) => detail.text)
-            )
+            .map((part) => ('text' in part ? part.text : ''))
         )}
       </ReasoningTunnel.In>
     </NodeLayout>

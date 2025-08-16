@@ -9,8 +9,10 @@ export const Header = async () => {
   return (
     <header className="flex items-center justify-between px-8">
       <Link className="flex items-center gap-2" href="/">
-        <Logo className="h-6 w-auto" />
-        <span className="font-medium text-xl tracking-tight">nusoma</span>
+        <Logo className="h-6 w-auto" title="nusoma" />
+        <span className="mb-1 font-semibold text-xl tracking-tight">
+          nusoma
+        </span>
       </Link>
       <div className="flex items-center gap-2">
         <Button asChild className="text-muted-foreground" variant="link">

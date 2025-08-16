@@ -33,7 +33,7 @@ export const NodeToolbar = ({ id, items }: NodeToolbarProps) => {
             <TooltipContent>{button.tooltip}</TooltipContent>
           </Tooltip>
         ) : (
-          <Fragment key={index}>{button.children}</Fragment>
+          <Fragment key={`${index}-${id}`}>{button.children}</Fragment>
         )
       )}
     </NodeToolbarRaw>

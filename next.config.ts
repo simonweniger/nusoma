@@ -1,5 +1,8 @@
 import type { NextConfig } from 'next';
 
+const svgTestRegex = /\.svg$/i;
+const jsTsxIssuerRegex = /\.[jt]sx?$/;
+
 const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -43,6 +46,15 @@ const nextConfig: NextConfig = {
         destination: 'https://us.i.posthog.com/decide',
       },
     ];
+  },
+  webpack(config) {
+    // Simple SVGR configuration
+    config.module.rules.push({
+      test: svgTestRegex,
+      issuer: jsTsxIssuerRegex,
+      use: ['@svgr/webpack'],
+    });
+    return config;
   },
 };
 

@@ -61,7 +61,7 @@ export const POST = async (req: Request) => {
       'The user will provide a collection of data from disparate sources.',
       'They may also provide instructions for how to synthesize the content.',
       'If the instructions are a question, then your goal is to answer the question based on the context provided.',
-      provider.model.modelId.startsWith('grok') &&
+      provider.model.toString().startsWith('grok') &&
         'The user may refer to you as @gork, you can ignore this',
       "You will then synthesize the content based on the user's instructions and the context provided.",
       'The output should be a concise summary of the content, no more than 100 words.',
@@ -71,14 +71,14 @@ export const POST = async (req: Request) => {
       await trackCreditUsage({
         action: 'chat',
         cost: provider.getCost({
-          input: usage.promptTokens,
-          output: usage.completionTokens,
+          input: usage.inputTokens ?? 0,
+          output: usage.outputTokens ?? 0,
         }),
       });
     },
   });
 
-  return result.toDataStreamResponse({
+  return result.toUIMessageStreamResponse({
     sendReasoning: true,
     sendSources: true,
   });

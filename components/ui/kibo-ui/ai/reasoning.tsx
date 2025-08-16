@@ -1,15 +1,15 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
+import { ChevronDownIcon } from 'lucide-react';
+import type { ComponentProps } from 'react';
+import { createContext, memo, useContext, useEffect, useState } from 'react';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { ChevronDownIcon } from 'lucide-react';
-import { createContext, memo, useContext, useEffect, useState } from 'react';
-import type { ComponentProps } from 'react';
+import { cn } from '@/lib/utils';
 import { AIResponse } from './response';
 
 type AIReasoningContextValue = {
@@ -96,9 +96,9 @@ export const AIReasoning = memo(
         value={{ isStreaming, isOpen, setIsOpen, duration }}
       >
         <Collapsible
-          open={isOpen}
-          onOpenChange={handleOpenChange}
           className={cn('not-prose mb-4', className)}
+          onOpenChange={handleOpenChange}
+          open={isOpen}
           {...props}
         >
           {children}

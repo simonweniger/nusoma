@@ -1,10 +1,10 @@
 import { openai } from '@ai-sdk/openai';
-import type { LanguageModelV1 } from 'ai';
+import type { LanguageModel } from 'ai';
 import { type NusomaModel, type NusomaProvider, providers } from '../providers';
 
 type NusomaVisionModel = NusomaModel & {
   providers: (NusomaProvider & {
-    model: LanguageModelV1;
+    model: LanguageModel;
   })[];
 };
 

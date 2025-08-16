@@ -8,7 +8,9 @@ export const useUser = () => {
   useEffect(() => {
     const fetchUser = async () => {
       const { data, error } = await createClient().auth.getUser();
+
       if (error) {
+        console.error(error); //todo: fix this -> we need to implement a logger
       }
 
       setUser(data.user);

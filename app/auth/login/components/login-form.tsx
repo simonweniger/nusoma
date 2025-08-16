@@ -19,7 +19,9 @@ export const LoginForm = () => {
   const [captchaToken, setCaptchaToken] = useState<string | undefined>(
     undefined
   );
-  const disabled = isLoading || !email || !password || !captchaToken;
+  const isDev = process.env.NODE_ENV === 'development';
+  const needsCaptcha = isDev ? false : !captchaToken;
+  const disabled = isLoading || !email || !password || needsCaptcha;
 
   const handleEmailLogin: FormEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault();
