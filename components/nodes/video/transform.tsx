@@ -176,7 +176,7 @@ export const VideoTransform = ({
   return (
     <NodeLayout data={data} id={id} title={title} toolbar={toolbar} type={type}>
       {loading && (
-        <Skeleton className="flex aspect-video w-full animate-pulse items-center justify-center rounded-b-xl">
+        <Skeleton className="flex aspect-video w-full animate-pulse items-center justify-center">
           <Loader2Icon
             className="size-4 animate-spin text-muted-foreground"
             size={16}
@@ -184,7 +184,7 @@ export const VideoTransform = ({
         </Skeleton>
       )}
       {!(loading || data.generated?.url) && (
-        <div className="flex aspect-video w-full items-center justify-center rounded-b-xl bg-secondary">
+        <div className="flex aspect-video w-full items-center justify-center bg-secondary">
           <p className="text-muted-foreground text-sm">
             Press <PlayIcon className="-translate-y-px inline" size={12} /> to
             generate video
@@ -194,7 +194,7 @@ export const VideoTransform = ({
       {data.generated?.url && !loading && (
         <video
           autoPlay
-          className="w-full rounded-b-xl object-cover"
+          className="w-full object-cover"
           height={data.height ?? 450}
           loop
           muted

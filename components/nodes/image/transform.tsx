@@ -267,7 +267,7 @@ export const ImageTransform = ({
     <NodeLayout data={data} id={id} title={title} toolbar={toolbar} type={type}>
       {loading && (
         <Skeleton
-          className="flex w-full animate-pulse items-center justify-center rounded-b-xl"
+          className="flex w-full animate-pulse items-center justify-center"
           style={{ aspectRatio }}
         >
           <Loader2Icon
@@ -278,7 +278,7 @@ export const ImageTransform = ({
       )}
       {!(loading || data.generated?.url) && (
         <div
-          className="flex w-full items-center justify-center rounded-b-xl bg-secondary p-4"
+          className="flex w-full items-center justify-center bg-secondary p-4"
           style={{ aspectRatio }}
         >
           <p className="text-muted-foreground text-sm">
@@ -290,7 +290,7 @@ export const ImageTransform = ({
       {!loading && data.generated?.url && (
         <Image
           alt="Generated image"
-          className="w-full rounded-b-xl object-cover"
+          className="w-full object-cover"
           height={1000}
           src={data.generated.url}
           width={1000}

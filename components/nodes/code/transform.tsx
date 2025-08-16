@@ -55,22 +55,23 @@ export const CodeTransform = ({
   const modelId = data.model ?? getDefaultModel(textModels);
   const language = data.generated?.language ?? 'javascript';
   const analytics = useAnalytics();
-  const { append, messages, setMessages, status, stop } = useChat({
-    api: '/api/code',
-    body: {
-      modelId,
-      language,
-    },
-    onError: (error) => handleError('Error generating text', error),
-    onFinish: (message) => {
+  const { sendMessage, messages, setMessages, status, stop } = useChat({
+    onError: (error) => handleError('Error generating code', error),
+    onFinish: ({ message }) => {
+      const text = message.parts
+        .filter((part) => part.type === 'text')
+        .map((part) => ('text' in part ? part.text : ''))
+        .join('');
+
       updateNodeData(id, {
         generated: {
-          text: message.content,
+          text,
+          language,
         },
         updatedAt: new Date().toISOString(),
       });
 
-      toast.success('Text generated successfully');
+      toast.success('Code generated successfully');
 
       setTimeout(() => mutate('credits'), 5000);
     },
@@ -123,20 +124,26 @@ export const CodeTransform = ({
     });
 
     setMessages([]);
-    append({
-      role: 'user',
-      content: content.join('\n'),
-    });
+    sendMessage(
+      {
+        role: 'user',
+        parts: [{ type: 'text', text: content.join('\n') }],
+      },
+      {
+        body: { modelId, language },
+      } as unknown as never
+    );
   }, [
     data.instructions,
     id,
     getNodes,
     getEdges,
-    append,
+    sendMessage,
     setMessages,
     analytics,
     modelId,
     type,
+    language,
   ]);
 
   const handleInstructionsChange: ChangeEventHandler<HTMLTextAreaElement> = (
@@ -260,7 +267,7 @@ export const CodeTransform = ({
   return (
     <NodeLayout data={data} id={id} title={title} toolbar={toolbar} type={type}>
       <Editor
-        className="aspect-square w-full overflow-hidden rounded-b-xl"
+        className="aspect-square w-full overflow-hidden"
         language={language}
         loading={
           <div className="dark aspect-square size-full">
@@ -277,7 +284,10 @@ export const CodeTransform = ({
         theme="vs-dark"
         value={
           nonUserMessages.length
-            ? nonUserMessages[0].content
+            ? nonUserMessages[0].parts
+                .filter((part) => part.type === 'text')
+                .map((part) => ('text' in part ? part.text : ''))
+                .join('')
             : data.generated?.text
         }
       />

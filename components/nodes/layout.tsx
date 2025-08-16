@@ -112,13 +112,11 @@ export const NodeLayout = ({
             )}
             <div
               className={cn(
-                'node-container flex size-full flex-col divide-y rounded-[28px] bg-card p-2 ring-1 ring-border transition-all',
+                'node-container flex size-full flex-col divide-y rounded bg-card p-2 ring-1 ring-border transition-all',
                 className
               )}
             >
-              <div className="overflow-hidden rounded-3xl bg-card">
-                {children}
-              </div>
+              <div className="overflow-hidden rounded bg-card">{children}</div>
             </div>
           </div>
         </ContextMenuTrigger>
@@ -159,7 +157,7 @@ export const NodeLayout = ({
               </code>
             </DialogDescription>
           </DialogHeader>
-          <pre className="overflow-x-auto rounded-lg bg-black p-4 text-sm text-white">
+          <pre className="overflow-x-auto rounded bg-black p-4 text-sm text-white">
             {JSON.stringify(data, null, 2)}
           </pre>
         </DialogContent>
