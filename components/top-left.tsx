@@ -1,7 +1,5 @@
-import { eq } from 'drizzle-orm';
 import { currentUser } from '@/lib/auth';
-import { database } from '@/lib/database';
-import { projects } from '@/schema';
+import { adminDb } from '@/lib/instantdb-admin';
 import { ProjectSelector } from './project-selector';
 import { ProjectSettings } from './project-settings';
 
@@ -16,8 +14,10 @@ export const TopLeft = async ({ id }: TopLeftProps) => {
     return null;
   }
 
-  const allProjects = await database.query.projects.findMany({
-    where: eq(projects.userId, user.id),
+  const { projects: allProjects } = await adminDb.query({
+    projects: {
+      $: { where: { 'owner.id': user.id } },
+    },
   });
 
   if (!allProjects.length) {

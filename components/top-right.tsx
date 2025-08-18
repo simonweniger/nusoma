@@ -1,9 +1,7 @@
-import { eq } from 'drizzle-orm';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { currentUserProfile } from '@/lib/auth';
-import { database } from '@/lib/database';
-import { projects } from '@/schema';
+import { adminDb } from '@/lib/instantdb-admin';
 import { CreditCounter } from './credits-counter';
 import { Menu } from './menu';
 import { Button } from './ui/button';
@@ -14,9 +12,13 @@ type TopRightProps = {
 
 export const TopRight = async ({ id }: TopRightProps) => {
   const profile = await currentUserProfile();
-  const project = await database.query.projects.findFirst({
-    where: eq(projects.id, id),
+  const { projects } = await adminDb.query({
+    projects: {
+      $: { where: { id } },
+    },
   });
+
+  const project = projects[0];
 
   if (!(profile && project)) {
     return null;

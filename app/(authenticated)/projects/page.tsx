@@ -1,10 +1,8 @@
-import { eq } from 'drizzle-orm';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createProjectAction } from '@/app/actions/project/create';
 import { currentUser, currentUserProfile } from '@/lib/auth';
-import { database } from '@/lib/database';
-import { projects } from '@/schema';
+import { adminDb } from '@/lib/instantdb-admin';
 
 export const metadata: Metadata = {
   title: 'nusoma',
@@ -26,9 +24,13 @@ const Projects = async () => {
     return redirect('/welcome');
   }
 
-  let project = await database.query.projects.findFirst({
-    where: eq(projects.userId, profile.id),
+  const { projects: userProjects } = await adminDb.query({
+    projects: {
+      $: { where: { 'owner.id': profile.id } },
+    },
   });
+
+  let project = userProjects[0];
 
   if (!project) {
     const newProject = await createProjectAction('Untitled Project');
@@ -37,9 +39,13 @@ const Projects = async () => {
       throw new Error(newProject.error);
     }
 
-    const newFetchedProject = await database.query.projects.findFirst({
-      where: eq(projects.id, newProject.id),
+    const { projects: newProjects } = await adminDb.query({
+      projects: {
+        $: { where: { id: newProject.id } },
+      },
     });
+
+    const newFetchedProject = newProjects[0];
 
     if (!newFetchedProject) {
       throw new Error('Failed to create project');

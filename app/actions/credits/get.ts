@@ -19,15 +19,15 @@ export const getCredits = async (): Promise<
   try {
     const userId = await requireAuth();
 
-    const { profiles } = await adminDb.query({
-      profiles: {
+    const { $users } = await adminDb.query({
+      $users: {
         $: {
-          where: { 'user.id': userId },
+          where: { id: userId },
         },
       },
     });
 
-    const profile = profiles[0];
+    const profile = $users[0];
 
     if (!profile) {
       throw new Error('User profile not found');

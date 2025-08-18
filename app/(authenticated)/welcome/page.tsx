@@ -1,11 +1,9 @@
-import { and, eq } from 'drizzle-orm';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createProjectAction } from '@/app/actions/project/create';
 import { currentUser } from '@/lib/auth';
-import { database } from '@/lib/database';
+import { adminDb } from '@/lib/instantdb-admin';
 import { ProjectProvider } from '@/providers/project';
-import { projects } from '@/schema';
 import { WelcomeDemo } from './components/welcome-demo';
 
 const title = 'Welcome to nusoma!';
@@ -24,9 +22,17 @@ const Welcome = async () => {
     return redirect('/sign-in');
   }
 
-  let welcomeProject = await database.query.projects.findFirst({
-    where: and(eq(projects.userId, user.id), eq(projects.welcomeProject, true)),
+  const { projects: welcomeProjects } = await adminDb.query({
+    projects: {
+      $: {
+        where: {
+          and: [{ 'owner.id': user.id }, { welcomeProject: true }],
+        },
+      },
+    },
   });
+
+  let welcomeProject = welcomeProjects?.[0];
 
   if (!welcomeProject) {
     const response = await createProjectAction('Welcome', true);
@@ -35,11 +41,13 @@ const Welcome = async () => {
       return <div>Error: {response.error}</div>;
     }
 
-    const project = await database.query.projects.findFirst({
-      where: eq(projects.id, response.id),
+    const { projects: newProjects } = await adminDb.query({
+      projects: {
+        $: { where: { id: response.id } },
+      },
     });
 
-    welcomeProject = project;
+    welcomeProject = newProjects[0];
   }
 
   if (!welcomeProject) {
@@ -48,7 +56,7 @@ const Welcome = async () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <ProjectProvider data={welcomeProject}>
+      <ProjectProvider projectId={welcomeProject.id}>
         <WelcomeDemo description={description} title={title} />
       </ProjectProvider>
     </div>

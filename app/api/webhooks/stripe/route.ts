@@ -1,11 +1,9 @@
-import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import type Stripe from 'stripe';
-import { database } from '@/lib/database';
 import { env } from '@/lib/env';
 import { parseError } from '@/lib/error/parse';
+import { adminDb } from '@/lib/instantdb-admin';
 import { stripe } from '@/lib/stripe';
-import { profile } from '@/schema';
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -63,14 +61,24 @@ export async function POST(req: Request) {
           }
         }
 
-        await database
-          .update(profile)
-          .set({
-            customerId,
-            subscriptionId: subscription.id,
-            productId: subscription.items.data[0]?.price.product as string,
-          })
-          .where(eq(profile.id, subscription.metadata.userId));
+        // Find the user and update their subscription info
+        const { $users } = await adminDb.query({
+          $users: {
+            $: { where: { id: subscription.metadata.userId } },
+          },
+        });
+
+        const userProfile = $users[0];
+
+        if (userProfile) {
+          await adminDb.transact(
+            adminDb.tx.$users[userProfile.id].update({
+              customerId,
+              subscriptionId: subscription.id,
+              productId: subscription.items.data[0]?.price.product as string,
+            })
+          );
+        }
 
         break;
       }
@@ -81,22 +89,25 @@ export async function POST(req: Request) {
           throw new Error('User ID not found');
         }
 
-        const userProfile = await database.query.profile.findFirst({
-          where: eq(profile.id, subscription.metadata.userId),
+        const { $users } = await adminDb.query({
+          $users: {
+            $: { where: { id: subscription.metadata.userId } },
+          },
         });
 
+        const userProfile = $users[0];
+
         if (!userProfile) {
-          throw new Error('Profile not found');
+          throw new Error('User not found');
         }
 
         if (userProfile.subscriptionId === subscription.id) {
-          await database
-            .update(profile)
-            .set({
+          await adminDb.transact(
+            adminDb.tx.$users[userProfile.id].update({
               subscriptionId: null,
               productId: null,
             })
-            .where(eq(profile.id, subscription.metadata.userId));
+          );
         }
 
         break;
