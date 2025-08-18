@@ -114,7 +114,7 @@ export const GET = async (request: NextRequest) => {
         productName === 'hobby' ? 'if_required' : 'always',
       subscription_data: {
         metadata: {
-          userId: user.id,
+          profileId: profile.id, // Use InstantDB profile ID for webhook lookup
         },
       },
     });

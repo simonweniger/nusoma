@@ -1,4 +1,5 @@
 import { auth, currentUser as clerkCurrentUser } from '@clerk/nextjs/server';
+import { id } from '@instantdb/react';
 import { redirect } from 'next/navigation';
 import { getCredits } from '@/app/actions/credits/get';
 import { env } from './env';
@@ -26,6 +27,36 @@ export const requireAuth = async () => {
   return userId;
 };
 
+export const createUserProfile = async (clerkUserId: string) => {
+  const { profiles } = await adminDb.query({
+    profiles: {
+      $: { where: { clerkId: clerkUserId } },
+    },
+  });
+
+  // If profile already exists, return it
+  if (profiles[0]) {
+    return profiles[0];
+  }
+
+  // Create new profile with Clerk user ID
+  const profileId = id();
+  await adminDb.transact([
+    adminDb.tx.profiles[profileId].update({
+      clerkId: clerkUserId,
+    }),
+  ]);
+
+  // Query and return the newly created profile
+  const { profiles: newProfiles } = await adminDb.query({
+    profiles: {
+      $: { where: { id: profileId } },
+    },
+  });
+
+  return newProfiles[0];
+};
+
 export const currentUserProfile = async () => {
   const clerkUser = await clerkCurrentUser();
 
@@ -33,28 +64,22 @@ export const currentUserProfile = async () => {
     throw new Error('User not authenticated');
   }
 
-  // Get the user's primary email address
-  const email = clerkUser.emailAddresses.find(
-    (e) => e.id === clerkUser.primaryEmailAddressId
-  )?.emailAddress;
-
-  if (!email) {
-    throw new Error('User email not found');
-  }
-
-  // Query InstantDB $users by email (InstantDB creates users based on email from JWT)
-  const { $users } = await adminDb.query({
-    $users: {
-      $: { where: { email } },
+  // Query InstantDB profiles by Clerk user ID
+  const { profiles } = await adminDb.query({
+    profiles: {
+      $: { where: { clerkId: clerkUser.id } },
     },
   });
 
-  const userProfile = $users[0];
+  let userProfile = profiles[0];
+
+  // If no profile exists, create one
+  if (!userProfile) {
+    userProfile = await createUserProfile(clerkUser.id);
+  }
 
   if (!userProfile) {
-    throw new Error(
-      'User profile not found in InstantDB - make sure the user has signed in through the client to sync their account'
-    );
+    throw new Error('Failed to create or retrieve user profile');
   }
 
   return userProfile;

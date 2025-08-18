@@ -8,12 +8,14 @@ const _schema = i.schema({
     }),
     $users: i.entity({
       email: i.string().unique().indexed().optional(),
+    }),
+    profiles: i.entity({
+      clerkId: i.string().unique().indexed(),
       customerId: i.string().optional(),
       subscriptionId: i.string().optional(),
       productId: i.string().optional(),
       onboardedAt: i.number().optional(),
     }),
-
     projects: i.entity({
       name: i.string(),
       transcriptionModel: i.string(),
@@ -29,7 +31,7 @@ const _schema = i.schema({
   links: {
     projectOwners: {
       forward: { on: 'projects', has: 'one', label: 'owner' },
-      reverse: { on: '$users', has: 'many', label: 'ownedProjects' },
+      reverse: { on: 'profiles', has: 'many', label: 'ownedProjects' },
     },
   },
   rooms: {

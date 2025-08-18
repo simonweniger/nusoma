@@ -35,8 +35,8 @@ export async function POST(req: Request) {
             ? subscription.customer
             : subscription.customer.id;
 
-        if (!subscription.metadata.userId) {
-          throw new Error('User ID not found');
+        if (!subscription.metadata.profileId) {
+          throw new Error('Profile ID not found');
         }
 
         // Get customer to find the user ID
@@ -61,23 +61,37 @@ export async function POST(req: Request) {
           }
         }
 
-        // Find the user and update their subscription info
-        const { $users } = await adminDb.query({
-          $users: {
-            $: { where: { id: subscription.metadata.userId } },
+        // Find the profile and update their subscription info
+        const { profiles } = await adminDb.query({
+          profiles: {
+            $: { where: { id: subscription.metadata.profileId } },
           },
         });
 
-        const userProfile = $users[0];
+        const userProfile = profiles[0];
 
         if (userProfile) {
+          const updateData: {
+            customerId: string;
+            subscriptionId: string;
+            productId: string;
+            onboardedAt?: number;
+          } = {
+            customerId,
+            subscriptionId: subscription.id,
+            productId: subscription.items.data[0]?.price.product as string,
+          };
+
+          // Set onboardedAt timestamp for new subscriptions to enable onboarding flow
+          if (event.type === 'customer.subscription.created' || !userProfile.onboardedAt) {
+            updateData.onboardedAt = Date.now();
+          }
+
           await adminDb.transact(
-            adminDb.tx.$users[userProfile.id].update({
-              customerId,
-              subscriptionId: subscription.id,
-              productId: subscription.items.data[0]?.price.product as string,
-            })
+            adminDb.tx.profiles[userProfile.id].update(updateData)
           );
+        } else {
+          throw new Error(`User profile not found for ID: ${subscription.metadata.profileId}`);
         }
 
         break;
@@ -85,25 +99,25 @@ export async function POST(req: Request) {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
 
-        if (!subscription.metadata.userId) {
-          throw new Error('User ID not found');
+        if (!subscription.metadata.profileId) {
+          throw new Error('Profile ID not found');
         }
 
-        const { $users } = await adminDb.query({
-          $users: {
-            $: { where: { id: subscription.metadata.userId } },
+        const { profiles } = await adminDb.query({
+          profiles: {
+            $: { where: { id: subscription.metadata.profileId } },
           },
         });
 
-        const userProfile = $users[0];
+        const userProfile = profiles[0];
 
         if (!userProfile) {
-          throw new Error('User not found');
+          throw new Error('Profile not found');
         }
 
         if (userProfile.subscriptionId === subscription.id) {
           await adminDb.transact(
-            adminDb.tx.$users[userProfile.id].update({
+            adminDb.tx.profiles[userProfile.id].update({
               subscriptionId: null,
               productId: null,
             })

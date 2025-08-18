@@ -15,7 +15,6 @@
     "schema:push": "npx instant-cli@latest push schema",
     "schema:perms": "npx instant-cli@latest push perms",
     "export": "email export",
-    "migrate": "npx drizzle-kit push",
     "generate": "npx -y openapi-typescript@latest https://api.us1.bfl.ai/openapi.json -o ./openapi/bfl.d.ts"
   },
   "dependencies": {
@@ -111,7 +110,6 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.1",
-    "drizzle-orm": "^0.44.4",
     "embla-carousel-react": "^8.6.0",
     "fuse.js": "^7.1.0",
     "input-otp": "^1.4.2",
@@ -169,7 +167,6 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "concurrently": "^9.2.0",
-    "drizzle-kit": "^0.31.4",
     "husky": "^9.1.7",
     "react-email": "4.2.8",
     "tailwindcss": "^4",
