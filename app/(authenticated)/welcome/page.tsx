@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createProjectAction } from '@/app/actions/project/create';
-import { currentUser } from '@/lib/auth';
+import { currentUserProfile } from '@/lib/auth';
 import { adminDb } from '@/lib/instantdb-admin';
 import { ProjectProvider } from '@/providers/project';
 import { WelcomeDemo } from './components/welcome-demo';
@@ -16,9 +16,9 @@ export const metadata: Metadata = {
 };
 
 const Welcome = async () => {
-  const user = await currentUser();
+  const userProfile = await currentUserProfile();
 
-  if (!user) {
+  if (!userProfile) {
     return redirect('/sign-in');
   }
 
@@ -26,7 +26,7 @@ const Welcome = async () => {
     projects: {
       $: {
         where: {
-          and: [{ 'owner.id': user.id }, { welcomeProject: true }],
+          and: [{ 'owner.id': userProfile.id }, { welcomeProject: true }],
         },
       },
     },

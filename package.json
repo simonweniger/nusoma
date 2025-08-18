@@ -12,6 +12,8 @@
     "lint": "npx ultracite lint",
     "format": "npx ultracite format",
     "format:fix": "npx ultracite format --unsafe",
+    "schema:push": "npx instant-cli@latest push schema",
+    "schema:perms": "npx instant-cli@latest push perms",
     "export": "email export",
     "migrate": "npx drizzle-kit push",
     "generate": "npx -y openapi-typescript@latest https://api.us1.bfl.ai/openapi.json -o ./openapi/bfl.d.ts"

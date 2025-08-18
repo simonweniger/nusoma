@@ -67,8 +67,8 @@ export const PostHogIdentifyProvider = ({ children }: PostHogProviderProps) => {
   useEffect(() => {
     if (posthog && user) {
       posthog.identify(user.id, {
-        email: user.email,
-        name: user.user_metadata.name,
+        email: user.emailAddresses[0]?.emailAddress,
+        name: user.fullName || user.firstName || 'Unknown',
       });
     }
   }, [posthog, user]);

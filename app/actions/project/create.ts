@@ -1,7 +1,7 @@
 'use server';
 
 import { id } from '@instantdb/react';
-import { requireAuth } from '@/lib/auth';
+import { currentUserProfile, requireAuth } from '@/lib/auth';
 import { parseError } from '@/lib/error/parse';
 import { adminDb } from '@/lib/instantdb-admin';
 import { transcriptionModels } from '@/lib/models/transcription';
@@ -35,7 +35,8 @@ export const createProjectAction = async (
     }
 > => {
   try {
-    const userId = await requireAuth();
+    await requireAuth();
+    const userProfile = await currentUserProfile();
 
     const projectId = id();
 
@@ -49,7 +50,7 @@ export const createProjectAction = async (
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
-        .link({ owner: userId }),
+        .link({ owner: userProfile.id }), // Use InstantDB user UUID
     ]);
 
     return { id: projectId };

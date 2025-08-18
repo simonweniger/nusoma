@@ -1,5 +1,4 @@
-import { auth } from '@clerk/nextjs/server';
-import { id } from '@instantdb/admin';
+import { auth, currentUser as clerkCurrentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { getCredits } from '@/app/actions/credits/get';
 import { env } from './env';
@@ -28,57 +27,34 @@ export const requireAuth = async () => {
 };
 
 export const currentUserProfile = async () => {
-  const user = await currentUser();
+  const clerkUser = await clerkCurrentUser();
 
-  if (!user) {
-    throw new Error('User not found');
+  if (!clerkUser) {
+    throw new Error('User not authenticated');
   }
 
-  // Query InstantDB for user profile using admin client
-  const { profiles } = await adminDb.query({
-    profiles: {
-      $: { where: { 'user.id': user.id } },
+  // Get the user's primary email address
+  const email = clerkUser.emailAddresses.find(
+    (e) => e.id === clerkUser.primaryEmailAddressId
+  )?.emailAddress;
+
+  if (!email) {
+    throw new Error('User email not found');
+  }
+
+  // Query InstantDB $users by email (InstantDB creates users based on email from JWT)
+  const { $users } = await adminDb.query({
+    $users: {
+      $: { where: { email } },
     },
   });
 
-  let userProfile = profiles[0];
+  const userProfile = $users[0];
 
   if (!userProfile) {
-    try {
-      // Create new profile if doesn't exist
-      const profileId = id();
-      await adminDb.transact(
-        adminDb.tx.profiles[profileId]
-          .update({
-            id: user.id,
-          })
-          .link({ user: user.id })
-      );
-
-      // Fetch the newly created profile
-      const { profiles: newProfiles } = await adminDb.query({
-        profiles: {
-          $: { where: { 'user.id': user.id } },
-        },
-      });
-      userProfile = newProfiles[0];
-
-      if (!userProfile) {
-        throw new Error('Failed to create user profile');
-      }
-    } catch {
-      // If profile creation fails, try to fetch again in case of race condition
-      const { profiles: retryProfiles } = await adminDb.query({
-        profiles: {
-          $: { where: { 'user.id': user.id } },
-        },
-      });
-      userProfile = retryProfiles[0];
-
-      if (!userProfile) {
-        throw new Error('Profile creation failed due to race condition');
-      }
-    }
+    throw new Error(
+      'User profile not found in InstantDB - make sure the user has signed in through the client to sync their account'
+    );
   }
 
   return userProfile;
