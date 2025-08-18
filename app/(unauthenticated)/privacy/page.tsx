@@ -282,10 +282,10 @@ const Privacy = () => (
           </thead>
           <tbody>
             <tr>
-              <td>OpenAI</td>
+              <td>Microsoft Azure</td>
               <td>AI model training and inference</td>
               <td>Global</td>
-              <td>USA</td>
+              <td>USA (Hosted in Europe)</td>
             </tr>
             <tr>
               <td>Vercel Analytics</td>
@@ -300,8 +300,14 @@ const Privacy = () => (
               <td>USA</td>
             </tr>
             <tr>
-              <td>Supabase</td>
+              <td>Clerk</td>
               <td>Authentication</td>
+              <td>Global</td>
+              <td>USA</td>
+            </tr>
+            <tr>
+              <td>InstantDB</td>
+              <td>Database and Storage</td>
               <td>Global</td>
               <td>USA</td>
             </tr>

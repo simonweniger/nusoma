@@ -1,14 +1,12 @@
 'use server';
 
-import { and, eq } from 'drizzle-orm';
-import { currentUser } from '@/lib/auth';
-import { database } from '@/lib/database';
+import { requireAuth } from '@/lib/auth';
 import { parseError } from '@/lib/error/parse';
-import { projects } from '@/schema';
+import { adminDb } from '@/lib/instantdb-admin';
 
 export const updateProjectAction = async (
   projectId: string,
-  data: Partial<typeof projects.$inferInsert>
+  data: Record<string, unknown>
 ): Promise<
   | {
       success: true;
@@ -18,23 +16,30 @@ export const updateProjectAction = async (
     }
 > => {
   try {
-    const user = await currentUser();
+    const userId = await requireAuth();
 
-    if (!user) {
-      throw new Error('You need to be logged in to update a project!');
+    // First check if project exists and user owns it
+    const { projects: projectResults } = await adminDb.query({
+      projects: {
+        $: {
+          where: { id: projectId },
+        },
+        owner: {},
+      },
+    });
+
+    const project = projectResults[0];
+
+    if (!project || project.owner?.id !== userId) {
+      throw new Error('Project not found or access denied');
     }
 
-    const project = await database
-      .update(projects)
-      .set({
+    await adminDb.transact([
+      adminDb.tx.projects[projectId].update({
         ...data,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(projects.id, projectId), eq(projects.userId, user.id)));
-
-    if (!project) {
-      throw new Error('Project not found');
-    }
+        updatedAt: Date.now(),
+      }),
+    ]);
 
     return { success: true };
   } catch (error) {

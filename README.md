@@ -10,18 +10,18 @@ A visual AI playground. nusoma is an open source canvas for building AI workflow
 - **Multiple AI Models**: Seamlessly integrate with leading AI models from various providers
 - **Multimedia Processing**: Process images, text, audio, and video content through your workflows
 - **Automatic Saving**: Changes are automatically saved to your projects
-- **Cloud Storage**: All workflows are securely stored in Supabase with Row Level Security enabled
+- **Cloud Storage**: All workflows are securely stored in InstantDB with Row Level Security enabled
 - **Modern UI**: Clean, responsive interface built with Next.js, React, and Tailwind CSS
 
 ## Technologies
 
 - [Next.js 15](https://nextjs.org/) with App Router and Turbopack
 - [React 19](https://react.dev/)
-- [Supabase](https://supabase.com/) for authentication and data storage
+- [InstantDB](https://www.instantdb.com/) for realtime & data storage
+- [Clerk](https://clerk.com/) for authentication and user management
 - [Vercel AI SDK](https://sdk.vercel.ai/) for AI model integration
 - [ReactFlow](https://reactflow.dev/) for the visual canvas
 - [TipTap](https://tiptap.dev/) for rich text editing
-- [Drizzle ORM](https://orm.drizzle.team/) for database queries
 - [Tailwind CSS](https://tailwindcss.com/) for styling
 - [shadcn/ui](https://ui.shadcn.com/), [Kibo UI](https://www.kibo-ui.com/) and [Radix UI](https://www.radix-ui.com/) for accessible UI components
 
@@ -31,8 +31,8 @@ A visual AI playground. nusoma is an open source canvas for building AI workflow
 
 - Node.js (v20+)
 - PNPM package manager
-- Supabase account and project
-- [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started) installed
+- InstantDB account and project
+- Clerk account
 - [Stripe CLI](https://docs.stripe.com/stripe-cli) installed
 
 ### Installation

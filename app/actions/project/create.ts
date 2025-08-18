@@ -1,11 +1,11 @@
 'use server';
 
-import { currentUser } from '@/lib/auth';
-import { database } from '@/lib/database';
+import { id } from '@instantdb/react';
+import { requireAuth } from '@/lib/auth';
 import { parseError } from '@/lib/error/parse';
+import { adminDb } from '@/lib/instantdb-admin';
 import { transcriptionModels } from '@/lib/models/transcription';
 import { visionModels } from '@/lib/models/vision';
-import { projects } from '@/schema';
 
 const defaultTranscriptionModel = Object.entries(transcriptionModels).find(
   ([_, model]) => model.default
@@ -35,28 +35,24 @@ export const createProjectAction = async (
     }
 > => {
   try {
-    const user = await currentUser();
+    const userId = await requireAuth();
 
-    if (!user) {
-      throw new Error('You need to be logged in to create a project!');
-    }
+    const projectId = id();
 
-    const project = await database
-      .insert(projects)
-      .values({
-        name,
-        userId: user.id,
-        transcriptionModel: defaultTranscriptionModel[0],
-        visionModel: defaultVisionModel[0],
-        welcomeProject,
-      })
-      .returning({ id: projects.id });
+    await adminDb.transact([
+      adminDb.tx.projects[projectId]
+        .update({
+          name,
+          transcriptionModel: defaultTranscriptionModel[0],
+          visionModel: defaultVisionModel[0],
+          welcomeProject: Boolean(welcomeProject),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        })
+        .link({ owner: userId }),
+    ]);
 
-    if (!project?.length) {
-      throw new Error('Failed to create project');
-    }
-
-    return { id: project[0].id };
+    return { id: projectId };
   } catch (error) {
     const message = parseError(error);
 

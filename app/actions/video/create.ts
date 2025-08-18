@@ -1,15 +1,14 @@
 'use server';
 
 import type { Edge, Node, Viewport } from '@xyflow/react';
-import { eq } from 'drizzle-orm';
+
 import { nanoid } from 'nanoid';
-import { getSubscribedUser } from '@/lib/auth';
-import { database } from '@/lib/database';
+import { requireAuth } from '@/lib/auth';
 import { parseError } from '@/lib/error/parse';
+import { adminDb } from '@/lib/instantdb-admin';
 import { videoModels } from '@/lib/models/video';
+import { uploadFile } from '@/lib/storage';
 import { trackCreditUsage } from '@/lib/stripe';
-import { createClient } from '@/lib/supabase/server';
-import { projects } from '@/schema';
 
 type GenerateVideoActionProps = {
   modelId: string;
@@ -37,8 +36,7 @@ export const generateVideoAction = async ({
     }
 > => {
   try {
-    const client = await createClient();
-    const user = await getSubscribedUser();
+    const userId = await requireAuth();
     const model = videoModels[modelId];
 
     if (!model) {
@@ -73,23 +71,25 @@ export const generateVideoAction = async ({
       cost: provider.getCost({ duration: 5 }),
     });
 
-    const blob = await client.storage
-      .from('files')
-      .upload(`${user.id}/${nanoid()}.mp4`, arrayBuffer, {
-        contentType: 'video/mp4',
-      });
+    const fileName = `${nanoid()}.mp4`;
 
-    if (blob.error) {
-      throw new Error(blob.error.message);
-    }
+    // Upload to InstantDB Storage
+    const { url: instantUrl } = await uploadFile(
+      new Uint8Array(arrayBuffer),
+      userId,
+      fileName,
+      'video/mp4'
+    );
 
-    const { data: supabaseDownloadUrl } = client.storage
-      .from('files')
-      .getPublicUrl(blob.data.path);
-
-    const project = await database.query.projects.findFirst({
-      where: eq(projects.id, projectId),
+    const { projects: projectResults } = await adminDb.query({
+      projects: {
+        $: {
+          where: { id: projectId },
+        },
+      },
     });
+
+    const project = projectResults[0];
 
     if (!project) {
       throw new Error('Project not found');
@@ -111,7 +111,7 @@ export const generateVideoAction = async ({
       ...(existingNode.data ?? {}),
       updatedAt: new Date().toISOString(),
       generated: {
-        url: supabaseDownloadUrl.publicUrl,
+        url: instantUrl,
         type: 'video/mp4',
       },
     };
@@ -127,10 +127,12 @@ export const generateVideoAction = async ({
       return existingNode;
     });
 
-    await database
-      .update(projects)
-      .set({ content: { ...content, nodes: updatedNodes } })
-      .where(eq(projects.id, projectId));
+    await adminDb.transact([
+      adminDb.tx.projects[projectId].update({
+        content: { ...content, nodes: updatedNodes },
+        updatedAt: Date.now(),
+      }),
+    ]);
 
     return {
       nodeData: newData,

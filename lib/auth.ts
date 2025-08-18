@@ -1,17 +1,30 @@
-import { eq } from 'drizzle-orm';
+import { auth } from '@clerk/nextjs/server';
+import { id } from '@instantdb/admin';
+import { redirect } from 'next/navigation';
 import { getCredits } from '@/app/actions/credits/get';
-import { profile } from '@/schema';
-import { database } from './database';
 import { env } from './env';
-import { createClient } from './supabase/server';
+import { adminDb } from './instantdb-admin';
 
 export const currentUser = async () => {
-  const client = await createClient();
-  const {
-    data: { user },
-  } = await client.auth.getUser();
+  const { userId } = await auth();
 
-  return user;
+  if (!userId) {
+    return null;
+  }
+
+  return {
+    id: userId,
+  };
+};
+
+export const requireAuth = async () => {
+  const { userId } = await auth();
+
+  if (!userId) {
+    redirect('/sign-in');
+  }
+
+  return userId;
 };
 
 export const currentUserProfile = async () => {
@@ -21,39 +34,49 @@ export const currentUserProfile = async () => {
     throw new Error('User not found');
   }
 
-  const userProfiles = await database
-    .select()
-    .from(profile)
-    .where(eq(profile.id, user.id));
-  let userProfile = userProfiles.at(0);
+  // Query InstantDB for user profile using admin client
+  const { profiles } = await adminDb.query({
+    profiles: {
+      $: { where: { 'user.id': user.id } },
+    },
+  });
 
-  if (!userProfile && user.email) {
+  let userProfile = profiles[0];
+
+  if (!userProfile) {
     try {
-      const response = await database
-        .insert(profile)
-        .values({ id: user.id })
-        .returning();
+      // Create new profile if doesn't exist
+      const profileId = id();
+      await adminDb.transact(
+        adminDb.tx.profiles[profileId]
+          .update({
+            id: user.id,
+          })
+          .link({ user: user.id })
+      );
 
-      if (!response.length) {
+      // Fetch the newly created profile
+      const { profiles: newProfiles } = await adminDb.query({
+        profiles: {
+          $: { where: { 'user.id': user.id } },
+        },
+      });
+      userProfile = newProfiles[0];
+
+      if (!userProfile) {
         throw new Error('Failed to create user profile');
       }
+    } catch {
+      // If profile creation fails, try to fetch again in case of race condition
+      const { profiles: retryProfiles } = await adminDb.query({
+        profiles: {
+          $: { where: { 'user.id': user.id } },
+        },
+      });
+      userProfile = retryProfiles[0];
 
-      userProfile = response[0];
-    } catch (error) {
-      // If we get a duplicate key error, the profile was created by another request
-      // Let's fetch it again
-      if (error instanceof Error && error.message.includes('23505')) {
-        const retryProfiles = await database
-          .select()
-          .from(profile)
-          .where(eq(profile.id, user.id));
-        userProfile = retryProfiles.at(0);
-
-        if (!userProfile) {
-          throw new Error('Profile creation failed due to race condition');
-        }
-      } else {
-        throw error;
+      if (!userProfile) {
+        throw new Error('Profile creation failed due to race condition');
       }
     }
   }

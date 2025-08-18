@@ -1,14 +1,12 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
-import { currentUser } from '@/lib/auth';
-import { database } from '@/lib/database';
+import { requireAuth } from '@/lib/auth';
 import { parseError } from '@/lib/error/parse';
-import { profile } from '@/schema';
+import { adminDb } from '@/lib/instantdb-admin';
 
 export const updateProfileAction = async (
   userId: string,
-  data: Partial<typeof profile.$inferInsert>
+  data: Record<string, unknown>
 ): Promise<
   | {
       success: true;
@@ -18,13 +16,13 @@ export const updateProfileAction = async (
     }
 > => {
   try {
-    const user = await currentUser();
+    const authUserId = await requireAuth();
 
-    if (!user) {
-      throw new Error('You need to be logged in to update your profile!');
+    if (authUserId !== userId) {
+      throw new Error('You can only update your own profile!');
     }
 
-    await database.update(profile).set(data).where(eq(profile.id, userId));
+    await adminDb.transact([adminDb.tx.profiles[userId].update(data)]);
 
     return { success: true };
   } catch (error) {

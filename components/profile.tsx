@@ -1,4 +1,4 @@
-import type { UserAttributes } from '@supabase/supabase-js';
+import { useUser } from '@clerk/nextjs';
 import { Loader2Icon } from 'lucide-react';
 import Image from 'next/image';
 import { type FormEventHandler, useEffect, useState } from 'react';
@@ -11,7 +11,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { handleError } from '@/lib/error/handle';
-import { createClient } from '@/lib/supabase/client';
 import { uploadFile } from '@/lib/upload';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -28,73 +27,38 @@ type ProfileProps = {
 };
 
 export const Profile = ({ open, setOpen }: ProfileProps) => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [image, setImage] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
-  const [password, setPassword] = useState('');
+  const { user } = useUser();
 
   useEffect(() => {
-    const loadProfile = async () => {
-      const client = createClient();
-      const { data } = await client.auth.getUser();
-
-      if (!data.user) {
-        return;
-      }
-
-      if (data.user.user_metadata.name) {
-        setName(data.user.user_metadata.name);
-      }
-
-      if (data.user.email) {
-        setEmail(data.user.email);
-      }
-
-      if (data.user.user_metadata.avatar) {
-        setImage(data.user.user_metadata.avatar);
-      }
-    };
-
-    loadProfile();
-  }, []);
+    if (user) {
+      setFirstName(user.firstName ?? '');
+      setLastName(user.lastName ?? '');
+      setImage(user.imageUrl ?? '');
+    }
+  }, [user]);
 
   const handleUpdateUser: FormEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault();
 
-    if (!(name.trim() && email.trim()) || isUpdating) {
+    if (!(firstName.trim() || lastName.trim()) || isUpdating) {
       return;
     }
 
     setIsUpdating(true);
 
     try {
-      const client = createClient();
-
-      const attributes: UserAttributes = {
-        data: {},
-      };
-
-      if (name.trim()) {
-        attributes.data = {
-          ...attributes.data,
-          name,
-        };
+      if (!user) {
+        throw new Error('User not found');
       }
 
-      if (email.trim()) {
-        attributes.email = email;
-      }
-
-      if (password.trim()) {
-        attributes.password = password;
-      }
-
-      const response = await client.auth.updateUser(attributes);
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
+      await user.update({
+        firstName: firstName.trim() || undefined,
+        lastName: lastName.trim() || undefined,
+      });
 
       toast.success('Profile updated successfully');
       setOpen(false);
@@ -115,20 +79,15 @@ export const Profile = ({ open, setOpen }: ProfileProps) => {
         throw new Error('No file selected');
       }
 
+      if (!user) {
+        throw new Error('User not found');
+      }
+
       setIsUpdating(true);
 
       const { url } = await uploadFile(files[0], 'avatars');
-      const client = createClient();
 
-      const response = await client.auth.updateUser({
-        data: {
-          avatar: url,
-        },
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
+      await user.setProfileImage({ file: files[0] });
 
       toast.success('Avatar updated successfully');
       setImage(url);
@@ -187,39 +146,43 @@ export const Profile = ({ open, setOpen }: ProfileProps) => {
           onSubmit={handleUpdateUser}
         >
           <div className="grid gap-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="firstName">First Name</Label>
             <Input
               className="text-foreground"
-              id="name"
-              onChange={({ target }) => setName(target.value)}
-              placeholder="Jane Doe"
-              value={name}
+              id="firstName"
+              onChange={({ target }) => setFirstName(target.value)}
+              placeholder="Jane"
+              value={firstName}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input
+              className="text-foreground"
+              id="lastName"
+              onChange={({ target }) => setLastName(target.value)}
+              placeholder="Doe"
+              value={lastName}
             />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
               className="text-foreground"
+              disabled
               id="email"
-              onChange={({ target }) => setEmail(target.value)}
-              placeholder="jane@doe.com"
-              type="email"
-              value={email}
+              placeholder={user?.primaryEmailAddress?.emailAddress ?? 'N/A'}
+              readOnly
             />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              className="text-foreground"
-              id="password"
-              onChange={({ target }) => setPassword(target.value)}
-              placeholder="••••••••"
-              type="password"
-              value={password}
-            />
+            <p className="text-muted-foreground text-xs">
+              Email changes must be done through Clerk settings
+            </p>
           </div>
           <Button
-            disabled={isUpdating || !name.trim() || !email.trim()}
+            disabled={
+              isUpdating ||
+              (firstName.trim().length === 0 && lastName.trim().length === 0)
+            }
             type="submit"
           >
             Update

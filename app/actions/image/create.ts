@@ -5,17 +5,16 @@ import {
   type Experimental_GenerateImageResult,
   experimental_generateImage as generateImage,
 } from 'ai';
-import { eq } from 'drizzle-orm';
+
 import { nanoid } from 'nanoid';
 import OpenAI from 'openai';
-import { getSubscribedUser } from '@/lib/auth';
-import { database } from '@/lib/database';
+import { requireAuth } from '@/lib/auth';
 import { parseError } from '@/lib/error/parse';
+import { adminDb } from '@/lib/instantdb-admin';
 import { imageModels } from '@/lib/models/image';
 import { visionModels } from '@/lib/models/vision';
+import { uploadFile } from '@/lib/storage';
 import { trackCreditUsage } from '@/lib/stripe';
-import { createClient } from '@/lib/supabase/server';
-import { projects } from '@/schema';
 
 type GenerateImageActionProps = {
   prompt: string;
@@ -97,8 +96,7 @@ export const generateImageAction = async ({
     }
 > => {
   try {
-    const client = await createClient();
-    const user = await getSubscribedUser();
+    const userId = await requireAuth();
     const model = imageModels[modelId];
 
     if (!model) {
@@ -166,32 +164,28 @@ export const generateImageAction = async ({
 
     const name = `${nanoid()}.${extension}`;
 
-    const file: File = new File([new Uint8Array(image.uint8Array)], name, {
-      type: image.mediaType,
-    });
-
-    const blob = await client.storage
-      .from('files')
-      .upload(`${user.id}/${name}`, file, {
-        contentType: file.type,
-      });
-
-    if (blob.error) {
-      throw new Error(blob.error.message);
-    }
-
-    const { data: downloadUrl } = client.storage
-      .from('files')
-      .getPublicUrl(blob.data.path);
+    // Upload to InstantDB Storage
+    const { url: instantUrl } = await uploadFile(
+      image.uint8Array,
+      userId,
+      name,
+      image.mediaType
+    );
 
     const url =
       process.env.NODE_ENV === 'production'
-        ? downloadUrl.publicUrl
+        ? instantUrl
         : `data:${image.mediaType};base64,${Buffer.from(image.uint8Array).toString('base64')}`;
 
-    const project = await database.query.projects.findFirst({
-      where: eq(projects.id, projectId),
+    const { projects: projectResults } = await adminDb.query({
+      projects: {
+        $: {
+          where: { id: projectId },
+        },
+      },
     });
+
+    const project = projectResults[0];
 
     if (!project) {
       throw new Error('Project not found');
@@ -244,7 +238,7 @@ export const generateImageAction = async ({
       ...(existingNode.data ?? {}),
       updatedAt: new Date().toISOString(),
       generated: {
-        url: downloadUrl.publicUrl,
+        url: instantUrl,
         type: image.mediaType,
       },
       description,
@@ -261,10 +255,12 @@ export const generateImageAction = async ({
       return existingNode;
     });
 
-    await database
-      .update(projects)
-      .set({ content: { ...content, nodes: updatedNodes } })
-      .where(eq(projects.id, projectId));
+    await adminDb.transact([
+      adminDb.tx.projects[projectId].update({
+        content: { ...content, nodes: updatedNodes },
+        updatedAt: Date.now(),
+      }),
+    ]);
 
     return {
       nodeData: newData,

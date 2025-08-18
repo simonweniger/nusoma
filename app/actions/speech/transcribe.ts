@@ -1,12 +1,10 @@
 'use server';
 
 import { experimental_transcribe as transcribe } from 'ai';
-import { eq } from 'drizzle-orm';
-import { getSubscribedUser } from '@/lib/auth';
-import { database } from '@/lib/database';
+import { requireAuth } from '@/lib/auth';
 import { parseError } from '@/lib/error/parse';
+import { adminDb } from '@/lib/instantdb-admin';
 import { transcriptionModels } from '@/lib/models/transcription';
-import { projects } from '@/schema';
 
 export const transcribeAction = async (
   url: string,
@@ -20,11 +18,17 @@ export const transcribeAction = async (
     }
 > => {
   try {
-    await getSubscribedUser();
+    await requireAuth();
 
-    const project = await database.query.projects.findFirst({
-      where: eq(projects.id, projectId),
+    const { projects: projectResults } = await adminDb.query({
+      projects: {
+        $: {
+          where: { id: projectId },
+        },
+      },
     });
+
+    const project = projectResults[0];
 
     if (!project) {
       throw new Error('Project not found');

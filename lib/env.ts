@@ -19,11 +19,11 @@ export const env = createEnv({
     STRIPE_CREDITS_METER_NAME: z.string().min(1),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).startsWith('whsec_'),
 
-    SUPABASE_AUTH_HOOK_SECRET: z.string().min(1).startsWith('v1,whsec_'),
+    // Clerk Integration
+    CLERK_SECRET_KEY: z.string().min(1),
 
-    // Supabase Integration
-    POSTGRES_URL: z.string().url().min(1),
-    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+    // InstantDB Integration
+    INSTANT_ADMIN_TOKEN: z.string().min(1),
 
     // AI SDK
     OPENAI_API_KEY: z.string().min(1).startsWith('sk-'),
@@ -56,9 +56,12 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1),
     NEXT_PUBLIC_POSTHOG_HOST: z.string().url().min(1),
 
-    // Supabase Integration
-    NEXT_PUBLIC_SUPABASE_URL: z.string().url().min(1),
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+    // InstantDB Integration
+    NEXT_PUBLIC_INSTANT_APP_ID: z.string().min(1),
+
+    // Clerk Integration
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
+    NEXT_PUBLIC_CLERK_CLIENT_NAME: z.string().min(1),
   },
   runtimeEnv: {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
@@ -74,9 +77,10 @@ export const env = createEnv({
     TOGETHER_AI_API_KEY: process.env.TOGETHER_AI_API_KEY,
     COHERE_API_KEY: process.env.COHERE_API_KEY,
     MISTRAL_API_KEY: process.env.MISTRAL_API_KEY,
-    POSTGRES_URL: process.env.POSTGRES_URL,
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_INSTANT_APP_ID: process.env.NEXT_PUBLIC_INSTANT_APP_ID,
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_CLERK_CLIENT_NAME: process.env.NEXT_PUBLIC_CLERK_CLIENT_NAME,
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
     MINIMAX_GROUP_ID: process.env.MINIMAX_GROUP_ID,
     MINIMAX_API_KEY: process.env.MINIMAX_API_KEY,
@@ -91,8 +95,8 @@ export const env = createEnv({
     STRIPE_CREDITS_METER_ID: process.env.STRIPE_CREDITS_METER_ID,
     STRIPE_CREDITS_METER_NAME: process.env.STRIPE_CREDITS_METER_NAME,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-    SUPABASE_AUTH_HOOK_SECRET: process.env.SUPABASE_AUTH_HOOK_SECRET,
+    CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+    INSTANT_ADMIN_TOKEN: process.env.INSTANT_ADMIN_TOKEN,
     RUNWAYML_API_SECRET: process.env.RUNWAYML_API_SECRET,
     LUMA_API_KEY: process.env.LUMA_API_KEY,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,

@@ -23,7 +23,6 @@ import type { MouseEvent, MouseEventHandler } from 'react';
 import { useCallback, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useDebouncedCallback } from 'use-debounce';
-import { updateProjectAction } from '@/app/actions/project/update';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { useSaveProject } from '@/hooks/use-save-project';
 import { handleError } from '@/lib/error/handle';
@@ -42,11 +41,11 @@ import {
 } from './ui/context-menu';
 
 export const Canvas = ({ children, ...props }: ReactFlowProps) => {
-  const project = useProject();
+  const { project, updateProject } = useProject();
   const {
     onConnect,
-    // onConnectStart,
-    // onConnectEnd,
+    //onConnectStart,
+    //onConnectEnd,
     onEdgesChange,
     onNodesChange,
     nodes: initialNodes,
@@ -72,21 +71,20 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
   const analytics = useAnalytics();
   const [saveState, setSaveState] = useSaveProject();
 
+  // Real-time save with InstantDB (faster than original)
   const save = useDebouncedCallback(async () => {
-    if (saveState.isSaving || !project?.userId || !project?.id) {
+    if (saveState.isSaving || !project?.id) {
       return;
     }
 
     try {
       setSaveState((prev) => ({ ...prev, isSaving: true }));
 
-      const response = await updateProjectAction(project.id, {
-        content: toObject(),
+      const currentFlow = toObject();
+      await updateProject({
+        content: currentFlow,
+        updatedAt: Date.now(),
       });
-
-      if ('error' in response) {
-        throw new Error(response.error);
-      }
 
       setSaveState((prev) => ({ ...prev, lastSaved: new Date() }));
     } catch (error) {
@@ -94,7 +92,7 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
     } finally {
       setSaveState((prev) => ({ ...prev, isSaving: false }));
     }
-  }, 1000);
+  }, 300); // Faster than original 1000ms
 
   const handleNodesChange = useCallback<OnNodesChange>(
     (changes) => {

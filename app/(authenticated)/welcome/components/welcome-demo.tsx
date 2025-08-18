@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@clerk/nextjs';
 import { getIncomers, useReactFlow } from '@xyflow/react';
 import { PlayIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -11,7 +12,6 @@ import type { ImageNodeProps } from '@/components/nodes/image';
 import type { TextNodeProps } from '@/components/nodes/text';
 import { Toolbar } from '@/components/toolbar';
 import { Button } from '@/components/ui/button';
-import { useUser } from '@/hooks/use-user';
 import { handleError } from '@/lib/error/handle';
 import { nodeButtons } from '@/lib/node-buttons';
 import { useProject } from '@/providers/project';
@@ -40,7 +40,7 @@ export const WelcomeDemo = ({ title, description }: WelcomeDemoProps) => {
   const [hasConnectedImageNode, setHasConnectedImageNode] = useState(false);
   const [hasImageInstructions, setHasImageInstructions] = useState(false);
   const [hasGeneratedImage, setHasGeneratedImage] = useState(false);
-  const user = useUser();
+  const { user } = useUser();
   const router = useRouter();
 
   const handleNodesChange = useCallback(() => {

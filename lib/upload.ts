@@ -1,38 +1,36 @@
 import { nanoid } from 'nanoid';
-import { createClient } from './supabase/client';
+import db from './instantdb';
 
 export const uploadFile = async (
   file: File,
   bucket: 'avatars' | 'files' | 'screenshots',
   filename?: string
 ) => {
-  const client = createClient();
-  const { data } = await client.auth.getUser();
-  const extension = file.name.split('.').pop();
+  // Check if user is authenticated through InstantDB
+  const { user } = db.useAuth();
 
-  if (!data?.user) {
+  if (!user) {
     throw new Error('You need to be logged in to upload a file!');
   }
 
+  const extension = file.name.split('.').pop();
   const name = filename ?? `${nanoid()}.${extension}`;
+  const path = `${bucket}/${user.id}/${name}`;
 
-  const blob = await client.storage
-    .from(bucket)
-    .upload(`${data.user.id}/${name}`, file, {
-      contentType: file.type,
-      upsert: bucket === 'screenshots',
-    });
+  // Upload using InstantDB storage
+  await db.storage.uploadFile(path, file, {
+    contentType: file.type,
+  });
 
-  if (blob.error) {
-    throw new Error(blob.error.message);
-  }
+  // For client-side uploads, InstantDB doesn't immediately return the URL
+  // We'll create a temporary blob URL for immediate use
+  const tempUrl = URL.createObjectURL(file);
 
-  const { data: downloadUrl } = client.storage
-    .from(bucket)
-    .getPublicUrl(blob.data.path);
+  // TODO: Replace this with proper InstantDB file URL retrieval
+  // For now, we'll use the temporary blob URL
 
   return {
-    url: downloadUrl.publicUrl,
+    url: tempUrl,
     type: file.type,
   };
 };

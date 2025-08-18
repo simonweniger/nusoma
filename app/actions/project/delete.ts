@@ -1,10 +1,8 @@
 'use server';
 
-import { and, eq } from 'drizzle-orm';
-import { currentUser } from '@/lib/auth';
-import { database } from '@/lib/database';
+import { requireAuth } from '@/lib/auth';
 import { parseError } from '@/lib/error/parse';
-import { projects } from '@/schema';
+import { adminDb } from '@/lib/instantdb-admin';
 
 export const deleteProjectAction = async (
   projectId: string
@@ -17,19 +15,25 @@ export const deleteProjectAction = async (
     }
 > => {
   try {
-    const user = await currentUser();
+    const userId = await requireAuth();
 
-    if (!user) {
-      throw new Error('You need to be logged in to delete a project!');
+    // First check if project exists and user owns it
+    const { projects: projectResults } = await adminDb.query({
+      projects: {
+        $: {
+          where: { id: projectId },
+        },
+        owner: {},
+      },
+    });
+
+    const project = projectResults[0];
+
+    if (!project || project.owner?.id !== userId) {
+      throw new Error('Project not found or access denied');
     }
 
-    const project = await database
-      .delete(projects)
-      .where(and(eq(projects.id, projectId), eq(projects.userId, user.id)));
-
-    if (!project) {
-      throw new Error('Project not found');
-    }
+    await adminDb.transact([adminDb.tx.projects[projectId].delete()]);
 
     return { success: true };
   } catch (error) {

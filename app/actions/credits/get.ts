@@ -1,8 +1,9 @@
 'use server';
 
-import { currentUserProfile } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { parseError } from '@/lib/error/parse';
+import { adminDb } from '@/lib/instantdb-admin';
 import { stripe } from '@/lib/stripe';
 
 const HOBBY_CREDITS = 200;
@@ -16,7 +17,17 @@ export const getCredits = async (): Promise<
     }
 > => {
   try {
-    const profile = await currentUserProfile();
+    const userId = await requireAuth();
+
+    const { profiles } = await adminDb.query({
+      profiles: {
+        $: {
+          where: { 'user.id': userId },
+        },
+      },
+    });
+
+    const profile = profiles[0];
 
     if (!profile) {
       throw new Error('User profile not found');

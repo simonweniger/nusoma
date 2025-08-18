@@ -1,4 +1,3 @@
-import { eq } from 'drizzle-orm';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -10,9 +9,8 @@ import { Toolbar } from '@/components/toolbar';
 import { TopLeft } from '@/components/top-left';
 import { TopRight } from '@/components/top-right';
 import { currentUserProfile } from '@/lib/auth';
-import { database } from '@/lib/database';
+import { adminDb } from '@/lib/instantdb-admin';
 import { ProjectProvider } from '@/providers/project';
-import { projects } from '@/schema';
 
 export const metadata: Metadata = {
   title: 'nusoma',
@@ -39,9 +37,14 @@ const Project = async ({ params }: ProjectProps) => {
     return redirect('/welcome');
   }
 
-  const project = await database.query.projects.findFirst({
-    where: eq(projects.id, projectId),
+  // Query project from InstantDB to ensure it exists
+  const { projects: projectsData } = await adminDb.query({
+    projects: {
+      $: { where: { id: projectId } },
+    },
   });
+
+  const project = projectsData[0];
 
   if (!project) {
     notFound();
@@ -50,7 +53,7 @@ const Project = async ({ params }: ProjectProps) => {
   return (
     <div className="flex h-screen w-screen items-stretch overflow-hidden">
       <div className="relative flex-1">
-        <ProjectProvider data={project}>
+        <ProjectProvider projectId={projectId}>
           <Canvas>
             <Controls />
             <Toolbar />

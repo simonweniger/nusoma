@@ -2,15 +2,14 @@
 
 import type { Edge, Node, Viewport } from '@xyflow/react';
 import { experimental_generateSpeech as generateSpeech } from 'ai';
-import { eq } from 'drizzle-orm';
+
 import { nanoid } from 'nanoid';
-import { getSubscribedUser } from '@/lib/auth';
-import { database } from '@/lib/database';
+import { requireAuth } from '@/lib/auth';
 import { parseError } from '@/lib/error/parse';
+import { adminDb } from '@/lib/instantdb-admin';
 import { speechModels } from '@/lib/models/speech';
+import { uploadFile } from '@/lib/storage';
 import { trackCreditUsage } from '@/lib/stripe';
-import { createClient } from '@/lib/supabase/server';
-import { projects } from '@/schema';
 
 type GenerateSpeechActionProps = {
   text: string;
@@ -37,8 +36,7 @@ export const generateSpeechAction = async ({
     }
 > => {
   try {
-    const client = await createClient();
-    const user = await getSubscribedUser();
+    const userId = await requireAuth();
 
     const model = speechModels[modelId];
 
@@ -61,27 +59,25 @@ export const generateSpeechAction = async ({
       cost: provider.getCost(text.length),
     });
 
-    const blob = await client.storage
-      .from('files')
-      .upload(
-        `${user.id}/${nanoid()}.mp3`,
-        new Blob([new Uint8Array(audio.uint8Array)]),
-        {
-          contentType: audio.mediaType,
-        }
-      );
+    const fileName = `${nanoid()}.mp3`;
 
-    if (blob.error) {
-      throw new Error(blob.error.message);
-    }
+    // Upload to InstantDB Storage
+    const { url: instantUrl } = await uploadFile(
+      audio.uint8Array,
+      userId,
+      fileName,
+      audio.mediaType
+    );
 
-    const { data: downloadUrl } = client.storage
-      .from('files')
-      .getPublicUrl(blob.data.path);
-
-    const project = await database.query.projects.findFirst({
-      where: eq(projects.id, projectId),
+    const { projects: projectResults } = await adminDb.query({
+      projects: {
+        $: {
+          where: { id: projectId },
+        },
+      },
     });
+
+    const project = projectResults[0];
 
     if (!project) {
       throw new Error('Project not found');
@@ -103,7 +99,7 @@ export const generateSpeechAction = async ({
       ...(existingNode.data ?? {}),
       updatedAt: new Date().toISOString(),
       generated: {
-        url: downloadUrl.publicUrl,
+        url: instantUrl,
         type: audio.mediaType,
       },
     };
@@ -119,10 +115,12 @@ export const generateSpeechAction = async ({
       return existingNode;
     });
 
-    await database
-      .update(projects)
-      .set({ content: { ...content, nodes: updatedNodes } })
-      .where(eq(projects.id, projectId));
+    await adminDb.transact([
+      adminDb.tx.projects[projectId].update({
+        content: { ...content, nodes: updatedNodes },
+        updatedAt: Date.now(),
+      }),
+    ]);
 
     return {
       nodeData: newData,

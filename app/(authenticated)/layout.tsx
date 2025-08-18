@@ -14,10 +14,10 @@ type AuthenticatedLayoutProps = {
 };
 
 const AuthenticatedLayout = async ({ children }: AuthenticatedLayoutProps) => {
-  const user = await currentUser();
+  const userId = await currentUser();
 
-  if (!user) {
-    redirect('/auth/login');
+  if (!userId) {
+    redirect('/sign-in');
   }
 
   const profile = await currentUserProfile();

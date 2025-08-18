@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { mono, sans, serif } from '@/lib/fonts';
 import { cn } from '@/lib/utils';
+import { AuthProvider } from '@/providers/auth';
 import { PostHogProvider } from '@/providers/posthog-provider';
 import { ThemeProvider } from '@/providers/theme';
 
@@ -44,15 +45,17 @@ const RootLayout = ({ children }: RootLayoutProps) => (
       )}
     >
       <PostHogProvider>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          disableTransitionOnChange
-          enableSystem
-        >
-          <TooltipProvider>{children}</TooltipProvider>
-          <Toaster className="z-[99999999]" />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            disableTransitionOnChange
+            enableSystem
+          >
+            <TooltipProvider>{children}</TooltipProvider>
+            <Toaster className="z-[99999999]" />
+          </ThemeProvider>
+        </AuthProvider>
         <Analytics />
       </PostHogProvider>
     </body>

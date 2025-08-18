@@ -1,12 +1,10 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
 import OpenAI from 'openai';
-import { getSubscribedUser } from '@/lib/auth';
-import { database } from '@/lib/database';
+import { requireAuth } from '@/lib/auth';
 import { parseError } from '@/lib/error/parse';
+import { adminDb } from '@/lib/instantdb-admin';
 import { visionModels } from '@/lib/models/vision';
-import { projects } from '@/schema';
 
 export const describeAction = async (
   url: string,
@@ -20,13 +18,19 @@ export const describeAction = async (
     }
 > => {
   try {
-    await getSubscribedUser();
+    await requireAuth();
 
     const openai = new OpenAI();
 
-    const project = await database.query.projects.findFirst({
-      where: eq(projects.id, projectId),
+    const { projects: projectResults } = await adminDb.query({
+      projects: {
+        $: {
+          where: { id: projectId },
+        },
+      },
     });
+
+    const project = projectResults[0];
 
     if (!project) {
       throw new Error('Project not found');

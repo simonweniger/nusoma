@@ -1,5 +1,6 @@
 'use client';
 
+import { useClerk, useUser } from '@clerk/nextjs';
 import { ArrowUpRight, ArrowUpRightIcon, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -12,8 +13,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useUser } from '@/hooks/use-user';
-import { createClient } from '@/lib/supabase/client';
 import { useSubscription } from '@/providers/subscription';
 import { Profile } from './profile';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -23,13 +22,13 @@ export const Menu = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const router = useRouter();
-  const user = useUser();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const { isSubscribed } = useSubscription();
 
   const logout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/auth/login');
+    await signOut();
+    router.push('/');
   };
 
   const handleOpenProfile: MouseEventHandler<HTMLDivElement> = (event) => {
@@ -56,12 +55,12 @@ export const Menu = () => {
         <DropdownMenuTrigger asChild>
           <Button className="rounded-full" size="icon" variant="ghost">
             <Avatar>
-              <AvatarImage src={user.user_metadata.avatar} />
+              <AvatarImage src={user?.imageUrl} />
               <AvatarFallback className="bg-primary text-primary-foreground uppercase">
-                {(user.user_metadata.name ?? user.email ?? user.id)
-                  ?.split(' ')
-                  .map((name: string) => name.at(0))
-                  .join('')}
+                {user.firstName?.[0] ??
+                  user.primaryEmailAddress?.emailAddress?.[0] ??
+                  '?'}
+                {user.lastName?.[0] ?? ''}
               </AvatarFallback>
             </Avatar>
           </Button>
@@ -75,20 +74,22 @@ export const Menu = () => {
         >
           <DropdownMenuLabel>
             <Avatar>
-              <AvatarImage src={user.user_metadata.avatar} />
+              <AvatarImage src={user.imageUrl} />
               <AvatarFallback className="bg-primary text-primary-foreground uppercase">
-                {(user.user_metadata.name ?? user.email ?? user.id)
-                  ?.split(' ')
-                  .map((name: string) => name.at(0))
-                  .join('')}
+                {user.firstName?.[0] ??
+                  user.primaryEmailAddress?.emailAddress?.[0] ??
+                  '?'}
+                {user.lastName?.[0] ?? ''}
               </AvatarFallback>
             </Avatar>
             <p className="mt-2 truncate">
-              {user.user_metadata.name ?? user.email ?? user.id}
+              {user.fullName ??
+                user.primaryEmailAddress?.emailAddress ??
+                user.id}
             </p>
-            {user.user_metadata.name && user.email && (
+            {user.fullName && user.primaryEmailAddress?.emailAddress && (
               <p className="truncate font-normal text-muted-foreground text-xs">
-                {user.email}
+                {user.primaryEmailAddress.emailAddress}
               </p>
             )}
           </DropdownMenuLabel>
