@@ -1,3 +1,4 @@
+import { currentUser as clerkCurrentUser } from '@clerk/nextjs/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { currentUser, currentUserProfile } from '@/lib/auth';
@@ -69,7 +70,13 @@ export const GET = async (request: NextRequest) => {
     return new Response('Profile not found', { status: 404 });
   }
 
-  if (!(profile.customerId || user.email)) {
+  // Get email from Clerk user since currentUser() doesn't include it
+  const clerkUser = await clerkCurrentUser();
+  const userEmail = clerkUser?.emailAddresses.find(
+    (e) => e.id === clerkUser.primaryEmailAddressId
+  )?.emailAddress;
+
+  if (!(profile.customerId || userEmail)) {
     return new Response('Customer ID or email not found', { status: 400 });
   }
 
@@ -98,7 +105,7 @@ export const GET = async (request: NextRequest) => {
   try {
     const checkoutLink = await stripe.checkout.sessions.create({
       customer: profile.customerId ?? undefined,
-      customer_email: profile.customerId ? undefined : user.email,
+      customer_email: profile.customerId ? undefined : userEmail,
       line_items: lineItems,
       success_url: successUrl,
       allow_promotion_codes: true,
