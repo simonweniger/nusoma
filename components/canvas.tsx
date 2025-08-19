@@ -386,6 +386,9 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
               onNodesChange={handleNodesChange}
               panOnDrag={false}
               panOnScroll
+              proOptions={{
+                hideAttribution: true,
+              }}
               selectionOnDrag={true}
               zoomOnDoubleClick={false}
               {...rest}

@@ -51,7 +51,7 @@ export const CodeTransform = ({
   title,
 }: CodeTransformProps) => {
   const { updateNodeData, getNodes, getEdges } = useReactFlow();
-  const project = useProject();
+  const { project } = useProject();
   const modelId = data.model ?? getDefaultModel(textModels);
   const language = data.generated?.language ?? 'javascript';
   const analytics = useAnalytics();
