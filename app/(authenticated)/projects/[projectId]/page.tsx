@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { Canvas } from '@/components/canvas';
 import { Controls } from '@/components/controls';
 import { Reasoning } from '@/components/reasoning';
-import { SaveIndicator } from '@/components/save-indicator';
+
 import { Toolbar } from '@/components/toolbar';
 import { TopLeft } from '@/components/top-left';
 import { TopRight } from '@/components/top-right';
@@ -57,7 +57,6 @@ const Project = async ({ params }: ProjectProps) => {
           <Canvas>
             <Controls />
             <Toolbar />
-            <SaveIndicator />
           </Canvas>
         </ProjectProvider>
         <Suspense fallback={null}>

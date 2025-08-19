@@ -1,8 +1,15 @@
-import { atom, useAtom } from 'jotai';
+import { create } from 'zustand';
 
-export const reasoningAtom = atom({
+type ReasoningState = {
+  isReasoning: boolean;
+  isGenerating: boolean;
+  setIsReasoning: (isReasoning: boolean) => void;
+  setIsGenerating: (isGenerating: boolean) => void;
+};
+
+export const useReasoning = create<ReasoningState>((set) => ({
   isReasoning: false,
   isGenerating: false,
-});
-
-export const useReasoning = () => useAtom(reasoningAtom);
+  setIsReasoning: (isReasoning) => set({ isReasoning }),
+  setIsGenerating: (isGenerating) => set({ isGenerating }),
+}));

@@ -72,10 +72,10 @@ export const TextTransform = ({
   title,
 }: TextTransformProps) => {
   const { updateNodeData, getNodes, getEdges } = useReactFlow();
-  const project = useProject();
+  const { project } = useProject();
   const modelId = data.model ?? getDefaultModel(textModels);
   const analytics = useAnalytics();
-  const [reasoning, setReasoning] = useReasoning();
+  const { isReasoning, setIsReasoning, setIsGenerating } = useReasoning();
   const { sendMessage, messages, setMessages, status, stop } = useChat({
     onError: (error) => handleError('Error generating text', error),
     onFinish: ({ message }) => {
@@ -91,10 +91,7 @@ export const TextTransform = ({
         updatedAt: new Date().toISOString(),
       });
 
-      setReasoning((oldReasoning) => ({
-        ...oldReasoning,
-        isGenerating: false,
-      }));
+      setIsGenerating(false);
 
       toast.success('Text generated successfully');
 
@@ -317,10 +314,11 @@ export const TextTransform = ({
       message.parts.some((part) => part.type === 'reasoning')
     );
 
-    if (hasReasoning && !reasoning.isReasoning && status === 'streaming') {
-      setReasoning({ isReasoning: true, isGenerating: true });
+    if (hasReasoning && !isReasoning && status === 'streaming') {
+      setIsReasoning(true);
+      setIsGenerating(true);
     }
-  }, [messages, reasoning, status, setReasoning]);
+  }, [messages, isReasoning, status, setIsReasoning, setIsGenerating]);
 
   return (
     <NodeLayout data={data} id={id} title={title} toolbar={toolbar} type={type}>

@@ -24,7 +24,7 @@ import { useCallback, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useDebouncedCallback } from 'use-debounce';
 import { useAnalytics } from '@/hooks/use-analytics';
-import { useSaveProject } from '@/hooks/use-save-project';
+
 import { handleError } from '@/lib/error/handle';
 import { isValidSourceTarget } from '@/lib/xyflow';
 import { NodeDropzoneProvider } from '@/providers/node-dropzone';
@@ -69,30 +69,22 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
     updateNode,
   } = useReactFlow();
   const analytics = useAnalytics();
-  const [saveState, setSaveState] = useSaveProject();
 
-  // Real-time save with InstantDB (faster than original)
-  const save = useDebouncedCallback(async () => {
-    if (saveState.isSaving || !project?.id) {
+  const save = useDebouncedCallback(() => {
+    if (!project) {
       return;
     }
 
     try {
-      setSaveState((prev) => ({ ...prev, isSaving: true }));
-
       const currentFlow = toObject();
-      await updateProject({
+      updateProject({
         content: currentFlow,
         updatedAt: Date.now(),
       });
-
-      setSaveState((prev) => ({ ...prev, lastSaved: new Date() }));
     } catch (error) {
       handleError('Error saving project', error);
-    } finally {
-      setSaveState((prev) => ({ ...prev, isSaving: false }));
     }
-  }, 300); // Faster than original 1000ms
+  }, 300);
 
   const handleNodesChange = useCallback<OnNodesChange>(
     (changes) => {

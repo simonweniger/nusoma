@@ -7,22 +7,24 @@ import { ReasoningTunnel } from '@/tunnels/reasoning';
 import { Button } from './ui/button';
 
 export const Reasoning = () => {
-  const [reasoning, setReasoning] = useReasoning();
+  const { isReasoning, isGenerating, setIsReasoning, setIsGenerating } =
+    useReasoning();
 
   const handleClose = () => {
-    setReasoning({ isReasoning: false, isGenerating: false });
+    setIsReasoning(false);
+    setIsGenerating(false);
   };
 
   return (
     <motion.div
-      animate={{ width: reasoning.isReasoning ? '24rem' : '0' }}
+      animate={{ width: isReasoning ? '24rem' : '0' }}
       className="w-sm overflow-auto border-l bg-background"
       initial={{ width: '0' }}
     >
       <div className="flex size-full flex-col divide-y">
         <div className="sticky top-0 flex items-center justify-between gap-4 bg-background px-4 py-2">
           <div className="flex items-center gap-2">
-            {reasoning.isGenerating ? (
+            {isGenerating ? (
               <Loader2Icon className="size-4 animate-spin text-primary" />
             ) : (
               <CheckIcon className="size-4 text-primary" />
