@@ -76,7 +76,7 @@ export const Hero = ({ currentPlan, authenticated }: HeroProps) => {
           icon: UserIcon,
         },
       ],
-      ctaLink: '/auth/sign-up',
+      ctaLink: '/sign-up',
       ctaText: 'Get Started',
       variant: 'outline',
     };
@@ -110,7 +110,7 @@ export const Hero = ({ currentPlan, authenticated }: HeroProps) => {
         },
       ],
       variant: 'outline',
-      ctaLink: '/auth/sign-up',
+      ctaLink: '/sign-up',
       ctaText: 'Get Started',
     };
 

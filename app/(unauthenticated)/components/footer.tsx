@@ -46,7 +46,7 @@ export const Footer = () => (
 
         <div className="mt-8 flex flex-col items-center justify-center gap-4 md:flex-row">
           <Button asChild className="w-full sm:w-auto" size="lg">
-            <Link href="/auth/sign-up">Get started for free</Link>
+            <Link href="/sign-up">Get started for free</Link>
           </Button>
           <Button
             asChild
@@ -54,7 +54,7 @@ export const Footer = () => (
             size="lg"
             variant="outline"
           >
-            <Link href="/auth/login">Login</Link>
+            <Link href="/sign-in">Login</Link>
           </Button>
         </div>
       </div>

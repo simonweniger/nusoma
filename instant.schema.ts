@@ -1,4 +1,4 @@
-import { i } from '@instantdb/react';
+import { type InstaQLEntity, i } from '@instantdb/react';
 
 const _schema = i.schema({
   entities: {
@@ -24,14 +24,21 @@ const _schema = i.schema({
       updatedAt: i.number().optional(),
       content: i.json().optional(),
       image: i.string().optional(),
-      members: i.json().optional(), // Array of strings stored as JSON
       welcomeProject: i.boolean().optional(),
     }),
   },
   links: {
-    projectOwners: {
+    userProfiles: {
+      forward: { on: 'profiles', has: 'one', label: 'user' },
+      reverse: { on: '$users', has: 'one', label: 'profile' },
+    },
+    projectOwnership: {
       forward: { on: 'projects', has: 'one', label: 'owner' },
-      reverse: { on: 'profiles', has: 'many', label: 'ownedProjects' },
+      reverse: { on: '$users', has: 'many', label: 'ownedProjects' },
+    },
+    projectMembership: {
+      forward: { on: 'projects', has: 'many', label: 'members' },
+      reverse: { on: '$users', has: 'many', label: 'memberProjects' },
     },
   },
   rooms: {
@@ -58,6 +65,12 @@ const _schema = i.schema({
 type _AppSchema = typeof _schema;
 interface AppSchema extends _AppSchema {}
 const schema: AppSchema = _schema;
+
+// Export utility types for entities
+export type Files = InstaQLEntity<AppSchema, '$files'>;
+export type Users = InstaQLEntity<AppSchema, '$users'>;
+export type Profiles = InstaQLEntity<AppSchema, 'profiles'>;
+export type Projects = InstaQLEntity<AppSchema, 'projects'>;
 
 export type { AppSchema };
 export default schema;

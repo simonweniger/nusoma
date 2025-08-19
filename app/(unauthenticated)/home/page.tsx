@@ -14,11 +14,11 @@ export const metadata: Metadata = {
 const buttons = [
   {
     title: 'Get started for free',
-    link: '/auth/sign-up',
+    link: '/sign-up',
   },
   {
     title: 'Login',
-    link: '/auth/login',
+    link: '/sign-in',
   },
 ];
 

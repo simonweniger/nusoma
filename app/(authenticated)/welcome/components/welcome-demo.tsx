@@ -29,7 +29,7 @@ type WelcomeDemoProps = {
 };
 
 export const WelcomeDemo = ({ title, description }: WelcomeDemoProps) => {
-  const project = useProject();
+  const { project } = useProject();
   const { getNodes, getEdges } = useReactFlow();
   const [started, setStarted] = useState(false);
   const { isSubscribed } = useSubscription();

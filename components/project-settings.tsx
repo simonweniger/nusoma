@@ -4,8 +4,7 @@ import { SettingsIcon, TrashIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type FormEventHandler, useState } from 'react';
 import { toast } from 'sonner';
-import { deleteProjectAction } from '@/app/actions/project/delete';
-import { updateProjectAction } from '@/app/actions/project/update';
+
 import {
   Dialog,
   DialogContent,
@@ -15,18 +14,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import type { Projects } from '@/instant.schema';
 import { handleError } from '@/lib/error/handle';
+import db from '@/lib/instantdb';
 import { transcriptionModels } from '@/lib/models/transcription';
 import { visionModels } from '@/lib/models/vision';
 import { useSubscription } from '@/providers/subscription';
-import type { projects } from '@/schema';
 import { ModelSelector } from './nodes/model-selector';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 
 type ProjectSettingsProps = {
-  data: typeof projects.$inferSelect;
+  data: Projects;
 };
 
 export const ProjectSettings = ({ data }: ProjectSettingsProps) => {
@@ -52,19 +52,17 @@ export const ProjectSettings = ({ data }: ProjectSettingsProps) => {
     try {
       setIsUpdating(true);
 
-      const response = await updateProjectAction(data.id, {
-        name,
-        transcriptionModel,
-        visionModel,
-      });
-
-      if ('error' in response) {
-        throw new Error(response.error);
-      }
+      await db.transact([
+        db.tx.projects[data.id].update({
+          name,
+          transcriptionModel,
+          visionModel,
+          updatedAt: Date.now(),
+        }),
+      ]);
 
       toast.success('Project updated successfully');
       setOpen(false);
-      router.refresh();
     } catch (error) {
       handleError('Error updating project', error);
     } finally {
@@ -74,12 +72,7 @@ export const ProjectSettings = ({ data }: ProjectSettingsProps) => {
 
   const handleDeleteProject = async () => {
     try {
-      const response = await deleteProjectAction(data.id);
-
-      if ('error' in response) {
-        throw new Error(response.error);
-      }
-
+      await db.transact([db.tx.projects[data.id].delete()]);
       toast.success('Project deleted successfully');
       setOpen(false);
       router.push('/');

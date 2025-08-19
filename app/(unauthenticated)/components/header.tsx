@@ -25,10 +25,10 @@ export const Header = async () => {
         ) : (
           <>
             <Button asChild variant="outline">
-              <Link href="/auth/login">Login</Link>
+              <Link href="/sign-in">Login</Link>
             </Button>
             <Button asChild>
-              <Link href="/auth/sign-up">Sign up</Link>
+              <Link href="/sign-up">Sign up</Link>
             </Button>
           </>
         )}

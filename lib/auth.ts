@@ -17,6 +17,33 @@ export const currentUser = async () => {
   };
 };
 
+export const currentInstantUser = async () => {
+  const clerkUser = await clerkCurrentUser();
+
+  if (!clerkUser) {
+    throw new Error('User not authenticated');
+  }
+
+  // Query for the InstantDB user by email
+  const { $users } = await adminDb.query({
+    $users: {
+      $: {
+        where: { email: clerkUser.primaryEmailAddress?.emailAddress || '' },
+      },
+    },
+  });
+
+  const instantUser = $users[0];
+
+  if (!instantUser) {
+    throw new Error(
+      'InstantDB user not found. Make sure the user is signed in to InstantDB.'
+    );
+  }
+
+  return instantUser;
+};
+
 export const requireAuth = async () => {
   const { userId } = await auth();
 
@@ -39,22 +66,62 @@ export const createUserProfile = async (clerkUserId: string) => {
     return profiles[0];
   }
 
-  // Create new profile with Clerk user ID
-  const profileId = id();
-  await adminDb.transact([
-    adminDb.tx.profiles[profileId].update({
-      clerkId: clerkUserId,
-    }),
-  ]);
+  try {
+    // Create new profile with Clerk user ID first (without linking)
+    const profileId = id();
+    await adminDb.transact([
+      adminDb.tx.profiles[profileId].update({
+        clerkId: clerkUserId,
+      }),
+    ]);
 
-  // Query and return the newly created profile
-  const { profiles: newProfiles } = await adminDb.query({
-    profiles: {
-      $: { where: { id: profileId } },
-    },
-  });
+    // Query and return the newly created profile
+    const { profiles: newProfiles } = await adminDb.query({
+      profiles: {
+        $: { where: { id: profileId } },
+      },
+    });
 
-  return newProfiles[0];
+    return newProfiles[0];
+    // biome-ignore lint/suspicious/noExplicitAny: needed here
+  } catch (error: any) {
+    // If we get a unique constraint error, it means another concurrent request
+    // already created the profile. Query and return the existing one.
+    if (
+      error?.body?.message?.includes('unique attribute') ||
+      error?.body?.message?.includes('already exists')
+    ) {
+      const { profiles: existingProfiles } = await adminDb.query({
+        profiles: {
+          $: { where: { clerkId: clerkUserId } },
+        },
+      });
+
+      if (existingProfiles[0]) {
+        return existingProfiles[0];
+      }
+    }
+
+    // Re-throw the error if it's not a unique constraint violation
+    throw error;
+  }
+};
+
+export const linkProfileToUser = async (profileId: string) => {
+  try {
+    const instantUser = await currentInstantUser();
+
+    // Link the profile to the InstantDB user
+    await adminDb.transact([
+      adminDb.tx.profiles[profileId].link({ user: instantUser.id }),
+    ]);
+
+    return true;
+  } catch (error) {
+    console.error('Error linking profile to user:', error);
+    // If we can't find the InstantDB user yet, that's okay - we'll try again later
+    return false;
+  }
 };
 
 export const currentUserProfile = async () => {
@@ -64,10 +131,11 @@ export const currentUserProfile = async () => {
     throw new Error('User not authenticated');
   }
 
-  // Query InstantDB profiles by Clerk user ID
+  // Query InstantDB profiles by Clerk user ID with user relationship
   const { profiles } = await adminDb.query({
     profiles: {
       $: { where: { clerkId: clerkUser.id } },
+      user: {},
     },
   });
 
@@ -75,11 +143,24 @@ export const currentUserProfile = async () => {
 
   // If no profile exists, create one
   if (!userProfile) {
-    userProfile = await createUserProfile(clerkUser.id);
+    const newProfile = await createUserProfile(clerkUser.id);
+    // Re-query with user relationship to match expected type
+    const { profiles: profilesWithUser } = await adminDb.query({
+      profiles: {
+        $: { where: { id: newProfile.id } },
+        user: {},
+      },
+    });
+    userProfile = profilesWithUser[0];
   }
 
   if (!userProfile) {
     throw new Error('Failed to create or retrieve user profile');
+  }
+
+  // If profile exists but isn't linked to a user, try to link it
+  if (userProfile && !userProfile.user) {
+    await linkProfileToUser(userProfile.id);
   }
 
   return userProfile;

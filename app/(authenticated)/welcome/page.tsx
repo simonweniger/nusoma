@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { createProjectAction } from '@/app/actions/project/create';
 import { currentUserProfile } from '@/lib/auth';
 import { adminDb } from '@/lib/instantdb-admin';
+import { createProject } from '@/lib/mutations/create-project';
 import { ProjectProvider } from '@/providers/project';
 import { WelcomeDemo } from './components/welcome-demo';
 
@@ -35,15 +35,11 @@ const Welcome = async () => {
   let welcomeProject = welcomeProjects?.[0];
 
   if (!welcomeProject) {
-    const response = await createProjectAction('Welcome', true);
-
-    if ('error' in response) {
-      return <div>Error: {response.error}</div>;
-    }
+    const projectId = await createProject('Welcome', true);
 
     const { projects: newProjects } = await adminDb.query({
       projects: {
-        $: { where: { id: response.id } },
+        $: { where: { id: projectId } },
       },
     });
 

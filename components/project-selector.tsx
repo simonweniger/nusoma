@@ -10,7 +10,6 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { createProjectAction } from '@/app/actions/project/create';
 import {
   Dialog,
   DialogContent,
@@ -31,20 +30,17 @@ import {
 } from '@/components/ui/kibo-ui/combobox';
 import { useUser } from '@/hooks/use-user';
 import { handleError } from '@/lib/error/handle';
+import db from '@/lib/instantdb';
+import { createProject } from '@/lib/mutations/create-project';
 import { cn } from '@/lib/utils';
-import type { projects } from '@/schema';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 
 type ProjectSelectorProps = {
-  projects: (typeof projects.$inferSelect)[];
   currentProject: string;
 };
 
-export const ProjectSelector = ({
-  projects,
-  currentProject,
-}: ProjectSelectorProps) => {
+export const ProjectSelector = ({ currentProject }: ProjectSelectorProps) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(currentProject);
   const [name, setName] = useState('');
@@ -53,14 +49,31 @@ export const ProjectSelector = ({
   const router = useRouter();
   const user = useUser();
 
+  // Get current user's profile
+  //const { data: profileData } = db.useQuery({
+  //  profiles: {
+  //    $: { where: { clerkId: user?.id || '' } },
+  //  },
+  //});
+  //const currentProfile = profileData?.profiles?.[0];
+
+  // Query all projects with their owners and members
+  const { data: projectData } = db.useQuery({
+    projects: {
+      owner: {},
+      members: {},
+    },
+  });
+  const allProjects = projectData?.projects || [];
+
   const fuse = useMemo(
     () =>
-      new Fuse(projects, {
+      new Fuse(allProjects, {
         keys: ['name'],
         minMatchCharLength: 1,
         threshold: 0.3,
       }),
-    [projects]
+    [allProjects]
   );
 
   const handleCreateProject = useCallback<FormEventHandler<HTMLFormElement>>(
@@ -74,15 +87,11 @@ export const ProjectSelector = ({
       setIsCreating(true);
 
       try {
-        const response = await createProjectAction(name.trim());
-
-        if ('error' in response) {
-          throw new Error(response.error);
-        }
+        const projectId = await createProject(name.trim());
 
         setOpen(false);
         setName('');
-        router.push(`/projects/${response.id}`);
+        router.push(`/projects/${projectId}`);
       } catch (error) {
         handleError('Error creating project', error);
       } finally {
@@ -107,21 +116,34 @@ export const ProjectSelector = ({
   );
 
   const projectGroups = useMemo(() => {
-    if (!user) {
+    if (!user?.id || allProjects.length === 0) {
       return [];
     }
+
+    const ownedProjects = allProjects.filter((project) => {
+      return project.owner?.id === user.id;
+    });
+
+    const sharedProjects = allProjects.filter((project) => {
+      if (project.owner?.id === user.id) {
+        return false;
+      }
+
+      // Check if current user is in the members relationship
+      return project.members?.some((member) => member.id === user.id) ?? false;
+    });
 
     return [
       {
         label: 'My Projects',
-        data: projects.filter((project) => project.userId === user.id),
+        data: ownedProjects,
       },
       {
-        label: 'Other Projects',
-        data: projects.filter((project) => project.userId !== user.id),
+        label: 'Shared Projects',
+        data: sharedProjects,
       },
     ];
-  }, [projects, user]);
+  }, [allProjects, user?.id]);
 
   const filterByFuse = useCallback(
     (currentValue: string, search: string) => {
@@ -137,7 +159,7 @@ export const ProjectSelector = ({
   return (
     <>
       <Combobox
-        data={projects.map((project) => ({
+        data={allProjects.map((project) => ({
           label: project.name,
           value: project.id,
         }))}
