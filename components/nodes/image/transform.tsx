@@ -2,6 +2,7 @@ import { getIncomers, useReactFlow } from '@xyflow/react';
 import {
   ClockIcon,
   DownloadIcon,
+  ExternalLinkIcon,
   Loader2Icon,
   PlayIcon,
   RotateCcwIcon,
@@ -11,26 +12,28 @@ import {
   type ChangeEventHandler,
   type ComponentProps,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
 import { toast } from 'sonner';
 import { mutate } from 'swr';
+import { MediaGallerySheet } from '@/components/media-gallery';
 import { NodeLayout } from '@/components/nodes/layout';
+import { StatusIndicator } from '@/components/status-indicator';
 import { Button } from '@/components/ui/button';
-
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useAnalytics } from '@/hooks/use-analytics';
+import { useMediaGallery } from '@/hooks/use-media-gallery';
+import { useNodeMediaStatus } from '@/hooks/use-node-media-status';
 import { download } from '@/lib/download';
 import { handleError } from '@/lib/error/handle';
-
 import {
   convertFalEndpointsToModels,
   createFalJob,
-  getMediaUrlFromOutput,
-  pollFalJob,
 } from '@/lib/fal-integration';
+import db from '@/lib/instantdb';
 import { imageModels } from '@/lib/models/image';
 import { getImagesFromImageNodes, getTextFromTextNodes } from '@/lib/xyflow';
 import { useProject } from '@/providers/project';
@@ -63,6 +66,25 @@ export const ImageTransform = ({
   const { updateNodeData, getNodes, getEdges } = useReactFlow();
   const [loading, setLoading] = useState(false);
   const { project } = useProject();
+  const { selectedMediaId, openMedia, closeMedia } = useMediaGallery();
+  const { status: mediaStatus } = useNodeMediaStatus({
+    nodeId: id,
+    mediaType: 'image',
+  });
+
+  // Update node data when generation completes
+  useEffect(() => {
+    if (mediaStatus?.isCompleted && mediaStatus.url && !data.generated?.url) {
+      updateNodeData(id, {
+        generated: {
+          url: mediaStatus.url,
+          type: 'image/png',
+        },
+        updatedAt: new Date().toISOString(),
+      });
+    }
+  }, [mediaStatus, data.generated?.url, id, updateNodeData]);
+
   //const hasIncomingImageNodes =
   //  getImagesFromImageNodes(getIncomers({ id }, getNodes(), getEdges()))
   //    .length > 0;
@@ -103,8 +125,8 @@ export const ImageTransform = ({
       const prompt = textNodes.join('\n');
       const imageUrl = imageNodes.length > 0 ? imageNodes[0].url : undefined;
 
-      // Create FAL job
-      const { mediaItemId, requestId } = await createFalJob({
+      // Create FAL job - polling is now handled by useMediaPolling hook
+      await createFalJob({
         endpointId: selectedEndpoint,
         prompt,
         projectId: project.id,
@@ -114,25 +136,9 @@ export const ImageTransform = ({
         size,
       });
 
-      // Poll for result
-      const result = await pollFalJob(requestId, mediaItemId, selectedEndpoint);
-      console.log('Result from pollFalJob:', result);
-      const generatedUrl = getMediaUrlFromOutput(result, 'image');
-      console.log('Generated URL:', generatedUrl);
-
-      if (!generatedUrl) {
-        throw new Error('No image URL in response');
-      }
-
-      updateNodeData(id, {
-        generated: {
-          url: generatedUrl,
-          type: 'image/png',
-        },
-        updatedAt: new Date().toISOString(),
-      });
-
-      toast.success('Image generated successfully');
+      toast.success(
+        'Image generation started! Check the status indicator for progress.'
+      );
 
       setTimeout(() => mutate('credits'), 5000);
     } catch (error) {
@@ -178,6 +184,25 @@ export const ImageTransform = ({
         ),
       },
     ];
+
+    // Add status indicator
+    if (mediaStatus?.isGenerating) {
+      items.push({
+        tooltip: `Status: ${mediaStatus.status}`,
+        children: (
+          <StatusIndicator
+            size="md"
+            status={
+              mediaStatus.status as
+                | 'pending'
+                | 'running'
+                | 'completed'
+                | 'failed'
+            }
+          />
+        ),
+      });
+    }
 
     if (selectedModel?.sizes?.length) {
       items.push({
@@ -236,6 +261,21 @@ export const ImageTransform = ({
           </Button>
         ),
       });
+
+      // Add media gallery button if we have generated content
+      items.push({
+        tooltip: 'View in Gallery',
+        children: (
+          <Button
+            className="rounded-full"
+            onClick={() => openMedia('latest')} // Use 'latest' to show the latest media item
+            size="icon"
+            variant="ghost"
+          >
+            <ExternalLinkIcon size={12} />
+          </Button>
+        ),
+      });
     }
 
     if (data.updatedAt) {
@@ -266,6 +306,8 @@ export const ImageTransform = ({
     allImageModels,
     selectedEndpoint,
     modelId,
+    mediaStatus,
+    openMedia,
   ]);
 
   const aspectRatio = useMemo(() => {
@@ -278,44 +320,64 @@ export const ImageTransform = ({
   }, [data.size]);
 
   return (
-    <NodeLayout data={data} id={id} title={title} toolbar={toolbar} type={type}>
-      {loading && (
-        <Skeleton
-          className="flex w-full animate-pulse items-center justify-center"
-          style={{ aspectRatio }}
-        >
-          <Loader2Icon
-            className="size-4 animate-spin text-muted-foreground"
-            size={16}
+    <>
+      <NodeLayout
+        data={data}
+        id={id}
+        title={title}
+        toolbar={toolbar}
+        type={type}
+      >
+        {loading && (
+          <Skeleton
+            className="flex w-full animate-pulse items-center justify-center"
+            style={{ aspectRatio }}
+          >
+            <Loader2Icon
+              className="size-4 animate-spin text-muted-foreground"
+              size={16}
+            />
+          </Skeleton>
+        )}
+        {!(loading || data.generated?.url) && (
+          <div
+            className="flex w-full items-center justify-center bg-secondary p-4"
+            style={{ aspectRatio }}
+          >
+            <p className="text-muted-foreground text-sm">
+              Press <PlayIcon className="-translate-y-px inline" size={12} /> to
+              create an image
+            </p>
+          </div>
+        )}
+        {!loading && data.generated?.url && (
+          <Image
+            alt="Generated image"
+            className="w-full object-cover"
+            height={1000}
+            src={data.generated.url}
+            width={1000}
           />
-        </Skeleton>
-      )}
-      {!(loading || data.generated?.url) && (
-        <div
-          className="flex w-full items-center justify-center bg-secondary p-4"
-          style={{ aspectRatio }}
-        >
-          <p className="text-muted-foreground text-sm">
-            Press <PlayIcon className="-translate-y-px inline" size={12} /> to
-            create an image
-          </p>
-        </div>
-      )}
-      {!loading && data.generated?.url && (
-        <Image
-          alt="Generated image"
-          className="w-full object-cover"
-          height={1000}
-          src={data.generated.url}
-          width={1000}
+        )}
+        <Textarea
+          className="shrink-0 resize-none rounded-none border-none bg-transparent! shadow-none focus-visible:ring-0"
+          onChange={handleInstructionsChange}
+          placeholder="Enter instructions"
+          value={data.instructions ?? ''}
+        />
+      </NodeLayout>
+
+      {project?.id && selectedMediaId && (
+        <MediaGallerySheet
+          mediaType="image"
+          onClose={closeMedia}
+          open={!!selectedMediaId}
+          projectId={project.id}
+          selectedMediaId={
+            selectedMediaId === 'latest' ? '' : selectedMediaId || ''
+          }
         />
       )}
-      <Textarea
-        className="shrink-0 resize-none rounded-none border-none bg-transparent! shadow-none focus-visible:ring-0"
-        onChange={handleInstructionsChange}
-        placeholder="Enter instructions"
-        value={data.instructions ?? ''}
-      />
-    </NodeLayout>
+    </>
   );
 };

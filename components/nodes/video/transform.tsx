@@ -2,28 +2,36 @@ import { getIncomers, useReactFlow } from '@xyflow/react';
 import {
   ClockIcon,
   DownloadIcon,
+  ExternalLinkIcon,
   Loader2Icon,
   PlayIcon,
   RotateCcwIcon,
 } from 'lucide-react';
-import { type ChangeEventHandler, type ComponentProps, useState } from 'react';
+import {
+  type ChangeEventHandler,
+  type ComponentProps,
+  useEffect,
+  useState,
+} from 'react';
 import { toast } from 'sonner';
 import { mutate } from 'swr';
+import { describeImageAction } from '@/app/actions/image/describe';
+import { MediaGallerySheet } from '@/components/media-gallery';
 import { NodeLayout } from '@/components/nodes/layout';
+import { StatusIndicator } from '@/components/status-indicator';
 import { Button } from '@/components/ui/button';
-
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useAnalytics } from '@/hooks/use-analytics';
+import { useMediaGallery } from '@/hooks/use-media-gallery';
+import { useNodeMediaStatus } from '@/hooks/use-node-media-status';
 import { download } from '@/lib/download';
 import { handleError } from '@/lib/error/handle';
-
 import {
   convertFalEndpointsToModels,
   createFalJob,
-  getMediaUrlFromOutput,
-  pollFalJob,
 } from '@/lib/fal-integration';
+import db from '@/lib/instantdb';
 import { videoModels } from '@/lib/models/video';
 import { getImagesFromImageNodes, getTextFromTextNodes } from '@/lib/xyflow';
 import { useProject } from '@/providers/project';
@@ -54,7 +62,40 @@ export const VideoTransform = ({
 }: VideoTransformProps) => {
   const { updateNodeData, getNodes, getEdges } = useReactFlow();
   const [loading, setLoading] = useState(false);
+  const [analyzingImage, setAnalyzingImage] = useState(false);
   const { project } = useProject();
+  const { selectedMediaId, openMedia, closeMedia } = useMediaGallery();
+  const { status: mediaStatus } = useNodeMediaStatus({
+    nodeId: id,
+    mediaType: 'video',
+  });
+
+  // Update node data when generation completes
+  useEffect(() => {
+    if (mediaStatus?.isCompleted && mediaStatus.url && !data.generated?.url) {
+      updateNodeData(id, {
+        generated: {
+          url: mediaStatus.url,
+          type: 'video/mp4',
+        },
+        updatedAt: new Date().toISOString(),
+      });
+    }
+  }, [mediaStatus, data.generated?.url, id, updateNodeData]);
+
+  // Query media items generated for this node
+  const { data: queryResult } = db.useQuery({
+    mediaItems: {
+      $: {
+        where: {
+          'project.id': project?.id || '',
+          mediaType: 'video',
+        },
+        order: { createdAt: 'desc' },
+        limit: 1,
+      },
+    },
+  });
   const modelId = data.model ?? getDefaultModel(videoModels);
   const analytics = useAnalytics();
 
@@ -87,11 +128,37 @@ export const VideoTransform = ({
         imageCount: images.length,
       });
 
-      const prompt = [data.instructions ?? '', ...textPrompts].join('\n');
+      let prompt = [data.instructions ?? '', ...textPrompts].join('\n').trim();
       const imageUrl = images.length > 0 ? images[0].url : undefined;
 
-      // Create FAL job
-      const { mediaItemId, requestId } = await createFalJob({
+      // If no prompt is provided but we have an image, use AI to describe it
+      if (!prompt && imageUrl) {
+        setAnalyzingImage(true);
+        toast.info('Analyzing image to generate video prompt...');
+
+        try {
+          const result = await describeImageAction(imageUrl);
+
+          if (result.success) {
+            prompt = result.description;
+            toast.success('Image analyzed! Generating video...');
+          } else {
+            console.error('Failed to describe image:', result.error);
+            prompt =
+              'Create a dynamic video with natural motion and camera movement';
+            toast.warning('Could not analyze image, using default prompt');
+          }
+        } finally {
+          setAnalyzingImage(false);
+        }
+      } else if (!prompt) {
+        // Fallback for no image and no prompt
+        prompt =
+          'Create a dynamic video with natural motion and camera movement';
+      }
+
+      // Create FAL job - polling is now handled by useMediaPolling hook
+      await createFalJob({
         endpointId: selectedEndpoint,
         prompt,
         projectId: project.id,
@@ -100,23 +167,9 @@ export const VideoTransform = ({
         imageUrl,
       });
 
-      // Poll for result
-      const result = await pollFalJob(requestId, mediaItemId, selectedEndpoint);
-      const generatedUrl = getMediaUrlFromOutput(result, 'video');
-
-      if (!generatedUrl) {
-        throw new Error('No video URL in response');
-      }
-
-      updateNodeData(id, {
-        generated: {
-          url: generatedUrl,
-          type: 'video/mp4',
-        },
-        updatedAt: new Date().toISOString(),
-      });
-
-      toast.success('Video generated successfully');
+      toast.success(
+        'Video generation started! Check the status indicator for progress.'
+      );
 
       setTimeout(() => mutate('credits'), 5000);
     } catch (error) {
@@ -144,9 +197,20 @@ export const VideoTransform = ({
         />
       ),
     },
-    loading
+    // Add status indicator
+    ...(mediaStatus && mediaStatus.isGenerating
+      ? [
+          {
+            tooltip: `Status: ${mediaStatus.status}`,
+            children: (
+              <StatusIndicator size="md" status={mediaStatus.status as any} />
+            ),
+          },
+        ]
+      : []),
+    loading || analyzingImage
       ? {
-          tooltip: 'Generating...',
+          tooltip: analyzingImage ? 'Analyzing image...' : 'Generating...',
           children: (
             <Button className="rounded-full" disabled size="icon">
               <Loader2Icon className="animate-spin" size={12} />
@@ -158,7 +222,7 @@ export const VideoTransform = ({
           children: (
             <Button
               className="rounded-full"
-              disabled={loading || !project?.id}
+              disabled={loading || analyzingImage || !project?.id}
               onClick={handleGenerate}
               size="icon"
             >
@@ -186,6 +250,24 @@ export const VideoTransform = ({
         </Button>
       ),
     });
+
+    // Add media gallery button if we have generated content
+    const latestMedia = queryResult?.mediaItems?.[0];
+    if (latestMedia) {
+      toolbar.push({
+        tooltip: 'View in Gallery',
+        children: (
+          <Button
+            className="rounded-full"
+            onClick={() => openMedia(latestMedia.id)}
+            size="icon"
+            variant="ghost"
+          >
+            <ExternalLinkIcon size={12} />
+          </Button>
+        ),
+      });
+    }
   }
 
   if (data.updatedAt) {
@@ -207,41 +289,59 @@ export const VideoTransform = ({
   ) => updateNodeData(id, { instructions: event.target.value });
 
   return (
-    <NodeLayout data={data} id={id} title={title} toolbar={toolbar} type={type}>
-      {loading && (
-        <Skeleton className="flex aspect-video w-full animate-pulse items-center justify-center">
-          <Loader2Icon
-            className="size-4 animate-spin text-muted-foreground"
-            size={16}
+    <>
+      <NodeLayout
+        data={data}
+        id={id}
+        title={title}
+        toolbar={toolbar}
+        type={type}
+      >
+        {loading && (
+          <Skeleton className="flex aspect-video w-full animate-pulse items-center justify-center">
+            <Loader2Icon
+              className="size-4 animate-spin text-muted-foreground"
+              size={16}
+            />
+          </Skeleton>
+        )}
+        {!(loading || data.generated?.url) && (
+          <div className="flex aspect-video w-full items-center justify-center bg-secondary">
+            <p className="text-muted-foreground text-sm">
+              Press <PlayIcon className="-translate-y-px inline" size={12} /> to
+              generate video
+            </p>
+          </div>
+        )}
+        {data.generated?.url && !loading && (
+          <video
+            autoPlay
+            className="w-full object-cover"
+            height={data.height ?? 450}
+            loop
+            muted
+            playsInline
+            src={data.generated.url}
+            width={data.width ?? 800}
           />
-        </Skeleton>
-      )}
-      {!(loading || data.generated?.url) && (
-        <div className="flex aspect-video w-full items-center justify-center bg-secondary">
-          <p className="text-muted-foreground text-sm">
-            Press <PlayIcon className="-translate-y-px inline" size={12} /> to
-            generate video
-          </p>
-        </div>
-      )}
-      {data.generated?.url && !loading && (
-        <video
-          autoPlay
-          className="w-full object-cover"
-          height={data.height ?? 450}
-          loop
-          muted
-          playsInline
-          src={data.generated.url}
-          width={data.width ?? 800}
+        )}
+        <Textarea
+          className="shrink-0 resize-none rounded-none border-none bg-transparent! shadow-none focus-visible:ring-0"
+          onChange={handleInstructionsChange}
+          placeholder="Enter instructions"
+          value={data.instructions ?? ''}
+        />
+      </NodeLayout>
+
+      {project?.id && selectedMediaId && (
+        <MediaGallerySheet
+          mediaType="video"
+          onClose={closeMedia}
+          open={!!selectedMediaId}
+          projectId={project.id}
+          selectedMediaId={selectedMediaId === 'latest' ? '' : selectedMediaId}
         />
       )}
-      <Textarea
-        className="shrink-0 resize-none rounded-none border-none bg-transparent! shadow-none focus-visible:ring-0"
-        onChange={handleInstructionsChange}
-        placeholder="Enter instructions"
-        value={data.instructions ?? ''}
-      />
-    </NodeLayout>
+    </>
   );
 };

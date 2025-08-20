@@ -1,19 +1,13 @@
-'use server';
-
 import { generateText } from 'ai';
-import { visionModels } from '@/lib/models/vision';
+import { visionModels } from './models/vision';
 
-export async function describeImageAction(
-  imageUrl: string
-): Promise<
-  { success: true; description: string } | { success: false; error: string }
-> {
+export async function describeImageForVideo(imageUrl: string): Promise<string> {
   try {
     // Use GPT-4o Mini for fast and cost-effective image description
     const model = visionModels['openai-gpt-4o-mini'];
 
     if (!(model && model.providers?.[0])) {
-      return { success: false, error: 'Vision model not available' };
+      throw new Error('Vision model not available');
     }
 
     const { text } = await generateText({
@@ -30,7 +24,7 @@ export async function describeImageAction(
 - Composition and style
 - Potential motion or animation possibilities
 
-Provide a concise but vivid description that would help an AI create an engaging video from this image. Keep it under 100 words and focus on dynamic elements that could be animated.`,
+Provide a concise but vivid description that would help an AI create an engaging video from this image. Keep it under 100 words.`,
             },
             {
               type: 'image',
@@ -43,13 +37,10 @@ Provide a concise but vivid description that would help an AI create an engaging
       temperature: 0.7,
     });
 
-    return { success: true, description: text.trim() };
+    return text.trim();
   } catch (error) {
     console.error('Error describing image:', error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : 'Failed to describe image',
-    };
+    // Fallback to a generic prompt
+    return 'Create a dynamic video with natural motion and camera movement based on this image';
   }
 }

@@ -66,6 +66,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     cost: '',
     category: 'video',
     inputAsset: ['image'],
+    prompt: true,
   },
   {
     endpointId: 'fal-ai/hunyuan-video',
@@ -73,6 +74,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     description: 'High visual quality, motion diversity and text alignment',
     cost: '',
     category: 'video',
+    prompt: true,
   },
   {
     endpointId: 'fal-ai/kling-video/v1.5/pro',
@@ -81,6 +83,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     cost: '',
     category: 'video',
     inputAsset: ['image'],
+    prompt: true,
   },
   {
     endpointId: 'fal-ai/kling-video/v1/standard/text-to-video',
@@ -90,6 +93,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     category: 'video',
     inputAsset: [],
     cameraControl: true,
+    prompt: true,
   },
   {
     endpointId: 'fal-ai/luma-dream-machine',
@@ -98,6 +102,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     cost: '',
     category: 'video',
     inputAsset: ['image'],
+    prompt: true,
   },
   {
     endpointId: 'fal-ai/minimax-music',
@@ -106,12 +111,8 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       'Advanced AI techniques to create high-quality, diverse musical compositions',
     cost: '',
     category: 'music',
-    inputAsset: [
-      {
-        type: 'audio',
-        key: 'reference_audio_url',
-      },
-    ],
+    inputAsset: ['audio'],
+    prompt: true,
   },
   {
     endpointId: 'fal-ai/mmaudio-v2',

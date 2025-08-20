@@ -2,7 +2,7 @@ import { useReactFlow } from '@xyflow/react';
 import { Loader2Icon } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
-import { describeAction } from '@/app/actions/image/describe';
+import { describeImageAction } from '@/app/actions/image/describe';
 import { NodeLayout } from '@/components/nodes/layout';
 import {
   Dropzone,
@@ -53,14 +53,14 @@ export const ImagePrimitive = ({
         },
       });
 
-      const description = await describeAction(url, project?.id);
+      const result = await describeImageAction(url);
 
-      if ('error' in description) {
-        throw new Error(description.error);
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
       updateNodeData(id, {
-        description: description.description,
+        description: result.description,
       });
     } catch (error) {
       handleError('Error uploading image', error);

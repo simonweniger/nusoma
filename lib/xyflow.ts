@@ -3,6 +3,7 @@ import type { AudioNodeProps } from '@/components/nodes/audio';
 import type { CodeNodeProps } from '@/components/nodes/code';
 import type { FileNodeProps } from '@/components/nodes/file';
 import type { ImageNodeProps } from '@/components/nodes/image';
+import type { MusicNodeProps } from '@/components/nodes/music';
 import type { TextNodeProps } from '@/components/nodes/text';
 import type { TweetNodeProps } from '@/components/nodes/tweet';
 
@@ -100,4 +101,32 @@ export const getTweetContentFromTweetNodes = (nodes: Node[]) => {
   );
 
   return tweetContent;
+};
+
+export const getAudioFromAudioNodes = (nodes: Node[]) => {
+  const sourceAudio = nodes
+    .filter((node) => node.type === 'audio')
+    .map((node) => (node.data as AudioNodeProps['data']).content)
+    .filter(Boolean) as { url: string; type: string }[];
+
+  const generatedAudio = nodes
+    .filter((node) => node.type === 'audio')
+    .map((node) => (node.data as AudioNodeProps['data']).generated)
+    .filter(Boolean) as { url: string; type: string }[];
+
+  return [...sourceAudio, ...generatedAudio];
+};
+
+export const getAudioFromMusicNodes = (nodes: Node[]) => {
+  const sourceMusic = nodes
+    .filter((node) => node.type === 'music')
+    .map((node) => (node.data as MusicNodeProps['data']).content)
+    .filter(Boolean) as { url: string; type: string }[];
+
+  const generatedMusic = nodes
+    .filter((node) => node.type === 'music')
+    .map((node) => (node.data as MusicNodeProps['data']).generated)
+    .filter(Boolean) as { url: string; type: string }[];
+
+  return [...sourceMusic, ...generatedMusic];
 };

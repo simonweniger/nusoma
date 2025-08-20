@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+/** biome-ignore-all lint/a11y/noNoninteractiveElementInteractions: <explanation> */
 import {
   CopyIcon,
   FilmIcon,
@@ -13,9 +13,10 @@ import {
   type HTMLAttributes,
   type MouseEventHandler,
   type PropsWithChildren,
-  useMemo,
+  //useMemo,
+  useState,
 } from 'react';
-import { LoadingIcon } from '@/components/ui/loading-icon';
+import { toast } from 'sonner';
 import {
   Sheet,
   SheetDescription,
@@ -25,28 +26,26 @@ import {
   SheetPortal,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { db } from '@/data/db';
-import {
-  queryKeys,
-  refreshVideoCache,
-  useProjectMediaItems,
-} from '@/data/queries';
-import type { MediaItem } from '@/data/schema';
-import { useProjectId, useVideoProjectStore } from '@/data/store';
+import type { MediaItems } from '@/instant.schema';
 import { AVAILABLE_ENDPOINTS } from '@/lib/fal';
-import { cn, resolveMediaUrl } from '@/lib/utils';
+import { getMediaUrlFromOutput } from '@/lib/fal-integration';
+import db from '@/lib/instantdb';
+import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 
 type MediaGallerySheetProps = ComponentProps<typeof Sheet> & {
   selectedMediaId: string;
+  projectId: string;
+  mediaType?: string; // Filter by specific media type
+  onClose: () => void;
 };
 
 type AudioPlayerProps = {
-  media: MediaItem;
+  media: MediaItems;
 } & HTMLAttributes<HTMLAudioElement>;
 
 function AudioPlayer({ media, ...props }: AudioPlayerProps) {
-  const src = resolveMediaUrl(media);
+  const src = media.url;
   if (!src) {
     return null;
   }
@@ -102,7 +101,7 @@ function MediaPropertyItem({
   );
 }
 
-const MEDIA_PLACEHOLDER: MediaItem = {
+const MEDIA_PLACEHOLDER: MediaItems = {
   id: 'placeholder',
   kind: 'generated',
   input: { prompt: 'n/a' },
@@ -110,68 +109,102 @@ const MEDIA_PLACEHOLDER: MediaItem = {
   status: 'pending',
   createdAt: 0,
   endpointId: 'n/a',
-  projectId: '',
   requestId: '',
 };
 
 export function MediaGallerySheet({
   selectedMediaId,
+  projectId,
+  mediaType,
+  onClose,
   ...props
 }: MediaGallerySheetProps) {
-  const projectId = useProjectId();
-  const { data: mediaItems = [] } = useProjectMediaItems(projectId);
+  // Query media items for this project using InstantDB, filtering by media type if provided
+  const whereClause = mediaType
+    ? { 'project.id': projectId, mediaType }
+    : { 'project.id': projectId };
+
+  const { data: queryResult } = db.useQuery({
+    mediaItems: {
+      $: {
+        where: whereClause,
+        order: { createdAt: 'desc' },
+      },
+    },
+  });
+
+  const mediaItems = queryResult?.mediaItems || [];
+
+  // If selectedMediaId is empty/not provided, show the latest media item
   const selectedMedia =
-    mediaItems.find((media) => media.id === selectedMediaId) ??
-    MEDIA_PLACEHOLDER;
-  const setSelectedMediaId = useVideoProjectStore((s) => s.setSelectedMediaId);
-  const openGenerateDialog = useVideoProjectStore((s) => s.openGenerateDialog);
-  const setGenerateData = useVideoProjectStore((s) => s.setGenerateData);
-  const setEndpointId = useVideoProjectStore((s) => s.setEndpointId);
-  const setGenerateMediaType = useVideoProjectStore(
-    (s) => s.setGenerateMediaType
-  );
-  const onGenerate = useVideoProjectStore((s) => s.onGenerate);
+    selectedMediaId && selectedMediaId !== ''
+      ? mediaItems.find((media) => media.id === selectedMediaId)
+      : null;
+
+  // Always show latest media if no specific selection or if media not found
+  const mediaToShow =
+    selectedMedia ||
+    (mediaItems.length > 0 ? mediaItems[0] : MEDIA_PLACEHOLDER);
+
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleUpscaleDialog = () => {
-    setGenerateMediaType('video');
-    const video = selectedMedia.output?.video?.url;
-
-    // video upscale model
-    setEndpointId('fal-ai/topaz/upscale/video');
-
-    setGenerateData({
-      ...(selectedMedia.input || {}),
-      video_url: video,
-    });
-    setSelectedMediaId(null);
-    openGenerateDialog();
+    // TODO: Implement video upscaling with FAL
+    toast.info('Video upscaling not yet implemented');
   };
 
   const handleOpenGenerateDialog = () => {
-    setGenerateMediaType('video');
-    const image = selectedMedia.output?.images?.[0]?.url;
-
-    const endpoint = AVAILABLE_ENDPOINTS.find(
-      (endpoint) => endpoint.category === 'video'
-    );
-
-    setEndpointId(endpoint?.endpointId ?? AVAILABLE_ENDPOINTS[0].endpointId);
-
-    setGenerateData({
-      ...(selectedMedia.input || {}),
-      image,
-      duration: undefined,
-    });
-    setSelectedMediaId(null);
-    openGenerateDialog();
+    // TODO: Implement image to video conversion with FAL
+    toast.info('Image to video conversion not yet implemented');
   };
 
-  const handleVary = () => {
-    setGenerateMediaType(selectedMedia.mediaType);
-    setEndpointId(selectedMedia.endpointId as string);
-    setGenerateData(selectedMedia.input || {});
-    setSelectedMediaId(null);
-    onGenerate();
+  const handleVary = async () => {
+    // Re-run the same generation with the same parameters
+    try {
+      const endpoint = AVAILABLE_ENDPOINTS.find(
+        (ep) => ep.endpointId === mediaToShow.endpointId
+      );
+
+      if (!endpoint) {
+        toast.error('Endpoint not found');
+        return;
+      }
+
+      // Create a new media item with the same input
+      const newMediaId = crypto.randomUUID();
+
+      await db.transact([
+        db.tx.mediaItems[newMediaId]
+          .update({
+            kind: 'generated',
+            endpointId: mediaToShow.endpointId,
+            mediaType: mediaToShow.mediaType,
+            status: 'pending',
+            input: mediaToShow.input,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          })
+          .link({ project: projectId }),
+      ]);
+
+      toast.success('Starting new generation...');
+      onClose();
+    } catch {
+      toast.error('Failed to start generation');
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await db.transact([db.tx.mediaItems[mediaToShow.id].delete()]);
+      toast.success('Media item deleted');
+      onClose();
+    } catch {
+      toast.error('Failed to delete media item');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Event handlers
@@ -179,44 +212,45 @@ export function MediaGallerySheet({
     e.preventDefault();
     e.stopPropagation();
   };
-  const close = () => {
-    setSelectedMediaId(null);
-  };
-  const mediaUrl = useMemo(
-    () => resolveMediaUrl(selectedMedia),
-    [selectedMedia]
-  );
-  const prompt = selectedMedia?.input?.prompt;
 
-  const queryClient = useQueryClient();
-  const deleteMedia = useMutation({
-    mutationFn: () => db.media.delete(selectedMediaId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.projectMediaItems(projectId),
-      });
-      refreshVideoCache(queryClient, projectId);
-      close();
-    },
-  });
+  const close = () => {
+    onClose();
+  };
+
+  // Get URL from url field or extract from output if missing
+  let mediaUrl: string | undefined = mediaToShow?.url;
+  if (!mediaUrl && mediaToShow?.output) {
+    // Try to extract URL from output for existing items that don't have url field set
+    const extractedUrl = getMediaUrlFromOutput(
+      mediaToShow.output,
+      mediaToShow.mediaType || 'image'
+    );
+    mediaUrl = extractedUrl || undefined;
+  }
+
+  const prompt = mediaToShow?.input?.prompt as string;
+
   return (
     <Sheet {...props}>
       <SheetOverlay className="pointer-events-none flex flex-col" />
       <SheetPortal>
         <div
-          className="pointer-events-auto fixed inset-0 z-[51] mr-[42rem] flex flex-col items-center justify-center gap-4 px-32 py-16"
+          className="pointer-events-auto fixed inset-0 z-[51] mr-[42rem] flex flex-col items-center justify-center gap-4 bg-black/20 px-8 py-16"
           onClick={close}
         >
+          <div className="text-sm text-white">{mediaToShow.mediaType}</div>
+
           {!!mediaUrl && (
             <>
-              {selectedMedia.mediaType === 'image' && (
+              {mediaToShow.mediaType === 'image' && (
                 <img
+                  alt="Generated content"
                   className="h-auto max-h-[90%] w-auto max-w-[90%] animate-fade-scale-in object-contain transition-all"
                   onClick={preventClose}
                   src={mediaUrl}
                 />
               )}
-              {selectedMedia.mediaType === 'video' && (
+              {mediaToShow.mediaType === 'video' && (
                 <video
                   className="h-auto max-h-[90%] w-auto max-w-[90%] animate-fade-scale-in object-contain transition-all"
                   controls
@@ -224,9 +258,9 @@ export function MediaGallerySheet({
                   src={mediaUrl}
                 />
               )}
-              {(selectedMedia.mediaType === 'music' ||
-                selectedMedia.mediaType === 'voiceover') && (
-                <AudioPlayer media={selectedMedia} />
+              {(mediaToShow.mediaType === 'music' ||
+                mediaToShow.mediaType === 'voiceover') && (
+                <AudioPlayer media={mediaToShow} />
               )}
             </>
           )}
@@ -253,7 +287,7 @@ export function MediaGallerySheet({
           <SheetHeader>
             <SheetTitle>Media Gallery</SheetTitle>
             <SheetDescription className="sr-only">
-              The b-roll for your video composition
+              The media library for your project
             </SheetDescription>
           </SheetHeader>
           <div className="flex h-full max-h-full flex-1 flex-col gap-8 overflow-y-hidden">
@@ -264,9 +298,9 @@ export function MediaGallerySheet({
               <div />
             </div>
             <div className="flex flex-row gap-2">
-              {selectedMedia?.mediaType === 'video' && (
+              {mediaToShow?.mediaType === 'video' && (
                 <Button
-                  disabled={deleteMedia.isPending}
+                  disabled={isDeleting}
                   onClick={handleUpscaleDialog}
                   variant="secondary"
                 >
@@ -274,9 +308,9 @@ export function MediaGallerySheet({
                   Upscale Video
                 </Button>
               )}
-              {selectedMedia?.mediaType === 'image' && (
+              {mediaToShow?.mediaType === 'image' && (
                 <Button
-                  disabled={deleteMedia.isPending}
+                  disabled={isDeleting}
                   onClick={handleOpenGenerateDialog}
                   variant="secondary"
                 >
@@ -285,7 +319,7 @@ export function MediaGallerySheet({
                 </Button>
               )}
               <Button
-                disabled={deleteMedia.isPending}
+                disabled={isDeleting}
                 onClick={handleVary}
                 variant="secondary"
               >
@@ -293,15 +327,11 @@ export function MediaGallerySheet({
                 Re-run
               </Button>
               <Button
-                disabled={deleteMedia.isPending}
-                onClick={() => deleteMedia.mutate()}
+                disabled={isDeleting}
+                onClick={handleDelete}
                 variant="secondary"
               >
-                {deleteMedia.isPending ? (
-                  <LoadingIcon />
-                ) : (
-                  <TrashIcon className="h-4 w-4 opacity-50" />
-                )}
+                <TrashIcon className="h-4 w-4 opacity-50" />
                 Delete
               </Button>
             </div>
@@ -309,25 +339,25 @@ export function MediaGallerySheet({
               <MediaPropertyItem label="Media URL" value={mediaUrl ?? 'n/a'} />
               <MediaPropertyItem
                 label="Model (fal endpoint)"
-                value={selectedMedia.endpointId ?? 'n/a'}
+                value={mediaToShow.endpointId ?? 'n/a'}
               >
                 <a
                   className="underline decoration-muted-foreground/70 decoration-dotted underline-offset-4"
-                  href={`https://fal.ai/models/${selectedMedia.endpointId}`}
+                  href={`https://fal.ai/models/${mediaToShow.endpointId}`}
                   target="_blank"
                 >
-                  <code>{selectedMedia.endpointId}</code>
+                  <code>{mediaToShow.endpointId}</code>
                 </a>
               </MediaPropertyItem>
               <MediaPropertyItem
                 label="Status"
-                value={selectedMedia.status ?? 'n/a'}
+                value={mediaToShow.status ?? 'n/a'}
               />
               <MediaPropertyItem
                 label="Request ID"
-                value={selectedMedia.requestId ?? 'n/a'}
+                value={mediaToShow.requestId ?? 'n/a'}
               >
-                <code>{selectedMedia.requestId}</code>
+                <code>{mediaToShow.requestId}</code>
               </MediaPropertyItem>
             </div>
           </div>

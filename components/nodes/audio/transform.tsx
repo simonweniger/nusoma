@@ -2,28 +2,35 @@ import { getIncomers, useReactFlow } from '@xyflow/react';
 import {
   ClockIcon,
   DownloadIcon,
+  ExternalLinkIcon,
   Loader2Icon,
   PlayIcon,
   RotateCcwIcon,
 } from 'lucide-react';
-import { type ChangeEventHandler, type ComponentProps, useState } from 'react';
+import {
+  type ChangeEventHandler,
+  type ComponentProps,
+  useEffect,
+  useState,
+} from 'react';
 import { toast } from 'sonner';
 import { mutate } from 'swr';
+import { MediaGallerySheet } from '@/components/media-gallery';
 import { NodeLayout } from '@/components/nodes/layout';
+import { StatusIndicator } from '@/components/status-indicator';
 import { Button } from '@/components/ui/button';
-
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useAnalytics } from '@/hooks/use-analytics';
+import { useMediaGallery } from '@/hooks/use-media-gallery';
+import { useNodeMediaStatus } from '@/hooks/use-node-media-status';
 import { download } from '@/lib/download';
 import { handleError } from '@/lib/error/handle';
-
 import {
   convertFalEndpointsToModels,
   createFalJob,
-  getMediaUrlFromOutput,
-  pollFalJob,
 } from '@/lib/fal-integration';
+import db from '@/lib/instantdb';
 import { speechModels } from '@/lib/models/speech';
 import {
   getDescriptionsFromImageNodes,
@@ -59,6 +66,38 @@ export const AudioTransform = ({
   const { updateNodeData, getNodes, getEdges } = useReactFlow();
   const [loading, setLoading] = useState(false);
   const { project } = useProject();
+  const { selectedMediaId, openMedia, closeMedia } = useMediaGallery();
+  const { status: mediaStatus } = useNodeMediaStatus({
+    nodeId: id,
+    mediaType: 'voiceover',
+  });
+
+  // Update node data when generation completes
+  useEffect(() => {
+    if (mediaStatus?.isCompleted && mediaStatus.url && !data.generated?.url) {
+      updateNodeData(id, {
+        generated: {
+          url: mediaStatus.url,
+          type: 'audio/mp3',
+        },
+        updatedAt: new Date().toISOString(),
+      });
+    }
+  }, [mediaStatus, data.generated?.url, id, updateNodeData]);
+
+  // Query media items generated for this node
+  const { data: queryResult } = db.useQuery({
+    mediaItems: {
+      $: {
+        where: {
+          'project.id': project?.id || '',
+          mediaType: 'voiceover',
+        },
+        order: { createdAt: 'desc' },
+        limit: 1,
+      },
+    },
+  });
   const modelId = data.model ?? getDefaultModel(speechModels);
   const model = speechModels[modelId];
   const analytics = useAnalytics();
@@ -100,8 +139,8 @@ export const AudioTransform = ({
         voice: data.voice ?? null,
       });
 
-      // Create FAL job
-      const { mediaItemId, requestId } = await createFalJob({
+      // Create FAL job - polling is now handled by useMediaPolling hook
+      await createFalJob({
         endpointId: selectedEndpoint,
         prompt: text,
         projectId: project.id,
@@ -110,23 +149,9 @@ export const AudioTransform = ({
         voice: data.voice,
       });
 
-      // Poll for result
-      const result = await pollFalJob(requestId, mediaItemId, selectedEndpoint);
-      const generatedUrl = getMediaUrlFromOutput(result, 'voiceover');
-
-      if (!generatedUrl) {
-        throw new Error('No audio URL in response');
-      }
-
-      updateNodeData(id, {
-        generated: {
-          url: generatedUrl,
-          type: 'audio/mp3',
-        },
-        updatedAt: new Date().toISOString(),
-      });
-
-      toast.success('Audio generated successfully');
+      toast.success(
+        'Audio generation started! Check the status indicator for progress.'
+      );
 
       setTimeout(() => mutate('credits'), 5000);
     } catch (error) {
@@ -148,6 +173,21 @@ export const AudioTransform = ({
       ),
     },
   ];
+
+  // Add status indicator
+  if (mediaStatus?.isGenerating) {
+    toolbar.push({
+      tooltip: `Status: ${mediaStatus.status}`,
+      children: (
+        <StatusIndicator
+          size="md"
+          status={
+            mediaStatus.status as 'pending' | 'running' | 'completed' | 'failed'
+          }
+        />
+      ),
+    });
+  }
 
   if (model?.voices.length) {
     toolbar.push({
@@ -206,6 +246,24 @@ export const AudioTransform = ({
         </Button>
       ),
     });
+
+    // Add media gallery button if we have generated content
+    const latestMedia = queryResult?.mediaItems?.[0];
+    if (latestMedia) {
+      toolbar.push({
+        tooltip: 'View in Gallery',
+        children: (
+          <Button
+            className="rounded-full"
+            onClick={() => openMedia('latest')}
+            size="icon"
+            variant="ghost"
+          >
+            <ExternalLinkIcon size={12} />
+          </Button>
+        ),
+      });
+    }
   }
 
   if (data.updatedAt) {
@@ -227,37 +285,57 @@ export const AudioTransform = ({
   ) => updateNodeData(id, { instructions: event.target.value });
 
   return (
-    <NodeLayout data={data} id={id} title={title} toolbar={toolbar} type={type}>
-      {loading && (
-        <Skeleton className="flex h-[50px] w-full animate-pulse items-center justify-center">
-          <Loader2Icon
-            className="size-4 animate-spin text-muted-foreground"
-            size={16}
+    <>
+      <NodeLayout
+        data={data}
+        id={id}
+        title={title}
+        toolbar={toolbar}
+        type={type}
+      >
+        {loading && (
+          <Skeleton className="flex h-[50px] w-full animate-pulse items-center justify-center">
+            <Loader2Icon
+              className="size-4 animate-spin text-muted-foreground"
+              size={16}
+            />
+          </Skeleton>
+        )}
+        {!(loading || data.generated?.url) && (
+          <div className="flex h-[50px] w-full items-center justify-center rounded-full bg-secondary">
+            <p className="text-muted-foreground text-sm">
+              Press <PlayIcon className="-translate-y-px inline" size={12} /> to
+              generate audio
+            </p>
+          </div>
+        )}
+        {!loading && data.generated?.url && (
+          // biome-ignore lint/a11y/useMediaCaption: we don't need a caption for audio
+          <audio
+            className="w-full rounded-none"
+            controls
+            src={data.generated.url}
           />
-        </Skeleton>
-      )}
-      {!(loading || data.generated?.url) && (
-        <div className="flex h-[50px] w-full items-center justify-center rounded-full bg-secondary">
-          <p className="text-muted-foreground text-sm">
-            Press <PlayIcon className="-translate-y-px inline" size={12} /> to
-            generate audio
-          </p>
-        </div>
-      )}
-      {!loading && data.generated?.url && (
-        // biome-ignore lint/a11y/useMediaCaption: we don't need a caption for audio
-        <audio
-          className="w-full rounded-none"
-          controls
-          src={data.generated.url}
+        )}
+        <Textarea
+          className="shrink-0 resize-none rounded-none border-none bg-transparent! shadow-none focus-visible:ring-0"
+          onChange={handleInstructionsChange}
+          placeholder="Enter instructions"
+          value={data.instructions ?? ''}
+        />
+      </NodeLayout>
+
+      {project?.id && selectedMediaId && (
+        <MediaGallerySheet
+          mediaType="voiceover"
+          onClose={closeMedia}
+          open={!!selectedMediaId}
+          projectId={project.id}
+          selectedMediaId={
+            selectedMediaId === 'latest' ? '' : selectedMediaId || ''
+          }
         />
       )}
-      <Textarea
-        className="shrink-0 resize-none rounded-none border-none bg-transparent! shadow-none focus-visible:ring-0"
-        onChange={handleInstructionsChange}
-        placeholder="Enter instructions"
-        value={data.instructions ?? ''}
-      />
-    </NodeLayout>
+    </>
   );
 };

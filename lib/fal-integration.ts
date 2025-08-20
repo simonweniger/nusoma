@@ -110,7 +110,7 @@ export const createFalJob = async (params: FalJobParams) => {
   }
 
   if (audioUrl) {
-    const audioKey = endpoint.inputMap?.audio_url || 'audio_url';
+    const audioKey = endpoint.inputMap?.audio_url || 'reference_audio_url';
     input[audioKey] = audioUrl;
   }
 
@@ -191,11 +191,20 @@ export const pollFalJob = async (
       if ((status as any).status === 'COMPLETED') {
         const result = await fal.queue.result(endpointId, { requestId });
 
-        // Update media item with result
+        // Extract the media URL from the result
+        // Find the endpoint to get the media type
+        const endpoint = AVAILABLE_ENDPOINTS.find(
+          (ep) => ep.endpointId === endpointId
+        );
+        const mediaType = endpoint?.category || 'image';
+        const mediaUrl = getMediaUrlFromOutput(result, mediaType);
+
+        // Update media item with result and extracted URL
         await db.transact([
           db.tx.mediaItems[mediaItemId].update({
             status: 'completed',
             output: result,
+            url: mediaUrl,
             updatedAt: Date.now(),
           }),
         ]);
@@ -291,28 +300,28 @@ export const getMediaUrlFromOutput = (
     }
 
     case 'video': {
-      if (data.video && typeof data.video === 'object') {
-        const video = data.video as Record<string, unknown>;
+      if (actualData.video && typeof actualData.video === 'object') {
+        const video = actualData.video as Record<string, unknown>;
         return typeof video.url === 'string' ? video.url : null;
       }
-      if (typeof data.url === 'string') {
-        return data.url;
+      if (typeof actualData.url === 'string') {
+        return actualData.url;
       }
       break;
     }
 
     case 'music':
     case 'voiceover': {
-      if (data.audio_file && typeof data.audio_file === 'object') {
-        const audioFile = data.audio_file as Record<string, unknown>;
+      if (actualData.audio_file && typeof actualData.audio_file === 'object') {
+        const audioFile = actualData.audio_file as Record<string, unknown>;
         return typeof audioFile.url === 'string' ? audioFile.url : null;
       }
-      if (data.audio && typeof data.audio === 'object') {
-        const audio = data.audio as Record<string, unknown>;
+      if (actualData.audio && typeof actualData.audio === 'object') {
+        const audio = actualData.audio as Record<string, unknown>;
         return typeof audio.url === 'string' ? audio.url : null;
       }
-      if (typeof data.url === 'string') {
-        return data.url;
+      if (typeof actualData.url === 'string') {
+        return actualData.url;
       }
       break;
     }

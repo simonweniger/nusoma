@@ -28,6 +28,10 @@
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": "off"
+      },
+      "a11y": {
+        "noStaticElementInteractions": "off",
+        "useMediaCaption": "off"
       }
     }
   }
