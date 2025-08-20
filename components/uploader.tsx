@@ -6,8 +6,8 @@ import {
   DropzoneEmptyState,
   type DropzoneProps,
 } from '@/components/ui/kibo-ui/dropzone';
+import { uploadFile } from '@/data/upload';
 import { handleError } from '@/lib/error/handle';
-import { uploadFile } from '@/lib/upload';
 
 type UploaderProps = {
   accept?: DropzoneProps['accept'];

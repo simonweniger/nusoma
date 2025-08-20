@@ -8,7 +8,7 @@ import {
   DropzoneEmptyState,
 } from '@/components/ui/kibo-ui/dropzone';
 import { handleError } from '@/lib/error/handle';
-import { uploadFile } from '@/lib/upload';
+import { createUploadFileFunction } from '@/lib/fal-integration';
 import type { FileNodeProps } from '.';
 
 type FilePrimitiveProps = FileNodeProps & {
@@ -62,6 +62,7 @@ export const FilePrimitive = ({
   const { updateNodeData } = useReactFlow();
   const [files, setFiles] = useState<File[] | undefined>();
   const [isUploading, setIsUploading] = useState(false);
+  const uploadFile = createUploadFileFunction();
 
   const handleDrop = async (files: File[]) => {
     if (isUploading) {

@@ -6,7 +6,14 @@ const jsTsxIssuerRegex = /\.[jt]sx?$/;
 const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
-    remotePatterns: [],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'v3.fal.media',
+        port: '',
+        pathname: '/files/**',
+      },
+    ],
   },
 
   experimental: {

@@ -28,10 +28,10 @@ import {
   ComboboxSeparator,
   ComboboxTrigger,
 } from '@/components/ui/kibo-ui/combobox';
+import { createProject } from '@/data/mutations/create-project';
 import { useUser } from '@/hooks/use-user';
 import { handleError } from '@/lib/error/handle';
 import db from '@/lib/instantdb';
-import { createProject } from '@/lib/mutations/create-project';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Input } from './ui/input';

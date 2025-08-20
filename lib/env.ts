@@ -25,7 +25,7 @@ export const env = createEnv({
     // InstantDB Integration
     INSTANT_ADMIN_TOKEN: z.string().min(1),
 
-    // AI SDK
+    // AI Providers
     OPENAI_API_KEY: z.string().min(1).startsWith('sk-'),
     GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1),
     GROQ_API_KEY: z.string().min(1).startsWith('gsk_'),
@@ -35,7 +35,7 @@ export const env = createEnv({
     AWS_ACCESS_KEY_ID: z.string().min(1),
     AWS_SECRET_ACCESS_KEY: z.string().min(1),
     AWS_REGION: z.string().min(1),
-    FAL_API_KEY: z.string().min(1),
+    FAL_KEY: z.string().min(1),
     TOGETHER_AI_API_KEY: z.string().min(1).startsWith('tgp_v1_'),
     COHERE_API_KEY: z.string().min(1),
     VERCEL_API_KEY: z.string().min(1).startsWith('v1:'),
@@ -73,7 +73,7 @@ export const env = createEnv({
     AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
     AWS_REGION: process.env.AWS_REGION,
-    FAL_API_KEY: process.env.FAL_API_KEY,
+    FAL_KEY: process.env.FAL_KEY,
     TOGETHER_AI_API_KEY: process.env.TOGETHER_AI_API_KEY,
     COHERE_API_KEY: process.env.COHERE_API_KEY,
     MISTRAL_API_KEY: process.env.MISTRAL_API_KEY,

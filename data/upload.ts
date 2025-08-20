@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import db from './instantdb';
+import db from '../lib/instantdb';
 
 export const uploadFile = async (
   file: File,

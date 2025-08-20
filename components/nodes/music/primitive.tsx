@@ -10,18 +10,18 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { handleError } from '@/lib/error/handle';
 import { createUploadFileFunction } from '@/lib/fal-integration';
-import type { VideoNodeProps } from '.';
+import type { MusicNodeProps } from '.';
 
-type VideoPrimitiveProps = VideoNodeProps & {
+type MusicPrimitiveProps = MusicNodeProps & {
   title: string;
 };
 
-export const VideoPrimitive = ({
+export const MusicPrimitive = ({
   data,
   id,
   type,
   title,
-}: VideoPrimitiveProps) => {
+}: MusicPrimitiveProps) => {
   const { updateNodeData } = useReactFlow();
   const [files, setFiles] = useState<File[] | undefined>();
   const [isUploading, setIsUploading] = useState(false);
@@ -39,8 +39,8 @@ export const VideoPrimitive = ({
 
       setIsUploading(true);
       setFiles(files);
-
       const [file] = files;
+
       const { url, type } = await uploadFile(file, 'files');
 
       updateNodeData(id, {
@@ -50,7 +50,7 @@ export const VideoPrimitive = ({
         },
       });
     } catch (error) {
-      handleError('Error uploading video', error);
+      handleError('Error uploading audio', error);
     } finally {
       setIsUploading(false);
     }
@@ -59,7 +59,7 @@ export const VideoPrimitive = ({
   return (
     <NodeLayout data={data} id={id} title={title} type={type}>
       {isUploading && (
-        <Skeleton className="flex aspect-video w-full animate-pulse items-center justify-center">
+        <Skeleton className="flex h-[50px] w-full animate-pulse items-center justify-center">
           <Loader2Icon
             className="size-4 animate-spin text-muted-foreground"
             size={16}
@@ -67,18 +67,17 @@ export const VideoPrimitive = ({
         </Skeleton>
       )}
       {!isUploading && data.content && (
-        <video
-          autoPlay
-          className="h-auto w-full"
-          loop
-          muted
+        // biome-ignore lint/a11y/useMediaCaption: we don't need a caption for audio
+        <audio
+          className="w-full rounded-none"
+          controls
           src={data.content.url}
         />
       )}
       {!(isUploading || data.content) && (
         <Dropzone
           accept={{
-            'video/*': [],
+            'audio/*': [],
           }}
           className="rounded-none border-none bg-transparent shadow-none hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent"
           maxFiles={1}
@@ -89,7 +88,7 @@ export const VideoPrimitive = ({
           onError={console.error}
           src={files}
         >
-          <DropzoneEmptyState className="p-4" />
+          <DropzoneEmptyState />
           <DropzoneContent />
         </Dropzone>
       )}

@@ -4,7 +4,7 @@ import { useReactFlow } from '@xyflow/react';
 import { FileIcon, ImageIcon, VideoIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { uploadFile } from '@/lib/upload';
+import { uploadFile } from '@/data/upload';
 import { cn } from '@/lib/utils';
 import { useNodeOperations } from './node-operations';
 import { useProject } from './project';

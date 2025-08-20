@@ -1,8 +1,8 @@
 import { useNodeConnections } from '@xyflow/react';
-import { AudioPrimitive } from './primitive';
-import { AudioTransform } from './transform';
+import { MusicPrimitive } from './primitive';
+import { MusicTransform } from './transform';
 
-export type AudioNodeProps = {
+export type MusicNodeProps = {
   type: string;
   data: {
     content?: {
@@ -16,19 +16,18 @@ export type AudioNodeProps = {
     updatedAt?: string;
     model?: string;
     falEndpoint?: string;
-    voice?: string;
-    transcript?: string;
+    duration?: number;
     instructions?: string;
   };
   id: string;
 };
 
-export const AudioNode = (props: AudioNodeProps) => {
+export const MusicNode = (props: MusicNodeProps) => {
   const connections = useNodeConnections({
     id: props.id,
     handleType: 'target',
   });
-  const Component = connections.length ? AudioTransform : AudioPrimitive;
+  const Component = connections.length ? MusicTransform : MusicPrimitive;
 
-  return <Component {...props} title="Audio" />;
+  return <Component {...props} title="Music" />;
 };

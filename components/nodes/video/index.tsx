@@ -15,6 +15,7 @@ export type VideoNodeProps = {
     };
     updatedAt?: string;
     model?: string;
+    falEndpoint?: string;
     instructions?: string;
     width?: number;
     height?: number;

@@ -10,8 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { uploadFile } from '@/data/upload';
 import { handleError } from '@/lib/error/handle';
-import { uploadFile } from '@/lib/upload';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import {

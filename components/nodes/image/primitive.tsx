@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/kibo-ui/dropzone';
 import { Skeleton } from '@/components/ui/skeleton';
 import { handleError } from '@/lib/error/handle';
-import { uploadFile } from '@/lib/upload';
+import { createUploadFileFunction } from '@/lib/fal-integration';
 import { useProject } from '@/providers/project';
 import type { ImageNodeProps } from '.';
 
@@ -29,6 +29,7 @@ export const ImagePrimitive = ({
   const { project } = useProject();
   const [files, setFiles] = useState<File[] | undefined>();
   const [isUploading, setIsUploading] = useState(false);
+  const uploadFile = createUploadFileFunction();
 
   const handleDrop = async (files: File[]) => {
     if (isUploading || !project?.id) {

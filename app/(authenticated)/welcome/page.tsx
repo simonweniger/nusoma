@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { createProject } from '@/data/mutations/create-project';
 import { currentUserProfile } from '@/lib/auth';
 import { adminDb } from '@/lib/instantdb-admin';
-import { createProject } from '@/lib/mutations/create-project';
 import { ProjectProvider } from '@/providers/project';
 import { WelcomeDemo } from './components/welcome-demo';
 

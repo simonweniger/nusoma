@@ -11,7 +11,9 @@ import { toast } from 'sonner';
 import { mutate } from 'swr';
 import { NodeLayout } from '@/components/nodes/layout';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useAnalytics } from '@/hooks/use-analytics';
@@ -24,44 +26,32 @@ import {
   getMediaUrlFromOutput,
   pollFalJob,
 } from '@/lib/fal-integration';
-import { videoModels } from '@/lib/models/video';
-import { getImagesFromImageNodes, getTextFromTextNodes } from '@/lib/xyflow';
+import {
+  getDescriptionsFromImageNodes,
+  getTextFromTextNodes,
+} from '@/lib/xyflow';
 import { useProject } from '@/providers/project';
 import { ModelSelector } from '../model-selector';
-import type { VideoNodeProps } from '.';
+import type { MusicNodeProps } from '.';
 
-type VideoTransformProps = VideoNodeProps & {
+type MusicTransformProps = MusicNodeProps & {
   title: string;
 };
 
-const getDefaultModel = (models: typeof videoModels) => {
-  const defaultModel = Object.entries(models).find(
-    ([_, model]) => model.default
-  );
-
-  if (!defaultModel) {
-    throw new Error('No default model found');
-  }
-
-  return defaultModel[0];
-};
-
-export const VideoTransform = ({
+export const MusicTransform = ({
   data,
   id,
   type,
   title,
-}: VideoTransformProps) => {
+}: MusicTransformProps) => {
   const { updateNodeData, getNodes, getEdges } = useReactFlow();
   const [loading, setLoading] = useState(false);
   const { project } = useProject();
-  const modelId = data.model ?? getDefaultModel(videoModels);
   const analytics = useAnalytics();
 
-  // Combine original video models with FAL AI endpoints
-  const falVideoModels = convertFalEndpointsToModels('video');
-  const allVideoModels = { ...videoModels, ...falVideoModels };
-  const selectedEndpoint = data.falEndpoint || Object.keys(falVideoModels)[0];
+  // FAL AI endpoints for music generation
+  const falMusicModels = convertFalEndpointsToModels('music');
+  const selectedEndpoint = data.falEndpoint || Object.keys(falMusicModels)[0];
 
   const handleGenerate = async () => {
     if (loading || !project?.id) {
@@ -71,56 +61,61 @@ export const VideoTransform = ({
     try {
       const incomers = getIncomers({ id }, getNodes(), getEdges());
       const textPrompts = getTextFromTextNodes(incomers);
-      const images = getImagesFromImageNodes(incomers);
+      const imagePrompts = getDescriptionsFromImageNodes(incomers);
 
-      if (!(textPrompts.length || images.length || data.instructions)) {
+      if (!(textPrompts.length || imagePrompts.length || data.instructions)) {
         throw new Error('No prompts found');
       }
 
       setLoading(true);
 
+      let text = [...textPrompts, ...imagePrompts].join('\n');
+      let instructions = data.instructions;
+
+      if (data.instructions && !text.length) {
+        text = data.instructions;
+        instructions = undefined;
+      }
+
       analytics.track('canvas', 'node', 'generate', {
         type,
-        promptLength: textPrompts.join('\n').length,
+        promptLength: text.length,
         endpoint: selectedEndpoint,
         instructionsLength: data.instructions?.length ?? 0,
-        imageCount: images.length,
+        duration: data.duration ?? 30,
       });
-
-      const prompt = [data.instructions ?? '', ...textPrompts].join('\n');
-      const imageUrl = images.length > 0 ? images[0].url : undefined;
 
       // Create FAL job
       const { mediaItemId, requestId } = await createFalJob({
         endpointId: selectedEndpoint,
-        prompt,
+        prompt: text,
         projectId: project.id,
         nodeId: id,
-        instructions: data.instructions,
-        imageUrl,
+        instructions,
+        duration: data.duration,
       });
 
       // Poll for result
       const result = await pollFalJob(requestId, mediaItemId, selectedEndpoint);
-      const generatedUrl = getMediaUrlFromOutput(result, 'video');
+      const generatedUrl = getMediaUrlFromOutput(result, 'music');
 
       if (!generatedUrl) {
-        throw new Error('No video URL in response');
+        throw new Error('No audio URL in response');
       }
 
       updateNodeData(id, {
         generated: {
           url: generatedUrl,
-          type: 'video/mp4',
+          type: 'audio/mp3',
         },
         updatedAt: new Date().toISOString(),
       });
 
-      toast.success('Video generated successfully');
+      toast.success('Music generated successfully');
 
       setTimeout(() => mutate('credits'), 5000);
     } catch (error) {
-      handleError('Error generating video', error);
+      handleError('Error generating music', error);
     } finally {
       setLoading(false);
     }
@@ -131,19 +126,15 @@ export const VideoTransform = ({
       children: (
         <ModelSelector
           className="w-[200px]"
-          onChange={(value) => {
-            // Check if it's a FAL model or original model
-            if (falVideoModels[value]) {
-              updateNodeData(id, { falEndpoint: value, model: undefined });
-            } else {
-              updateNodeData(id, { model: value, falEndpoint: undefined });
-            }
-          }}
-          options={allVideoModels}
-          value={data.falEndpoint || modelId}
+          onChange={(value) => updateNodeData(id, { falEndpoint: value })}
+          options={falMusicModels}
+          value={selectedEndpoint}
         />
       ),
     },
+  ];
+
+  toolbar.push(
     loading
       ? {
           tooltip: 'Generating...',
@@ -169,16 +160,16 @@ export const VideoTransform = ({
               )}
             </Button>
           ),
-        },
-  ];
+        }
+  );
 
-  if (data.generated?.url) {
+  if (data.generated) {
     toolbar.push({
       tooltip: 'Download',
       children: (
         <Button
           className="rounded-full"
-          onClick={() => download(data.generated, id, 'mp4')}
+          onClick={() => download(data.generated, id, 'mp3')}
           size="icon"
           variant="ghost"
         >
@@ -206,10 +197,13 @@ export const VideoTransform = ({
     event
   ) => updateNodeData(id, { instructions: event.target.value });
 
+  const handleDurationChange: ChangeEventHandler<HTMLInputElement> = (event) =>
+    updateNodeData(id, { duration: Number.parseInt(event.target.value, 10) });
+
   return (
     <NodeLayout data={data} id={id} title={title} toolbar={toolbar} type={type}>
       {loading && (
-        <Skeleton className="flex aspect-video w-full animate-pulse items-center justify-center">
+        <Skeleton className="flex h-[50px] w-full animate-pulse items-center justify-center">
           <Loader2Icon
             className="size-4 animate-spin text-muted-foreground"
             size={16}
@@ -217,29 +211,40 @@ export const VideoTransform = ({
         </Skeleton>
       )}
       {!(loading || data.generated?.url) && (
-        <div className="flex aspect-video w-full items-center justify-center bg-secondary">
+        <div className="flex h-[50px] w-full items-center justify-center rounded-full bg-secondary">
           <p className="text-muted-foreground text-sm">
             Press <PlayIcon className="-translate-y-px inline" size={12} /> to
-            generate video
+            generate music
           </p>
         </div>
       )}
-      {data.generated?.url && !loading && (
-        <video
-          autoPlay
-          className="w-full object-cover"
-          height={data.height ?? 450}
-          loop
-          muted
-          playsInline
+      {!loading && data.generated?.url && (
+        // biome-ignore lint/a11y/useMediaCaption: we don't need a caption for audio
+        <audio
+          className="w-full rounded-none"
+          controls
           src={data.generated.url}
-          width={data.width ?? 800}
         />
       )}
+      <div className="flex items-center gap-2 p-2">
+        <Label className="text-xs" htmlFor={`duration-${id}`}>
+          Duration:
+        </Label>
+        <Input
+          className="w-16 text-xs"
+          id={`duration-${id}`}
+          max={120}
+          min={5}
+          onChange={handleDurationChange}
+          type="number"
+          value={data.duration || 30}
+        />
+        <span className="text-muted-foreground text-xs">seconds</span>
+      </div>
       <Textarea
         className="shrink-0 resize-none rounded-none border-none bg-transparent! shadow-none focus-visible:ring-0"
         onChange={handleInstructionsChange}
-        placeholder="Enter instructions"
+        placeholder="Enter music description or style"
         value={data.instructions ?? ''}
       />
     </NodeLayout>

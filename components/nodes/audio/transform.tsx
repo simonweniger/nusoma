@@ -9,14 +9,21 @@ import {
 import { type ChangeEventHandler, type ComponentProps, useState } from 'react';
 import { toast } from 'sonner';
 import { mutate } from 'swr';
-import { generateSpeechAction } from '@/app/actions/speech/create';
 import { NodeLayout } from '@/components/nodes/layout';
 import { Button } from '@/components/ui/button';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { download } from '@/lib/download';
 import { handleError } from '@/lib/error/handle';
+
+import {
+  convertFalEndpointsToModels,
+  createFalJob,
+  getMediaUrlFromOutput,
+  pollFalJob,
+} from '@/lib/fal-integration';
 import { speechModels } from '@/lib/models/speech';
 import {
   getDescriptionsFromImageNodes,
@@ -56,6 +63,11 @@ export const AudioTransform = ({
   const model = speechModels[modelId];
   const analytics = useAnalytics();
 
+  // FAL AI endpoints for voiceover generation
+  const falVoiceoverModels = convertFalEndpointsToModels('voiceover');
+  const selectedEndpoint =
+    data.falEndpoint || Object.keys(falVoiceoverModels)[0];
+
   const handleGenerate = async () => {
     if (loading || !project?.id) {
       return;
@@ -83,25 +95,36 @@ export const AudioTransform = ({
       analytics.track('canvas', 'node', 'generate', {
         type,
         promptLength: text.length,
-        model: modelId,
+        endpoint: selectedEndpoint,
         instructionsLength: data.instructions?.length ?? 0,
         voice: data.voice ?? null,
       });
 
-      const response = await generateSpeechAction({
-        text,
-        nodeId: id,
-        modelId,
+      // Create FAL job
+      const { mediaItemId, requestId } = await createFalJob({
+        endpointId: selectedEndpoint,
+        prompt: text,
         projectId: project.id,
-        voice: data.voice,
+        nodeId: id,
         instructions,
+        voice: data.voice,
       });
 
-      if ('error' in response) {
-        throw new Error(response.error);
+      // Poll for result
+      const result = await pollFalJob(requestId, mediaItemId, selectedEndpoint);
+      const generatedUrl = getMediaUrlFromOutput(result, 'voiceover');
+
+      if (!generatedUrl) {
+        throw new Error('No audio URL in response');
       }
 
-      updateNodeData(id, response.nodeData);
+      updateNodeData(id, {
+        generated: {
+          url: generatedUrl,
+          type: 'audio/mp3',
+        },
+        updatedAt: new Date().toISOString(),
+      });
 
       toast.success('Audio generated successfully');
 
@@ -117,11 +140,10 @@ export const AudioTransform = ({
     {
       children: (
         <ModelSelector
-          className="w-[200px] rounded-full"
-          key={id}
-          onChange={(value) => updateNodeData(id, { model: value })}
-          options={speechModels}
-          value={modelId}
+          className="w-[200px]"
+          onChange={(value) => updateNodeData(id, { falEndpoint: value })}
+          options={falVoiceoverModels}
+          value={selectedEndpoint}
         />
       ),
     },

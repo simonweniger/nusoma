@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/kibo-ui/dropzone';
 import { Skeleton } from '@/components/ui/skeleton';
 import { handleError } from '@/lib/error/handle';
-import { uploadFile } from '@/lib/upload';
+import { createUploadFileFunction } from '@/lib/fal-integration';
 import { useProject } from '@/providers/project';
 import type { AudioNodeProps } from '.';
 
@@ -28,6 +28,7 @@ export const AudioPrimitive = ({
   const [files, setFiles] = useState<File[] | undefined>();
   const { project } = useProject();
   const [isUploading, setIsUploading] = useState(false);
+  const uploadFile = createUploadFileFunction();
 
   const handleDrop = async (files: File[]) => {
     if (isUploading || !project?.id) {

@@ -16,15 +16,21 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 import { mutate } from 'swr';
-import { generateImageAction } from '@/app/actions/image/create';
-import { editImageAction } from '@/app/actions/image/edit';
 import { NodeLayout } from '@/components/nodes/layout';
 import { Button } from '@/components/ui/button';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { download } from '@/lib/download';
 import { handleError } from '@/lib/error/handle';
+
+import {
+  convertFalEndpointsToModels,
+  createFalJob,
+  getMediaUrlFromOutput,
+  pollFalJob,
+} from '@/lib/fal-integration';
 import { imageModels } from '@/lib/models/image';
 import { getImagesFromImageNodes, getTextFromTextNodes } from '@/lib/xyflow';
 import { useProject } from '@/providers/project';
@@ -57,13 +63,18 @@ export const ImageTransform = ({
   const { updateNodeData, getNodes, getEdges } = useReactFlow();
   const [loading, setLoading] = useState(false);
   const { project } = useProject();
-  const hasIncomingImageNodes =
-    getImagesFromImageNodes(getIncomers({ id }, getNodes(), getEdges()))
-      .length > 0;
+  //const hasIncomingImageNodes =
+  //  getImagesFromImageNodes(getIncomers({ id }, getNodes(), getEdges()))
+  //    .length > 0;
   const modelId = data.model ?? getDefaultModel(imageModels);
   const analytics = useAnalytics();
   const selectedModel = imageModels[modelId];
   const size = data.size ?? selectedModel?.sizes?.at(0);
+
+  // Combine original image models with FAL AI endpoints
+  const falImageModels = convertFalEndpointsToModels('image');
+  const allImageModels = { ...imageModels, ...falImageModels };
+  const selectedEndpoint = data.falEndpoint || Object.keys(falImageModels)[0];
 
   const handleGenerate = useCallback(async () => {
     if (loading || !project?.id) {
@@ -75,7 +86,7 @@ export const ImageTransform = ({
     const imageNodes = getImagesFromImageNodes(incomers);
 
     try {
-      if (!(textNodes.length || imageNodes.length)) {
+      if (!(textNodes.length || imageNodes.length || data.instructions)) {
         throw new Error('No input provided');
       }
 
@@ -85,33 +96,41 @@ export const ImageTransform = ({
         type,
         textPromptsLength: textNodes.length,
         imagePromptsLength: imageNodes.length,
-        model: modelId,
+        endpoint: selectedEndpoint,
         instructionsLength: data.instructions?.length ?? 0,
       });
 
-      const response = imageNodes.length
-        ? await editImageAction({
-            images: imageNodes,
-            instructions: data.instructions,
-            nodeId: id,
-            projectId: project.id,
-            modelId,
-            size,
-          })
-        : await generateImageAction({
-            prompt: textNodes.join('\n'),
-            modelId,
-            instructions: data.instructions,
-            projectId: project.id,
-            nodeId: id,
-            size,
-          });
+      const prompt = textNodes.join('\n');
+      const imageUrl = imageNodes.length > 0 ? imageNodes[0].url : undefined;
 
-      if ('error' in response) {
-        throw new Error(response.error);
+      // Create FAL job
+      const { mediaItemId, requestId } = await createFalJob({
+        endpointId: selectedEndpoint,
+        prompt,
+        projectId: project.id,
+        nodeId: id,
+        instructions: data.instructions,
+        imageUrl,
+        size,
+      });
+
+      // Poll for result
+      const result = await pollFalJob(requestId, mediaItemId, selectedEndpoint);
+      console.log('Result from pollFalJob:', result);
+      const generatedUrl = getMediaUrlFromOutput(result, 'image');
+      console.log('Generated URL:', generatedUrl);
+
+      if (!generatedUrl) {
+        throw new Error('No image URL in response');
       }
 
-      updateNodeData(id, response.nodeData);
+      updateNodeData(id, {
+        generated: {
+          url: generatedUrl,
+          type: 'image/png',
+        },
+        updatedAt: new Date().toISOString(),
+      });
 
       toast.success('Image generated successfully');
 
@@ -130,7 +149,7 @@ export const ImageTransform = ({
     type,
     data.instructions,
     getEdges,
-    modelId,
+    selectedEndpoint,
     getNodes,
     updateNodeData,
   ]);
@@ -140,27 +159,21 @@ export const ImageTransform = ({
   ) => updateNodeData(id, { instructions: event.target.value });
 
   const toolbar = useMemo<ComponentProps<typeof NodeLayout>['toolbar']>(() => {
-    const availableModels = Object.fromEntries(
-      Object.entries(imageModels).map(([key, model]) => [
-        key,
-        {
-          ...model,
-          disabled: hasIncomingImageNodes
-            ? !model.supportsEdit
-            : model.disabled,
-        },
-      ])
-    );
-
     const items: ComponentProps<typeof NodeLayout>['toolbar'] = [
       {
         children: (
           <ModelSelector
-            className="w-[200px] rounded-full"
-            id={id}
-            onChange={(value) => updateNodeData(id, { model: value })}
-            options={availableModels}
-            value={modelId}
+            className="w-[200px]"
+            onChange={(value) => {
+              // Check if it's a FAL model or original model
+              if (falImageModels[value]) {
+                updateNodeData(id, { falEndpoint: value, model: undefined });
+              } else {
+                updateNodeData(id, { model: value, falEndpoint: undefined });
+              }
+            }}
+            options={allImageModels}
+            value={data.falEndpoint || modelId}
           />
         ),
       },
@@ -241,8 +254,6 @@ export const ImageTransform = ({
 
     return items;
   }, [
-    modelId,
-    hasIncomingImageNodes,
     id,
     updateNodeData,
     selectedModel?.sizes,
@@ -252,6 +263,9 @@ export const ImageTransform = ({
     data.updatedAt,
     handleGenerate,
     project?.id,
+    allImageModels,
+    selectedEndpoint,
+    modelId,
   ]);
 
   const aspectRatio = useMemo(() => {

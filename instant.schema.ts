@@ -18,6 +18,7 @@ const _schema = i.schema({
     }),
     projects: i.entity({
       name: i.string(),
+      description: i.string(),
       transcriptionModel: i.string(),
       visionModel: i.string(),
       createdAt: i.number().indexed(),
@@ -25,6 +26,19 @@ const _schema = i.schema({
       content: i.json().optional(),
       image: i.string().optional(),
       welcomeProject: i.boolean().optional(),
+    }),
+    mediaItems: i.entity({
+      kind: i.string(), //generated | uploaded
+      endpointId: i.string().optional(),
+      requestId: i.string().optional(),
+      mediaType: i.string().optional(), //image | video | music | voiceover | text | sound | file
+      status: i.string().optional(), //pending | running | completed | failed
+      url: i.string().optional(),
+      input: i.json().optional(),
+      output: i.json().optional(),
+      metadata: i.json().optional(),
+      createdAt: i.number().indexed(),
+      updatedAt: i.number().optional(),
     }),
   },
   links: {
@@ -39,6 +53,10 @@ const _schema = i.schema({
     projectMembership: {
       forward: { on: 'projects', has: 'many', label: 'members' },
       reverse: { on: '$users', has: 'many', label: 'memberProjects' },
+    },
+    projectMediaItems: {
+      forward: { on: 'projects', has: 'many', label: 'mediaItems' },
+      reverse: { on: 'mediaItems', has: 'one', label: 'project' },
     },
   },
   rooms: {
@@ -71,6 +89,7 @@ export type Files = InstaQLEntity<AppSchema, '$files'>;
 export type Users = InstaQLEntity<AppSchema, '$users'>;
 export type Profiles = InstaQLEntity<AppSchema, 'profiles'>;
 export type Projects = InstaQLEntity<AppSchema, 'projects'>;
+export type MediaItems = InstaQLEntity<AppSchema, 'mediaItems'>;
 
 export type { AppSchema };
 export default schema;
