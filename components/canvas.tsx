@@ -7,6 +7,7 @@ import {
   type Edge,
   getOutgoers,
   type IsValidConnection,
+  MiniMap,
   type Node,
   type OnConnect,
   type OnConnectEnd,
@@ -394,6 +395,7 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
               {...rest}
             >
               <Background />
+              {/*<MiniMap className="absolute right-0 bottom-0 scale-75" /> */}
               {children}
             </ReactFlow>
           </ContextMenuTrigger>

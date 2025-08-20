@@ -1,6 +1,6 @@
 'use server';
 
-import { requireAuth } from '@/lib/auth';
+import { currentUserProfile } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { parseError } from '@/lib/error/parse';
 import { adminDb } from '@/lib/instantdb-admin';
@@ -8,37 +8,55 @@ import { stripe } from '@/lib/stripe';
 
 const HOBBY_CREDITS = 200;
 
-export const getCredits = async (): Promise<
+export const syncCredits = async (): Promise<
   | {
+      success: true;
       credits: number;
+      usage: number;
     }
   | {
       error: string;
     }
 > => {
   try {
-    const userId = await requireAuth();
+    const profile = await currentUserProfile();
 
-    const { $users } = await adminDb.query({
-      $users: {
-        $: {
-          where: { id: userId },
-        },
-      },
-    });
-
-    const profile = $users[0];
-
-    if (!profile) {
-      throw new Error('User profile not found');
+    if (!profile?.user) {
+      throw new Error('User profile not found or not linked');
     }
 
     if (!profile.customerId) {
-      throw new Error('Customer ID not found');
+      // For users without subscriptions, set default hobby credits
+      await adminDb.transact([
+        adminDb.tx.profiles[profile.id].update({
+          credits: HOBBY_CREDITS,
+          creditUsage: 0,
+          creditsUpdatedAt: Date.now(),
+        }),
+      ]);
+
+      return {
+        success: true,
+        credits: HOBBY_CREDITS,
+        usage: 0,
+      };
     }
 
     if (!profile.subscriptionId) {
-      throw new Error('Customer ID not found');
+      // For users without subscriptions, set default hobby credits
+      await adminDb.transact([
+        adminDb.tx.profiles[profile.id].update({
+          credits: HOBBY_CREDITS,
+          creditUsage: 0,
+          creditsUpdatedAt: Date.now(),
+        }),
+      ]);
+
+      return {
+        success: true,
+        credits: HOBBY_CREDITS,
+        usage: 0,
+      };
     }
 
     const upcomingInvoice = await stripe.invoices.createPreview({
@@ -80,12 +98,22 @@ export const getCredits = async (): Promise<
 
     const usage = usageProductLineItem?.quantity ?? 0;
 
+    // Update the profile with the latest credits info
+    await adminDb.transact([
+      adminDb.tx.profiles[profile.id].update({
+        credits,
+        creditUsage: usage,
+        creditsUpdatedAt: Date.now(),
+      }),
+    ]);
+
     return {
-      credits: credits - usage,
+      success: true,
+      credits,
+      usage,
     };
   } catch (error) {
     const message = parseError(error);
-
     return { error: message };
   }
 };

@@ -1,11 +1,11 @@
 'use server';
 
+import { id } from '@instantdb/react';
 import type { Edge, Node, Viewport } from '@xyflow/react';
 import {
   type Experimental_GenerateImageResult,
   experimental_generateImage as generateImage,
 } from 'ai';
-
 import { nanoid } from 'nanoid';
 import OpenAI from 'openai';
 import { requireAuth } from '@/lib/auth';
@@ -233,6 +233,39 @@ export const generateImageAction = async ({
     if (!existingNode) {
       throw new Error('Node not found');
     }
+
+    // Create media item in InstantDB for the gallery
+    const mediaItemId = id();
+
+    await adminDb.transact([
+      // Create the media item
+      adminDb.tx.mediaItems[mediaItemId]
+        .update({
+          kind: 'generated',
+          nodeId,
+          mediaType: 'image',
+          status: 'completed',
+          url: instantUrl,
+          input: {
+            prompt,
+            instructions: instructions || undefined,
+            modelId,
+            size: size || undefined,
+          },
+          output: {
+            url: instantUrl,
+            type: image.mediaType,
+            description,
+          },
+          metadata: {
+            provider: provider.model.modelId,
+            size: size || undefined,
+          },
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        })
+        .link({ project: projectId }),
+    ]);
 
     const newData = {
       ...(existingNode.data ?? {}),

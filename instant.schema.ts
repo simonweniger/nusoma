@@ -15,10 +15,13 @@ const _schema = i.schema({
       subscriptionId: i.string().optional(),
       productId: i.string().optional(),
       onboardedAt: i.number().optional(),
+      credits: i.number().optional(),
+      creditUsage: i.number().optional(),
+      creditsUpdatedAt: i.number().optional(),
     }),
     projects: i.entity({
       name: i.string(),
-      description: i.string(),
+      description: i.string().optional(),
       transcriptionModel: i.string(),
       visionModel: i.string(),
       createdAt: i.number().indexed(),
@@ -31,6 +34,7 @@ const _schema = i.schema({
       kind: i.string(), //generated | uploaded
       endpointId: i.string().optional(),
       requestId: i.string().optional(),
+      nodeId: i.string().optional(), // ID of the node that created this media
       mediaType: i.string().optional(), //image | video | music | voiceover | text | sound | file
       status: i.string().optional(), //pending | running | completed | failed
       url: i.string().optional(),

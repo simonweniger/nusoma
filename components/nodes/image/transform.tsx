@@ -66,7 +66,8 @@ export const ImageTransform = ({
   const { updateNodeData, getNodes, getEdges } = useReactFlow();
   const [loading, setLoading] = useState(false);
   const { project } = useProject();
-  const { selectedMediaId, openMedia, closeMedia } = useMediaGallery();
+  const { selectedMediaId, selectedNodeIds, openMedia, closeMedia } =
+    useMediaGallery();
   const { status: mediaStatus } = useNodeMediaStatus({
     nodeId: id,
     mediaType: 'image',
@@ -268,7 +269,15 @@ export const ImageTransform = ({
         children: (
           <Button
             className="rounded-full"
-            onClick={() => openMedia('latest')} // Use 'latest' to show the latest media item
+            onClick={() => {
+              // Get all selected nodes from the canvas
+              const selectedNodes = getNodes().filter((node) => node.selected);
+              const nodeIds =
+                selectedNodes.length > 1
+                  ? selectedNodes.map((n) => n.id)
+                  : [id];
+              openMedia('latest', nodeIds);
+            }}
             size="icon"
             variant="ghost"
           >
@@ -370,6 +379,7 @@ export const ImageTransform = ({
       {project?.id && selectedMediaId && (
         <MediaGallerySheet
           mediaType="image"
+          nodeIds={selectedNodeIds.length > 0 ? selectedNodeIds : undefined}
           onClose={closeMedia}
           open={!!selectedMediaId}
           projectId={project.id}

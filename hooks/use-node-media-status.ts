@@ -15,18 +15,23 @@ export const useNodeMediaStatus = ({
   const { project } = useProject();
 
   // Query media items for this node
-  const { data: queryResult } = db.useQuery({
-    mediaItems: {
-      $: {
-        where: {
-          'project.id': project?.id || '',
-          mediaType,
-        },
-        order: { createdAt: 'desc' },
-        limit: 1,
-      },
-    },
-  });
+  const { data: queryResult } = db.useQuery(
+    project?.id
+      ? {
+          mediaItems: {
+            $: {
+              where: {
+                'project.id': project.id,
+                mediaType,
+                nodeId,
+              },
+              order: { createdAt: 'desc' },
+              limit: 1,
+            },
+          },
+        }
+      : {}
+  );
 
   const latestMedia = queryResult?.mediaItems?.[0];
 
@@ -34,9 +39,9 @@ export const useNodeMediaStatus = ({
   const { data: pollingData } = useMediaPolling({
     mediaItem: latestMedia,
     enabled:
-      !!latestMedia &&
-      latestMedia.status !== 'completed' &&
-      latestMedia.status !== 'failed',
+      Boolean(latestMedia) &&
+      latestMedia?.status !== 'completed' &&
+      latestMedia?.status !== 'failed',
   });
 
   const status = useMemo(() => {

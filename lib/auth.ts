@@ -1,7 +1,7 @@
 import { auth, currentUser as clerkCurrentUser } from '@clerk/nextjs/server';
 import { id } from '@instantdb/react';
 import { redirect } from 'next/navigation';
-import { getCredits } from '@/app/actions/credits/get';
+
 import { env } from './env';
 import { adminDb } from './instantdb-admin';
 
@@ -190,15 +190,15 @@ export const getSubscribedUser = async () => {
     throw new Error('Claim your free AI credits to use this feature.');
   }
 
-  const credits = await getCredits();
-
-  if ('error' in credits) {
-    throw new Error(credits.error);
-  }
+  // Check credits directly from InstantDB profile
+  const HOBBY_CREDITS = 200;
+  const totalCredits = profile.credits ?? HOBBY_CREDITS;
+  const usedCredits = profile.creditUsage ?? 0;
+  const remainingCredits = totalCredits - usedCredits;
 
   if (
     profile.productId === env.STRIPE_HOBBY_PRODUCT_ID &&
-    credits.credits <= 0
+    remainingCredits <= 0
   ) {
     throw new Error(
       'Sorry, you have no credits remaining! Please upgrade for more credits.'

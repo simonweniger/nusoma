@@ -59,9 +59,7 @@ const Project = async ({ params }: ProjectProps) => {
             <Toolbar />
           </Canvas>
         </ProjectProvider>
-        <Suspense fallback={null}>
-          <TopLeft id={projectId} />
-        </Suspense>
+        <TopLeft id={projectId} />
         <Suspense fallback={null}>
           <TopRight id={projectId} />
         </Suspense>

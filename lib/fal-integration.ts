@@ -63,6 +63,7 @@ export const createFalJob = async (params: FalJobParams) => {
     endpointId,
     prompt,
     projectId,
+    nodeId,
     instructions,
     imageUrl,
     videoUrl,
@@ -148,6 +149,7 @@ export const createFalJob = async (params: FalJobParams) => {
       .update({
         kind: 'generated',
         endpointId,
+        nodeId,
         mediaType: endpoint.category,
         status: 'pending',
         input,
@@ -188,7 +190,7 @@ export const pollFalJob = async (
     try {
       const status = await fal.queue.status(endpointId, { requestId });
 
-      if ((status as any).status === 'COMPLETED') {
+      if (status.status === 'COMPLETED') {
         const result = await fal.queue.result(endpointId, { requestId });
 
         // Extract the media URL from the result
@@ -212,16 +214,13 @@ export const pollFalJob = async (
         return result;
       }
 
-      if ((status as any).status === 'FAILED') {
+      if (status.status === 'IN_QUEUE') {
         await db.transact([
           db.tx.mediaItems[mediaItemId].update({
-            status: 'failed',
+            status: 'pending',
             updatedAt: Date.now(),
           }),
         ]);
-        throw new Error(
-          `FAL job failed: ${(status as any).logs || 'Unknown error'}`
-        );
       }
 
       // Update status in database for UI updates

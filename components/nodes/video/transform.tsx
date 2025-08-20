@@ -64,7 +64,8 @@ export const VideoTransform = ({
   const [loading, setLoading] = useState(false);
   const [analyzingImage, setAnalyzingImage] = useState(false);
   const { project } = useProject();
-  const { selectedMediaId, openMedia, closeMedia } = useMediaGallery();
+  const { selectedMediaId, selectedNodeIds, openMedia, closeMedia } =
+    useMediaGallery();
   const { status: mediaStatus } = useNodeMediaStatus({
     nodeId: id,
     mediaType: 'video',
@@ -84,18 +85,22 @@ export const VideoTransform = ({
   }, [mediaStatus, data.generated?.url, id, updateNodeData]);
 
   // Query media items generated for this node
-  const { data: queryResult } = db.useQuery({
-    mediaItems: {
-      $: {
-        where: {
-          'project.id': project?.id || '',
-          mediaType: 'video',
-        },
-        order: { createdAt: 'desc' },
-        limit: 1,
-      },
-    },
-  });
+  const { data: queryResult } = db.useQuery(
+    project?.id
+      ? {
+          mediaItems: {
+            $: {
+              where: {
+                'project.id': project.id,
+                mediaType: 'video',
+              },
+              order: { createdAt: 'desc' },
+              limit: 1,
+            },
+          },
+        }
+      : {}
+  );
   const modelId = data.model ?? getDefaultModel(videoModels);
   const analytics = useAnalytics();
 
@@ -198,12 +203,21 @@ export const VideoTransform = ({
       ),
     },
     // Add status indicator
-    ...(mediaStatus && mediaStatus.isGenerating
+    ...(mediaStatus?.isGenerating
       ? [
           {
             tooltip: `Status: ${mediaStatus.status}`,
             children: (
-              <StatusIndicator size="md" status={mediaStatus.status as any} />
+              <StatusIndicator
+                size="md"
+                status={
+                  mediaStatus.status as
+                    | 'pending'
+                    | 'running'
+                    | 'completed'
+                    | 'failed'
+                }
+              />
             ),
           },
         ]
@@ -259,7 +273,15 @@ export const VideoTransform = ({
         children: (
           <Button
             className="rounded-full"
-            onClick={() => openMedia(latestMedia.id)}
+            onClick={() => {
+              // Get all selected nodes from the canvas
+              const selectedNodes = getNodes().filter((node) => node.selected);
+              const nodeIds =
+                selectedNodes.length > 1
+                  ? selectedNodes.map((n) => n.id)
+                  : [id];
+              openMedia(latestMedia.id, nodeIds);
+            }}
             size="icon"
             variant="ghost"
           >
@@ -336,8 +358,9 @@ export const VideoTransform = ({
       {project?.id && selectedMediaId && (
         <MediaGallerySheet
           mediaType="video"
+          nodeIds={selectedNodeIds.length > 0 ? selectedNodeIds : undefined}
           onClose={closeMedia}
-          open={!!selectedMediaId}
+          open={Boolean(selectedMediaId)}
           projectId={project.id}
           selectedMediaId={selectedMediaId === 'latest' ? '' : selectedMediaId}
         />

@@ -66,7 +66,8 @@ export const AudioTransform = ({
   const { updateNodeData, getNodes, getEdges } = useReactFlow();
   const [loading, setLoading] = useState(false);
   const { project } = useProject();
-  const { selectedMediaId, openMedia, closeMedia } = useMediaGallery();
+  const { selectedMediaId, selectedNodeIds, openMedia, closeMedia } =
+    useMediaGallery();
   const { status: mediaStatus } = useNodeMediaStatus({
     nodeId: id,
     mediaType: 'voiceover',
@@ -86,18 +87,22 @@ export const AudioTransform = ({
   }, [mediaStatus, data.generated?.url, id, updateNodeData]);
 
   // Query media items generated for this node
-  const { data: queryResult } = db.useQuery({
-    mediaItems: {
-      $: {
-        where: {
-          'project.id': project?.id || '',
-          mediaType: 'voiceover',
-        },
-        order: { createdAt: 'desc' },
-        limit: 1,
-      },
-    },
-  });
+  const { data: queryResult } = db.useQuery(
+    project?.id
+      ? {
+          mediaItems: {
+            $: {
+              where: {
+                'project.id': project.id,
+                mediaType: 'voiceover',
+              },
+              order: { createdAt: 'desc' },
+              limit: 1,
+            },
+          },
+        }
+      : {}
+  );
   const modelId = data.model ?? getDefaultModel(speechModels);
   const model = speechModels[modelId];
   const analytics = useAnalytics();
@@ -255,7 +260,15 @@ export const AudioTransform = ({
         children: (
           <Button
             className="rounded-full"
-            onClick={() => openMedia('latest')}
+            onClick={() => {
+              // Get all selected nodes from the canvas
+              const selectedNodes = getNodes().filter((node) => node.selected);
+              const nodeIds =
+                selectedNodes.length > 1
+                  ? selectedNodes.map((n) => n.id)
+                  : [id];
+              openMedia('latest', nodeIds);
+            }}
             size="icon"
             variant="ghost"
           >
@@ -310,7 +323,6 @@ export const AudioTransform = ({
           </div>
         )}
         {!loading && data.generated?.url && (
-          // biome-ignore lint/a11y/useMediaCaption: we don't need a caption for audio
           <audio
             className="w-full rounded-none"
             controls
@@ -328,12 +340,11 @@ export const AudioTransform = ({
       {project?.id && selectedMediaId && (
         <MediaGallerySheet
           mediaType="voiceover"
+          nodeIds={selectedNodeIds.length > 0 ? selectedNodeIds : undefined}
           onClose={closeMedia}
-          open={!!selectedMediaId}
+          open={Boolean(selectedMediaId)}
           projectId={project.id}
-          selectedMediaId={
-            selectedMediaId === 'latest' ? '' : selectedMediaId || ''
-          }
+          selectedMediaId={selectedMediaId === 'latest' ? '' : selectedMediaId}
         />
       )}
     </>

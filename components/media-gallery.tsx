@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/a11y/noNoninteractiveElementInteractions: <explanation> */
+/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: needed for interactive overlay */
 import {
   CopyIcon,
   FilmIcon,
@@ -37,6 +37,7 @@ type MediaGallerySheetProps = ComponentProps<typeof Sheet> & {
   selectedMediaId: string;
   projectId: string;
   mediaType?: string; // Filter by specific media type
+  nodeIds?: string[]; // Filter by specific node IDs for multi-selection
   onClose: () => void;
 };
 
@@ -101,6 +102,90 @@ function MediaPropertyItem({
   );
 }
 
+function MediaGridItem({
+  media,
+  isSelected,
+  onClick,
+}: {
+  media: MediaItems;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  // Get URL from url field or extract from output if missing
+  let mediaUrl: string | undefined = media?.url;
+  if (!mediaUrl && media?.output) {
+    const extractedUrl = getMediaUrlFromOutput(
+      media.output,
+      media.mediaType || 'image'
+    );
+    mediaUrl = extractedUrl || undefined;
+  }
+
+  return (
+    <div
+      className={cn(
+        'aspect-square cursor-pointer overflow-hidden rounded-lg border-2 transition-all hover:border-primary/50',
+        isSelected ? 'border-primary' : 'border-border'
+      )}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+    >
+      {mediaUrl && (
+        <>
+          {media.mediaType === 'image' && (
+            <img
+              alt="Generated content"
+              className="h-full w-full object-cover"
+              src={mediaUrl}
+            />
+          )}
+          {media.mediaType === 'video' && (
+            <div className="relative h-full w-full">
+              <video className="h-full w-full object-cover" src={mediaUrl} />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                <div className="rounded-full bg-white/90 p-2">
+                  <svg
+                    aria-label="Play video"
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <title>Play video</title>
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          )}
+          {(media.mediaType === 'music' || media.mediaType === 'voiceover') && (
+            <div className="flex h-full w-full items-center justify-center bg-accent text-muted-foreground">
+              {media.mediaType === 'music' && <MusicIcon className="h-8 w-8" />}
+              {media.mediaType === 'voiceover' && (
+                <MicIcon className="h-8 w-8" />
+              )}
+            </div>
+          )}
+        </>
+      )}
+      {!mediaUrl && (
+        <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+          <div className="text-center">
+            <div className="text-sm">No preview</div>
+            <div className="text-xs">{media.status}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const MEDIA_PLACEHOLDER: MediaItems = {
   id: 'placeholder',
   kind: 'generated',
@@ -116,13 +201,23 @@ export function MediaGallerySheet({
   selectedMediaId,
   projectId,
   mediaType,
+  nodeIds,
   onClose,
   ...props
 }: MediaGallerySheetProps) {
-  // Query media items for this project using InstantDB, filtering by media type if provided
-  const whereClause = mediaType
-    ? { 'project.id': projectId, mediaType }
-    : { 'project.id': projectId };
+  // Build where clause for filtering media items
+  const whereClause: any = { 'project.id': projectId };
+
+  // Add media type filter if provided
+  if (mediaType) {
+    whereClause.mediaType = mediaType;
+  }
+
+  // Add node ID filter if provided (for specific node filtering)
+  if (nodeIds && nodeIds.length > 0) {
+    // Filter by the specific nodes - this will show only media created by these nodes
+    whereClause.nodeId = { $in: nodeIds };
+  }
 
   const { data: queryResult } = db.useQuery({
     mediaItems: {
@@ -135,18 +230,54 @@ export function MediaGallerySheet({
 
   const mediaItems = queryResult?.mediaItems || [];
 
+  // State for grid view selection
+  const [selectedGridMediaId, setSelectedGridMediaId] = useState<string | null>(
+    null
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Determine if we're showing multiple items (grid view) or single item
+  const isGridView = nodeIds && nodeIds.length > 1;
+
   // If selectedMediaId is empty/not provided, show the latest media item
   const selectedMedia =
     selectedMediaId && selectedMediaId !== ''
       ? mediaItems.find((media) => media.id === selectedMediaId)
       : null;
 
-  // Always show latest media if no specific selection or if media not found
-  const mediaToShow =
-    selectedMedia ||
-    (mediaItems.length > 0 ? mediaItems[0] : MEDIA_PLACEHOLDER);
+  // Use all media items since nodeId filtering is now handled at the query level
+  const filteredMediaItems = mediaItems;
 
-  const [isDeleting, setIsDeleting] = useState(false);
+  // Debug logging (can be removed in production)
+  // console.log('Media Gallery Debug:', {
+  //   projectId,
+  //   mediaType,
+  //   nodeIds,
+  //   whereClause,
+  //   mediaItemsCount: mediaItems.length,
+  //   isGridView,
+  //   selectedMediaId,
+  //   selectedGridMediaId,
+  // });
+
+  // For grid view, use the selectedGridMediaId, otherwise use the normal logic
+  let mediaToShow: MediaItems;
+  if (isGridView) {
+    if (selectedGridMediaId) {
+      mediaToShow =
+        filteredMediaItems.find((media) => media.id === selectedGridMediaId) ||
+        filteredMediaItems[0] ||
+        MEDIA_PLACEHOLDER;
+    } else {
+      mediaToShow = filteredMediaItems[0] || MEDIA_PLACEHOLDER;
+    }
+  } else {
+    mediaToShow =
+      selectedMedia ||
+      (filteredMediaItems.length > 0
+        ? filteredMediaItems[0]
+        : MEDIA_PLACEHOLDER);
+  }
 
   const handleUpscaleDialog = () => {
     // TODO: Implement video upscaling with FAL
@@ -228,7 +359,7 @@ export function MediaGallerySheet({
     mediaUrl = extractedUrl || undefined;
   }
 
-  const prompt = mediaToShow?.input?.prompt as string;
+  const prompt = (mediaToShow?.input as any)?.prompt as string;
 
   return (
     <Sheet {...props}>
@@ -237,32 +368,71 @@ export function MediaGallerySheet({
         <div
           className="pointer-events-auto fixed inset-0 z-[51] mr-[42rem] flex flex-col items-center justify-center gap-4 bg-black/20 px-8 py-16"
           onClick={close}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              close();
+            }
+          }}
+          role="button"
+          tabIndex={0}
         >
-          <div className="text-sm text-white">{mediaToShow.mediaType}</div>
-
-          {!!mediaUrl && (
-            <>
-              {mediaToShow.mediaType === 'image' && (
-                <img
-                  alt="Generated content"
-                  className="h-auto max-h-[90%] w-auto max-w-[90%] animate-fade-scale-in object-contain transition-all"
-                  onClick={preventClose}
-                  src={mediaUrl}
-                />
+          {isGridView ? (
+            // Grid view for multiple nodes - display in the main media area
+            <div className="flex max-w-[80%] flex-col gap-4">
+              <div className="text-center text-sm text-white">
+                {filteredMediaItems.length} media items from {nodeIds?.length}{' '}
+                selected nodes
+              </div>
+              {filteredMediaItems.length > 0 ? (
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+                  {filteredMediaItems.map((media) => (
+                    <MediaGridItem
+                      isSelected={
+                        selectedGridMediaId === media.id ||
+                        (!selectedGridMediaId &&
+                          media.id === filteredMediaItems[0]?.id)
+                      }
+                      key={media.id}
+                      media={media}
+                      onClick={() => setSelectedGridMediaId(media.id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-white">
+                  <p>No media items found</p>
+                  <p className="text-sm opacity-75">
+                    Generate some content to see it here
+                  </p>
+                </div>
               )}
-              {mediaToShow.mediaType === 'video' && (
-                <video
-                  className="h-auto max-h-[90%] w-auto max-w-[90%] animate-fade-scale-in object-contain transition-all"
-                  controls
-                  onClick={preventClose}
-                  src={mediaUrl}
-                />
-              )}
-              {(mediaToShow.mediaType === 'music' ||
-                mediaToShow.mediaType === 'voiceover') && (
-                <AudioPlayer media={mediaToShow} />
-              )}
-            </>
+            </div>
+          ) : (
+            // Single media view
+            Boolean(mediaUrl) && (
+              <>
+                {mediaToShow.mediaType === 'image' && (
+                  <img
+                    alt="Generated content"
+                    className="h-auto max-h-[90%] w-auto max-w-[90%] animate-fade-scale-in object-contain transition-all"
+                    onClick={preventClose}
+                    src={mediaUrl}
+                  />
+                )}
+                {mediaToShow.mediaType === 'video' && (
+                  <video
+                    className="h-auto max-h-[90%] w-auto max-w-[90%] animate-fade-scale-in object-contain transition-all"
+                    controls
+                    onClick={preventClose}
+                    src={mediaUrl}
+                  />
+                )}
+                {(mediaToShow.mediaType === 'music' ||
+                  mediaToShow.mediaType === 'voiceover') && (
+                  <AudioPlayer media={mediaToShow} />
+                )}
+              </>
+            )
           )}
           <style jsx>{`
             @keyframes fadeScaleIn {
@@ -282,7 +452,10 @@ export function MediaGallerySheet({
         </div>
         <SheetPanel
           className="flex h-screen max-h-screen min-h-screen flex-col overflow-hidden sm:max-w-2xl"
-          onPointerDownOutside={preventClose as any}
+          onPointerDownOutside={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
         >
           <SheetHeader>
             <SheetTitle>Media Gallery</SheetTitle>
@@ -295,7 +468,13 @@ export function MediaGallerySheet({
               <p className="text-muted-foreground">
                 {prompt ?? <span className="italic">No description</span>}
               </p>
-              <div />
+              {isGridView && (
+                <p className="text-muted-foreground text-xs">
+                  {selectedGridMediaId
+                    ? 'Selected from grid'
+                    : 'First item from grid'}
+                </p>
+              )}
             </div>
             <div className="flex flex-row gap-2">
               {mediaToShow?.mediaType === 'video' && (

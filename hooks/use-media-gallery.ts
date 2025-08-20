@@ -2,12 +2,15 @@ import { create } from 'zustand';
 
 type MediaGalleryState = {
   selectedMediaId: string | null;
-  openMedia: (mediaId: string) => void;
+  selectedNodeIds: string[];
+  openMedia: (mediaId: string, nodeIds?: string[]) => void;
   closeMedia: () => void;
 };
 
 export const useMediaGallery = create<MediaGalleryState>((set) => ({
   selectedMediaId: null,
-  openMedia: (mediaId) => set({ selectedMediaId: mediaId }),
-  closeMedia: () => set({ selectedMediaId: null }),
+  selectedNodeIds: [],
+  openMedia: (mediaId, nodeIds = []) =>
+    set({ selectedMediaId: mediaId, selectedNodeIds: nodeIds }),
+  closeMedia: () => set({ selectedMediaId: null, selectedNodeIds: [] }),
 }));

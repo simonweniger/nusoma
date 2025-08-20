@@ -29,7 +29,7 @@ import {
   ComboboxTrigger,
 } from '@/components/ui/kibo-ui/combobox';
 import { createProject } from '@/data/mutations/create-project';
-import { useUser } from '@/hooks/use-user';
+import { useAuth } from '@/hooks/use-auth';
 import { handleError } from '@/lib/error/handle';
 import db from '@/lib/instantdb';
 import { cn } from '@/lib/utils';
@@ -47,23 +47,22 @@ export const ProjectSelector = ({ currentProject }: ProjectSelectorProps) => {
   const [isCreating, setIsCreating] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const router = useRouter();
-  const user = useUser();
+  const { isSignedIn, isLoaded } = useAuth();
 
-  // Get current user's profile
-  //const { data: profileData } = db.useQuery({
-  //  profiles: {
-  //    $: { where: { clerkId: user?.id || '' } },
-  //  },
-  //});
-  //const currentProfile = profileData?.profiles?.[0];
+  // Get the current InstantDB user
+  const instantUser = db.useAuth();
 
-  // Query all projects with their owners and members
-  const { data: projectData } = db.useQuery({
-    projects: {
-      owner: {},
-      members: {},
-    },
-  });
+  // Query all projects with their owners and members (only when authenticated)
+  const { data: projectData } = db.useQuery(
+    isSignedIn && isLoaded && instantUser.user
+      ? {
+          projects: {
+            owner: {},
+            members: {},
+          },
+        }
+      : {}
+  );
   const allProjects = projectData?.projects || [];
 
   const fuse = useMemo(
@@ -116,21 +115,25 @@ export const ProjectSelector = ({ currentProject }: ProjectSelectorProps) => {
   );
 
   const projectGroups = useMemo(() => {
-    if (!user?.id || allProjects.length === 0) {
+    if (!instantUser.user?.id || allProjects.length === 0) {
       return [];
     }
 
+    const currentUserId = instantUser.user.id;
+
     const ownedProjects = allProjects.filter((project) => {
-      return project.owner?.id === user.id;
+      return project.owner?.id === currentUserId;
     });
 
     const sharedProjects = allProjects.filter((project) => {
-      if (project.owner?.id === user.id) {
+      if (project.owner?.id === currentUserId) {
         return false;
       }
 
       // Check if current user is in the members relationship
-      return project.members?.some((member) => member.id === user.id) ?? false;
+      return (
+        project.members?.some((member) => member.id === currentUserId) ?? false
+      );
     });
 
     return [
@@ -143,7 +146,7 @@ export const ProjectSelector = ({ currentProject }: ProjectSelectorProps) => {
         data: sharedProjects,
       },
     ];
-  }, [allProjects, user?.id]);
+  }, [allProjects, instantUser.user?.id]);
 
   const filterByFuse = useCallback(
     (currentValue: string, search: string) => {
