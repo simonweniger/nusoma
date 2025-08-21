@@ -119,10 +119,10 @@ export const MorphingEdge = ({ id, source, target, style }: EdgeProps) => {
       const t = pathPoints.length > 1 ? i / (pathPoints.length - 1) : 0;
       const point = pathPoints[i];
 
-      // Create smooth liquid droplet shape - thick at ends, thin in middle
-      // Use a smooth curve that creates the "blob" effect
+      // Create dramatic liquid droplet shape with higher exponential effect
+      // Use a stronger curve that creates more visible "blob" effect
       const distanceFromCenter = Math.abs(t - 0.5) * 2; // 0 at center, 1 at ends
-      const widthMultiplier = distanceFromCenter ** 2; // Quadratic for smooth transition
+      const widthMultiplier = distanceFromCenter ** 4; // Higher exponent for more dramatic effect
 
       const currentWidth = midWidth + (baseWidth - midWidth) * widthMultiplier;
 
