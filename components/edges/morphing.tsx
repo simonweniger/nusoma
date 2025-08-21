@@ -85,7 +85,7 @@ export const MorphingEdge = ({ id, source, target, style }: EdgeProps) => {
   });
 
   // Calculate width once for use in both connection and end caps
-  const baseWidth = Math.min(Math.max(20, distance / 8), 25); // Max width of 25px
+  const baseWidth = Math.min(Math.max(20, distance / 8), 20); // Max width of 20px
   const midWidth = baseWidth * 0.3;
 
   // Create smooth step connection with rounded edges
@@ -181,11 +181,45 @@ export const MorphingEdge = ({ id, source, target, style }: EdgeProps) => {
       }))
       .reverse();
 
-    // Create clean, simple path
-    const topCurve = topPoints.map((p) => `${p.x},${p.y}`).join(' L ');
-    const bottomCurve = bottomPoints.map((p) => `${p.x},${p.y}`).join(' L ');
+    // Create smooth, rounded path with curves instead of sharp corners
+    const createSmoothCurve = (points: Array<{ x: number; y: number }>) => {
+      if (points.length < 2) return '';
 
-    return `M ${topCurve} L ${bottomCurve} Z`;
+      let path = `M ${points[0].x},${points[0].y}`;
+
+      for (let i = 1; i < points.length; i++) {
+        const current = points[i];
+        const prev = points[i - 1];
+
+        if (i === points.length - 1) {
+          // Last point - straight line
+          path += ` L ${current.x},${current.y}`;
+        } else {
+          // Create smooth curve using quadratic bezier
+          const next = points[i + 1];
+          const controlX = current.x;
+          const controlY = current.y;
+          const endX = (current.x + next.x) / 2;
+          const endY = (current.y + next.y) / 2;
+
+          path += ` Q ${controlX},${controlY} ${endX},${endY}`;
+
+          // If this is not the second-to-last point, add the second half of the curve
+          if (i < points.length - 2) {
+            path += ` Q ${next.x},${next.y} ${(next.x + points[i + 2].x) / 2},${(next.y + points[i + 2].y) / 2}`;
+            i++; // Skip next iteration since we've handled it
+          }
+        }
+      }
+
+      return path;
+    };
+
+    const topCurve = createSmoothCurve(topPoints);
+    const bottomCurve = createSmoothCurve(bottomPoints);
+
+    // Connect with smooth path
+    return `${topCurve} L ${bottomPoints[0].x},${bottomPoints[0].y} ${bottomCurve.replace('M', 'L')} Z`;
   };
 
   return (
@@ -203,14 +237,22 @@ export const MorphingEdge = ({ id, source, target, style }: EdgeProps) => {
       </defs>
 
       <g filter={`url(#subtle-smooth-${id})`} style={style}>
-        {/* Clean smooth step connection with variable width */}
+        {/* Clean smooth step connection with subtle liquid motion */}
         <path
           d={createSmoothStepConnection()}
           fill="var(--card)"
           style={{
             fillOpacity: 1,
           }}
-        />
+        >
+          {/* Only subtle opacity animation to avoid movement */}
+          <animate
+            attributeName="opacity"
+            dur="3s"
+            repeatCount="indefinite"
+            values="0.98;1;0.98"
+          />
+        </path>
       </g>
     </>
   );
