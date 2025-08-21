@@ -1,4 +1,4 @@
-import { Handle, Position, useReactFlow } from '@xyflow/react';
+import { Position, useReactFlow } from '@xyflow/react';
 import { CodeIcon, CopyIcon, EyeIcon, TrashIcon } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import {
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useNodeOperations } from '@/providers/node-operations';
+import { CustomHandle } from './custom-handle';
 import { NodeToolbar } from './toolbar';
 
 type NodeLayoutProps = {
@@ -97,8 +98,8 @@ export const NodeLayout = ({
       {type !== 'drop' && toolbar?.length && (
         <NodeToolbar id={id} items={toolbar} />
       )}
-      {type !== 'file' && type !== 'tweet' && (
-        <Handle position={Position.Left} type="target" />
+      {type !== 'file' && type !== 'tweet' && type !== 'text' && (
+        <CustomHandle nodeId={id} position={Position.Left} type="target" />
       )}
       <ContextMenu onOpenChange={handleSelect}>
         <ContextMenuTrigger>
@@ -112,7 +113,7 @@ export const NodeLayout = ({
             )}
             <div
               className={cn(
-                'node-container flex size-full flex-col divide-y rounded bg-card p-2 ring-1 ring-border transition-all',
+                'node-container flex size-full flex-col divide-y rounded bg-card p-2 transition-all',
                 className
               )}
             >
@@ -145,7 +146,7 @@ export const NodeLayout = ({
           )}
         </ContextMenuContent>
       </ContextMenu>
-      {type !== 'video' && <Handle position={Position.Right} type="source" />}
+      <CustomHandle nodeId={id} position={Position.Right} type="source" />
       <Dialog onOpenChange={setShowData} open={showData}>
         <DialogContent>
           <DialogHeader>

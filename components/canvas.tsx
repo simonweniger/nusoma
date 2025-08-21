@@ -7,7 +7,7 @@ import {
   type Edge,
   getOutgoers,
   type IsValidConnection,
-  MiniMap,
+  //MiniMap,
   type Node,
   type OnConnect,
   type OnConnectEnd,
@@ -54,11 +54,20 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
     ...rest
   } = props ?? {};
   const content = project?.content as { nodes: Node[]; edges: Edge[] };
+
+  // Migrate existing edges to use morphing type
+  const migrateEdges = (edges: Edge[]): Edge[] => {
+    return edges.map((edge) => ({
+      ...edge,
+      type: edge.type === 'animated' ? 'morphing' : edge.type,
+    }));
+  };
+
   const [nodes, setNodes] = useState<Node[]>(
     initialNodes ?? content?.nodes ?? []
   );
   const [edges, setEdges] = useState<Edge[]>(
-    initialEdges ?? content?.edges ?? []
+    migrateEdges(initialEdges ?? content?.edges ?? [])
   );
   const [copiedNodes, setCopiedNodes] = useState<Node[]>([]);
   const {
@@ -115,7 +124,7 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
     (connection) => {
       const newEdge: Edge = {
         id: nanoid(),
-        type: 'animated',
+        type: 'morphing',
         ...connection,
       };
       setEdges((eds: Edge[]) => eds.concat(newEdge));

@@ -80,7 +80,6 @@ export const AudioPrimitive = ({
         </Skeleton>
       )}
       {!isUploading && data.content && (
-        // biome-ignore lint/a11y/useMediaCaption: we don't need a caption for audio
         <audio
           className="w-full rounded-none"
           controls

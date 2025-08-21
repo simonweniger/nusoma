@@ -6,7 +6,7 @@ export async function describeImageForVideo(imageUrl: string): Promise<string> {
     // Use GPT-4o Mini for fast and cost-effective image description
     const model = visionModels['openai-gpt-4o-mini'];
 
-    if (!(model && model.providers?.[0])) {
+    if (!model?.providers?.[0]) {
       throw new Error('Vision model not available');
     }
 
