@@ -1,7 +1,7 @@
 import {
   BaseEdge,
   type EdgeProps,
-  getBezierPath,
+  getSmoothStepPath,
   type InternalNode,
   type Node,
   Position,
@@ -23,31 +23,32 @@ const getHandleCoordsByPosition = (
     return [0, 0];
   }
 
-  let offsetX = handle.width / 2;
-  let offsetY = handle.height / 2;
+  // For overlapping rectangular handles, connect directly to the node edge
+  let x: number;
+  let y: number;
 
-  // this is a tiny detail to make the markerEnd of an edge visible.
-  // The handle position that gets calculated has the origin top-left, so depending which side we are using, we add a little offset
-  // when the handlePosition is Position.Right for example, we need to add an offset as big as the handle itself in order to get the correct position
   switch (handlePosition) {
     case Position.Left:
-      offsetX = 0;
+      // Connect to the left edge of the node
+      x = node.internals.positionAbsolute.x;
+      y = node.internals.positionAbsolute.y + (node.measured?.height || 0) / 2;
       break;
     case Position.Right:
-      offsetX = handle.width;
+      // Connect to the right edge of the node
+      x = node.internals.positionAbsolute.x + (node.measured?.width || 0);
+      y = node.internals.positionAbsolute.y + (node.measured?.height || 0) / 2;
       break;
     case Position.Top:
-      offsetY = 0;
+      x = node.internals.positionAbsolute.x + (node.measured?.width || 0) / 2;
+      y = node.internals.positionAbsolute.y;
       break;
     case Position.Bottom:
-      offsetY = handle.height;
+      x = node.internals.positionAbsolute.x + (node.measured?.width || 0) / 2;
+      y = node.internals.positionAbsolute.y + (node.measured?.height || 0);
       break;
     default:
       throw new Error(`Invalid handle position: ${handlePosition}`);
   }
-
-  const x = node.internals.positionAbsolute.x + handle.x + offsetX;
-  const y = node.internals.positionAbsolute.y + handle.y + offsetY;
 
   return [x, y];
 };
@@ -90,7 +91,7 @@ export const AnimatedEdge = ({
     targetNode
   );
 
-  const [edgePath] = getBezierPath({
+  const [edgePath] = getSmoothStepPath({
     sourceX: sx,
     sourceY: sy,
     sourcePosition: sourcePos,
@@ -101,10 +102,59 @@ export const AnimatedEdge = ({
 
   return (
     <>
+      <defs>
+        <linearGradient id={`gradient-${id}`}>
+          <stop offset="0%" stopColor="transparent">
+            <animate
+              attributeName="offset"
+              dur="2s"
+              repeatCount="indefinite"
+              values="0%;25%;0%"
+            />
+          </stop>
+          <stop offset="20%" stopColor="var(--primary)" stopOpacity="0.8">
+            <animate
+              attributeName="offset"
+              dur="2s"
+              repeatCount="indefinite"
+              values="20%;45%;20%"
+            />
+          </stop>
+          <stop offset="40%" stopColor="var(--primary)">
+            <animate
+              attributeName="offset"
+              dur="2s"
+              repeatCount="indefinite"
+              values="40%;65%;40%"
+            />
+          </stop>
+          <stop offset="60%" stopColor="var(--primary)" stopOpacity="0.8">
+            <animate
+              attributeName="offset"
+              dur="2s"
+              repeatCount="indefinite"
+              values="60%;85%;60%"
+            />
+          </stop>
+          <stop offset="80%" stopColor="transparent">
+            <animate
+              attributeName="offset"
+              dur="2s"
+              repeatCount="indefinite"
+              values="80%;100%;80%"
+            />
+          </stop>
+        </linearGradient>
+      </defs>
       <BaseEdge id={id} markerEnd={markerEnd} path={edgePath} style={style} />
-      <circle fill="var(--primary)" r="4">
-        <animateMotion dur="2s" path={edgePath} repeatCount="indefinite" />
-      </circle>
+      <path
+        d={edgePath}
+        fill="none"
+        opacity="0.8"
+        stroke={`url(#gradient-${id})`}
+        strokeLinecap="round"
+        strokeWidth="4"
+      />
     </>
   );
 };

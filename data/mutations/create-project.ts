@@ -5,6 +5,7 @@ import { visionModels } from '@/lib/models/vision';
 
 export const createProject = async (
   name: string,
+  userId?: string,
   welcomeProject = false
 ): Promise<string> => {
   const defaultTranscriptionModel = Object.entries(transcriptionModels).find(
@@ -21,14 +22,16 @@ export const createProject = async (
   const projectId = id();
 
   await db.transact([
-    db.tx.projects[projectId].update({
-      name,
-      transcriptionModel: defaultTranscriptionModel[0],
-      visionModel: defaultVisionModel[0],
-      welcomeProject,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    }),
+    db.tx.projects[projectId]
+      .update({
+        name,
+        transcriptionModel: defaultTranscriptionModel[0],
+        visionModel: defaultVisionModel[0],
+        welcomeProject,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+      .link({ owner: userId }),
   ]);
 
   return projectId;

@@ -97,55 +97,69 @@ export const NodeLayout = ({
       {type !== 'drop' && toolbar?.length && (
         <NodeToolbar id={id} items={toolbar} />
       )}
-      {type !== 'file' && type !== 'tweet' && (
-        <Handle position={Position.Left} type="target" />
-      )}
-      <ContextMenu onOpenChange={handleSelect}>
-        <ContextMenuTrigger>
-          <div className="relative size-full h-auto w-sm">
-            {type !== 'drop' && (
-              <div className="-translate-y-full -top-2 absolute right-0 left-0 flex shrink-0 items-center justify-between">
-                <p className="font-mono text-muted-foreground text-xs tracking-tighter">
-                  {title}
-                </p>
-              </div>
-            )}
-            <div
-              className={cn(
-                'node-container flex size-full flex-col divide-y rounded bg-card p-2 ring-1 ring-border transition-all',
-                className
+      <div className="gooey-group" style={{ filter: 'url(#gooey)' }}>
+        {type !== 'file' && type !== 'tweet' && (
+          <Handle
+            className="handle-overlapping"
+            position={Position.Left}
+            type="target"
+          />
+        )}
+        <ContextMenu onOpenChange={handleSelect}>
+          <ContextMenuTrigger>
+            <div className="relative size-full h-auto w-sm">
+              {type !== 'drop' && (
+                <div className="-translate-y-full -top-2 absolute right-0 left-0 flex shrink-0 items-center justify-between">
+                  <p className="font-mono text-muted-foreground text-xs tracking-tighter">
+                    {title}
+                  </p>
+                </div>
               )}
-            >
-              <div className="overflow-hidden rounded bg-card">{children}</div>
+              <div
+                className={cn(
+                  'node-container flex size-full flex-col divide-y rounded bg-card p-2 transition-all',
+                  className
+                )}
+              >
+                <div className="overflow-hidden rounded bg-card">
+                  {children}
+                </div>
+              </div>
             </div>
-          </div>
-        </ContextMenuTrigger>
-        <ContextMenuContent>
-          <ContextMenuItem onClick={() => duplicateNode(id)}>
-            <CopyIcon size={12} />
-            <span>Duplicate</span>
-          </ContextMenuItem>
-          <ContextMenuItem onClick={handleFocus}>
-            <EyeIcon size={12} />
-            <span>Focus</span>
-          </ContextMenuItem>
-          <ContextMenuSeparator />
-          <ContextMenuItem onClick={handleDelete} variant="destructive">
-            <TrashIcon size={12} />
-            <span>Delete</span>
-          </ContextMenuItem>
-          {process.env.NODE_ENV === 'development' && (
-            <>
-              <ContextMenuSeparator />
-              <ContextMenuItem onClick={handleShowData}>
-                <CodeIcon size={12} />
-                <span>Show data</span>
-              </ContextMenuItem>
-            </>
-          )}
-        </ContextMenuContent>
-      </ContextMenu>
-      {type !== 'video' && <Handle position={Position.Right} type="source" />}
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem onClick={() => duplicateNode(id)}>
+              <CopyIcon size={12} />
+              <span>Duplicate</span>
+            </ContextMenuItem>
+            <ContextMenuItem onClick={handleFocus}>
+              <EyeIcon size={12} />
+              <span>Focus</span>
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem onClick={handleDelete} variant="destructive">
+              <TrashIcon size={12} />
+              <span>Delete</span>
+            </ContextMenuItem>
+            {process.env.NODE_ENV === 'development' && (
+              <>
+                <ContextMenuSeparator />
+                <ContextMenuItem onClick={handleShowData}>
+                  <CodeIcon size={12} />
+                  <span>Show data</span>
+                </ContextMenuItem>
+              </>
+            )}
+          </ContextMenuContent>
+        </ContextMenu>
+        {type !== 'video' && (
+          <Handle
+            className="handle-overlapping"
+            position={Position.Right}
+            type="source"
+          />
+        )}
+      </div>
       <Dialog onOpenChange={setShowData} open={showData}>
         <DialogContent>
           <DialogHeader>

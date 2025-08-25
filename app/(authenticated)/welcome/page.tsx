@@ -1,7 +1,7 @@
+import { id } from '@instantdb/react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { createProject } from '@/data/mutations/create-project';
-import { currentUserProfile } from '@/lib/auth';
+import { currentInstantUser, currentUserProfile } from '@/lib/auth';
 import { adminDb } from '@/lib/instantdb-admin';
 import { ProjectProvider } from '@/providers/project';
 import { WelcomeDemo } from './components/welcome-demo';
@@ -22,6 +22,8 @@ const Welcome = async () => {
     return redirect('/sign-in');
   }
 
+  const instantUser = await currentInstantUser();
+
   const { projects: welcomeProjects } = await adminDb.query({
     projects: {
       $: {
@@ -35,7 +37,21 @@ const Welcome = async () => {
   let welcomeProject = welcomeProjects?.[0];
 
   if (!welcomeProject) {
-    const projectId = await createProject('Welcome', true);
+    // Create project directly using adminDb for server-side creation
+    const projectId = id();
+
+    await adminDb.transact([
+      adminDb.tx.projects[projectId]
+        .update({
+          name: 'Welcome',
+          transcriptionModel: 'openai-whisper-large-v3',
+          visionModel: 'anthropic-claude-3-5-sonnet-20241022',
+          welcomeProject: true,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        })
+        .link({ owner: instantUser.id }),
+    ]);
 
     const { projects: newProjects } = await adminDb.query({
       projects: {

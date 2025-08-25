@@ -1,60 +1,70 @@
-import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { createProjectAction } from '@/app/actions/project/create';
-import { currentUser, currentUserProfile } from '@/lib/auth';
-import { adminDb } from '@/lib/instantdb-admin';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'nusoma',
-  description: 'Create and share AI workflows',
-};
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { createProject } from '@/data/mutations/create-project';
+import db from '@/lib/instantdb';
 
-export const maxDuration = 800; // 13 minutes
+const Projects = () => {
+  const router = useRouter();
+  const { user, isLoading: authLoading } = db.useAuth();
 
-const Projects = async () => {
-  const user = await currentUser();
+  // Query user's projects
+  const { data, isLoading: dataLoading } = db.useQuery(
+    user
+      ? {
+          projects: {
+            $: { where: { 'owner.id': user.id } },
+          },
+        }
+      : {}
+  );
 
-  if (!user) {
-    return redirect('/sign-in');
-  }
+  const userProjects = data?.projects || [];
 
-  const profile = await currentUserProfile();
-
-  if (!profile?.onboardedAt) {
-    return redirect('/welcome');
-  }
-
-  const { projects: userProjects } = await adminDb.query({
-    projects: {
-      $: { where: { 'owner.id': profile.id } },
-    },
-  });
-
-  let project = userProjects[0];
-
-  if (!project) {
-    const newProject = await createProjectAction('Untitled Project');
-
-    if ('error' in newProject) {
-      throw new Error(newProject.error);
+  useEffect(() => {
+    if (authLoading || dataLoading) {
+      return;
     }
 
-    const { projects: newProjects } = await adminDb.query({
-      projects: {
-        $: { where: { id: newProject.id } },
-      },
-    });
-
-    const newFetchedProject = newProjects[0];
-
-    if (!newFetchedProject) {
-      throw new Error('Failed to create project');
+    if (!user) {
+      router.push('/sign-in');
+      return;
     }
 
-    project = newFetchedProject;
+    const handleProjectNavigation = async () => {
+      const project = userProjects[0];
+
+      if (!project) {
+        try {
+          const projectId = await createProject('Untitled Project', user.id);
+          router.push(`/projects/${projectId}`);
+          return;
+        } catch (error) {
+          console.error('Failed to create project:', error);
+          return;
+        }
+      }
+
+      router.push(`/projects/${project.id}`);
+    };
+
+    handleProjectNavigation();
+  }, [user, userProjects, authLoading, dataLoading, router]);
+
+  // Show loading state
+  if (authLoading || dataLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-primary border-b-2" />
+          <p className="mt-4 text-muted-foreground">Loading projects...</p>
+        </div>
+      </div>
+    );
   }
 
-  redirect(`/projects/${project.id}`);
+  return null; // This component only handles navigation
 };
 
 export default Projects;

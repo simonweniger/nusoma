@@ -7,7 +7,7 @@ import {
   type Edge,
   getOutgoers,
   type IsValidConnection,
-  MiniMap,
+  //MiniMap,
   type Node,
   type OnConnect,
   type OnConnectEnd,
@@ -391,6 +391,7 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
                 hideAttribution: true,
               }}
               selectionOnDrag={true}
+              snapToGrid
               zoomOnDoubleClick={false}
               {...rest}
             >

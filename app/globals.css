@@ -206,13 +206,26 @@
     @apply size-4;
   }
   .react-flow__handle {
-    @apply !size-4 !border-2 !border-border !bg-background;
+    @apply !w-4 !h-6 !border-2 !border-border !bg-background !transition-all !rounded-none;
   }
   .react-flow__handle-left {
-    @apply !-left-4;
+    @apply !-left-3;
   }
   .react-flow__handle-right {
-    @apply !-right-4;
+    @apply !-right-3;
+  }
+  .react-flow__handle.handle-overlapping {
+    @apply !bg-card !border-card !z-0;
+  }
+  /* Position rectangular handles to connect seamlessly */
+  .react-flow__handle-left.handle-overlapping {
+    @apply !left-0;
+  }
+  .react-flow__handle-right.handle-overlapping {
+    @apply !right-0;
+  }
+  .gooey-group {
+    @apply relative;
   }
 }
 

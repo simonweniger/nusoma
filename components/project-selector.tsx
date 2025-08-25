@@ -86,7 +86,10 @@ export const ProjectSelector = ({ currentProject }: ProjectSelectorProps) => {
       setIsCreating(true);
 
       try {
-        const projectId = await createProject(name.trim());
+        const projectId = await createProject(
+          name.trim(),
+          instantUser.user?.id
+        );
 
         setOpen(false);
         setName('');
@@ -97,7 +100,7 @@ export const ProjectSelector = ({ currentProject }: ProjectSelectorProps) => {
         setIsCreating(false);
       }
     },
-    [isCreating, name, router]
+    [isCreating, name, router, instantUser.user?.id]
   );
 
   const handleSelect = useCallback(
