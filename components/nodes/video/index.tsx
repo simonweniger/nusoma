@@ -1,6 +1,4 @@
-import { useNodeConnections } from '@xyflow/react';
-import { VideoPrimitive } from './primitive';
-import { VideoTransform } from './transform';
+import { VideoTableNode } from './table-node';
 
 export type VideoNodeProps = {
   type: string;
@@ -23,12 +21,6 @@ export type VideoNodeProps = {
   id: string;
 };
 
-export const VideoNode = (props: VideoNodeProps) => {
-  const connections = useNodeConnections({
-    id: props.id,
-    handleType: 'target',
-  });
-  const Component = connections.length ? VideoTransform : VideoPrimitive;
-
-  return <Component {...props} title="Video" />;
-};
+export const VideoNode = (props: VideoNodeProps) => (
+  <VideoTableNode {...props} title="Video" />
+);

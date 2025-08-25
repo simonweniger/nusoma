@@ -392,6 +392,14 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
               }}
               selectionOnDrag={true}
               snapToGrid
+              style={
+                {
+                  '--xy-background-pattern-dots-color-default':
+                    'var(--color-border)',
+                  '--xy-edge-stroke-width-default': 1.5,
+                  '--xy-attribution-background-color-default': 'transparent',
+                } as React.CSSProperties
+              }
               zoomOnDoubleClick={false}
               {...rest}
             >

@@ -98,7 +98,7 @@ export const NodeLayout = ({
         <NodeToolbar id={id} items={toolbar} />
       )}
       <div className="gooey-group" style={{ filter: 'url(#gooey)' }}>
-        {type !== 'file' && type !== 'tweet' && (
+        {type !== 'file' && type !== 'tweet' && type !== 'drop' && (
           <Handle
             className="handle-overlapping"
             position={Position.Left}
@@ -117,13 +117,22 @@ export const NodeLayout = ({
               )}
               <div
                 className={cn(
-                  'node-container flex size-full flex-col divide-y rounded bg-card p-2 transition-all',
+                  'node-container flex size-full flex-col divide-y rounded transition-all',
+                  type === 'drop' ? 'bg-transparent p-0' : 'bg-card p-2',
                   className
                 )}
               >
-                <div className="overflow-hidden rounded bg-card">
-                  {children}
-                </div>
+                {type === 'drop' ? (
+                  // For drop nodes, render content directly without extra backgrounds
+                  <div className="w-66 overflow-hidden rounded-xl">
+                    {children}
+                  </div>
+                ) : (
+                  // For other nodes, use the original styling
+                  <div className="w-66 overflow-hidden rounded-xl bg-card font-mono shadow-[0_1px_1px_rgba(0,0,0,0.02),_0_2px_2px_rgba(0,0,0,0.02),_0_4px_4px_rgba(0,0,0,0.02),_0_8px_8px_rgba(0,0,0,0.02),_0_16px_16px_rgba(0,0,0,0.02),_0_32px_32px_rgba(0,0,0,0.02)]">
+                    {children}
+                  </div>
+                )}
               </div>
             </div>
           </ContextMenuTrigger>
@@ -152,7 +161,7 @@ export const NodeLayout = ({
             )}
           </ContextMenuContent>
         </ContextMenu>
-        {type !== 'video' && (
+        {type !== 'video' && type !== 'drop' && (
           <Handle
             className="handle-overlapping"
             position={Position.Right}

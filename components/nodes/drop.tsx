@@ -100,7 +100,7 @@ export const DropNode = ({ data, id }: DropNodeProps) => {
   return (
     <div ref={ref}>
       <NodeLayout data={data} id={id} title="Add a new node" type="drop">
-        <Command className="rounded-lg">
+        <Command className="rounded-xl border-none bg-card shadow-[0_1px_1px_rgba(0,0,0,0.02),_0_2px_2px_rgba(0,0,0,0.02),_0_4px_4px_rgba(0,0,0,0.02),_0_8px_8px_rgba(0,0,0,0.02),_0_16px_16px_rgba(0,0,0,0.02),_0_32px_32px_rgba(0,0,0,0.02)]">
           <CommandInput placeholder="Type a command or search..." />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>

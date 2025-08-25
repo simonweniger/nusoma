@@ -57,7 +57,8 @@ export const VideoPrimitive = ({
   };
 
   return (
-    <NodeLayout data={data} id={id} title={title} type={type}>
+    <div>
+      {/*<NodeLayout data={data} id={id} title={title} type={type}>*/}
       {isUploading && (
         <Skeleton className="flex aspect-video w-full animate-pulse items-center justify-center">
           <Loader2Icon
@@ -93,6 +94,6 @@ export const VideoPrimitive = ({
           <DropzoneContent />
         </Dropzone>
       )}
-    </NodeLayout>
+    </div>
   );
 };
