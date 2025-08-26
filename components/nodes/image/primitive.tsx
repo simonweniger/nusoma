@@ -93,7 +93,7 @@ export const ImagePrimitive = ({
           accept={{
             'image/*': [],
           }}
-          className="rounded-none border-none bg-transparent p-0 shadow-none hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent"
+          className="border-none bg-transparent p-0 shadow-none hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent"
           maxFiles={1}
           maxSize={1024 * 1024 * 10}
           minSize={1024}

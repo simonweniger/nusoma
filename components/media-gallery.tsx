@@ -214,11 +214,12 @@ export function MediaGallerySheet({
   }
 
   // Add node ID filter if provided (for specific node filtering)
-  if (nodeIds && nodeIds.length > 0) {
-    // Filter by the specific nodes - this will show only media created by these nodes
-    whereClause.nodeId = { $in: nodeIds };
+  // But only if we're not in a multi-node selection - in that case show all media
+  if (nodeIds && nodeIds.length === 1) {
+    // Filter by the specific node - this will show only media created by this node
+    whereClause.nodeId = nodeIds[0];
   }
-
+  // For multiple nodes, show all media items from the project to avoid empty galleries
   const { data: queryResult } = db.useQuery({
     mediaItems: {
       $: {

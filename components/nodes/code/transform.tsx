@@ -170,7 +170,7 @@ export const CodeTransform = ({
       {
         children: (
           <LanguageSelector
-            className="w-[200px] rounded-full"
+            className="w-[200px]"
             onChange={handleLanguageChange}
             value={language}
           />
@@ -179,7 +179,7 @@ export const CodeTransform = ({
       {
         children: (
           <ModelSelector
-            className="w-[200px] rounded-full"
+            className="w-[200px]"
             key={id}
             onChange={(value) => updateNodeData(id, { model: value })}
             options={textModels}

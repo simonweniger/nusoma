@@ -1,4 +1,4 @@
-import { Handle, Position, useReactFlow } from '@xyflow/react';
+import { Position, useReactFlow } from '@xyflow/react';
 import { CodeIcon, CopyIcon, EyeIcon, TrashIcon } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import {
@@ -15,6 +15,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { BaseHandle } from '@/components/ui/reactflow/base-handle';
+import {
+  BaseNode,
+  BaseNodeContent,
+  BaseNodeHeader,
+  BaseNodeHeaderTitle,
+} from '@/components/ui/reactflow/base-node';
 import { cn } from '@/lib/utils';
 import { useNodeOperations } from '@/providers/node-operations';
 import { NodeToolbar } from './toolbar';
@@ -34,6 +41,8 @@ type NodeLayoutProps = {
     children: ReactNode;
   }[];
   className?: string;
+  headerActions?: ReactNode;
+  showHeader?: boolean;
 };
 
 export const NodeLayout = ({
@@ -44,6 +53,8 @@ export const NodeLayout = ({
   toolbar,
   title,
   className,
+  headerActions,
+  showHeader = true,
 }: NodeLayoutProps) => {
   const { deleteElements, setCenter, getNode, updateNode } = useReactFlow();
   const { duplicateNode } = useNodeOperations();
@@ -97,28 +108,22 @@ export const NodeLayout = ({
       {type !== 'drop' && toolbar?.length && (
         <NodeToolbar id={id} items={toolbar} />
       )}
-      {type !== 'file' && type !== 'tweet' && (
-        <Handle position={Position.Left} type="target" />
+      {type !== 'file' && type !== 'tweet' && type !== 'text' && (
+        <BaseHandle position={Position.Left} type="target" />
       )}
       <ContextMenu onOpenChange={handleSelect}>
         <ContextMenuTrigger>
-          <div className="relative size-full h-auto w-sm">
-            {type !== 'drop' && (
-              <div className="-translate-y-full -top-2 absolute right-0 left-0 flex shrink-0 items-center justify-between">
-                <p className="font-mono text-muted-foreground text-xs tracking-tighter">
+          <BaseNode className={cn('relative w-sm transition-all', className)}>
+            {showHeader && type !== 'drop' && (
+              <BaseNodeHeader className="border-b">
+                <BaseNodeHeaderTitle className="font-mono text-muted-foreground text-xs tracking-tighter">
                   {title}
-                </p>
-              </div>
+                </BaseNodeHeaderTitle>
+                {headerActions}
+              </BaseNodeHeader>
             )}
-            <div
-              className={cn(
-                'node-container flex size-full flex-col divide-y rounded bg-card p-2 ring-1 ring-border transition-all',
-                className
-              )}
-            >
-              <div className="overflow-hidden rounded bg-card">{children}</div>
-            </div>
-          </div>
+            <BaseNodeContent className="p-0">{children}</BaseNodeContent>
+          </BaseNode>
         </ContextMenuTrigger>
         <ContextMenuContent>
           <ContextMenuItem onClick={() => duplicateNode(id)}>
@@ -145,7 +150,7 @@ export const NodeLayout = ({
           )}
         </ContextMenuContent>
       </ContextMenu>
-      {type !== 'video' && <Handle position={Position.Right} type="source" />}
+      <BaseHandle position={Position.Right} type="source" />
       <Dialog onOpenChange={setShowData} open={showData}>
         <DialogContent>
           <DialogHeader>

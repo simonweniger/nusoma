@@ -99,28 +99,37 @@ export const DropNode = ({ data, id }: DropNodeProps) => {
 
   return (
     <div ref={ref}>
-      <NodeLayout data={data} id={id} title="Add a new node" type="drop">
-        <Command className="rounded-lg">
-          <CommandInput placeholder="Type a command or search..." />
-          <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
-            <CommandGroup heading="Add node">
-              {nodeButtons
-                .filter(
-                  (button) => button.id !== 'file' && button.id !== 'tweet'
-                )
-                .map((button) => (
-                  <CommandItem
-                    key={button.id}
-                    onSelect={() => handleSelect(button.id, button.data)}
-                  >
-                    <button.icon size={16} />
-                    {button.label}
-                  </CommandItem>
-                ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
+      <NodeLayout
+        data={data}
+        id={id}
+        showHeader={false}
+        title="Add a new node"
+        type="drop"
+      >
+        <div className="p-4">
+          <h3 className="mb-3 font-semibold">Add a new node</h3>
+          <Command className="rounded-lg">
+            <CommandInput placeholder="Type a command or search..." />
+            <CommandList>
+              <CommandEmpty>No results found.</CommandEmpty>
+              <CommandGroup heading="Add node">
+                {nodeButtons
+                  .filter(
+                    (button) => button.id !== 'file' && button.id !== 'tweet'
+                  )
+                  .map((button) => (
+                    <CommandItem
+                      key={button.id}
+                      onSelect={() => handleSelect(button.id, button.data)}
+                    >
+                      <button.icon size={16} />
+                      {button.label}
+                    </CommandItem>
+                  ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </div>
       </NodeLayout>
     </div>
   );

@@ -7,7 +7,7 @@ import {
   type Edge,
   getOutgoers,
   type IsValidConnection,
-  MiniMap,
+  //MiniMap,
   type Node,
   type OnConnect,
   type OnConnectEnd,
@@ -50,16 +50,14 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
     onEdgesChange,
     onNodesChange,
     nodes: initialNodes,
-    edges: initialEdges,
     ...rest
   } = props ?? {};
   const content = project?.content as { nodes: Node[]; edges: Edge[] };
+
   const [nodes, setNodes] = useState<Node[]>(
     initialNodes ?? content?.nodes ?? []
   );
-  const [edges, setEdges] = useState<Edge[]>(
-    initialEdges ?? content?.edges ?? []
-  );
+  const [edges, setEdges] = useState<Edge[]>(content?.edges ?? []);
   const [copiedNodes, setCopiedNodes] = useState<Node[]>([]);
   const {
     getEdges,
@@ -102,7 +100,7 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
   const handleEdgesChange = useCallback<OnEdgesChange>(
     (changes) => {
       setEdges((current) => {
-        const updated = applyEdgeChanges(changes, current);
+        const updated = applyEdgeChanges(changes, current ?? []);
         save();
         onEdgesChange?.(changes);
         return updated;
@@ -118,7 +116,7 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
         type: 'animated',
         ...connection,
       };
-      setEdges((eds: Edge[]) => eds.concat(newEdge));
+      setEdges((eds) => (eds ?? []).concat(newEdge));
       save();
       onConnect?.(connection);
     },
@@ -201,8 +199,8 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
           },
         });
 
-        setEdges((eds: Edge[]) =>
-          eds.concat({
+        setEdges((eds) =>
+          (eds ?? []).concat({
             id: nanoid(),
             source: isSourceHandle ? sourceId : newNodeId,
             target: isSourceHandle ? newNodeId : sourceId,
@@ -264,7 +262,7 @@ export const Canvas = ({ children, ...props }: ReactFlowProps) => {
   const handleConnectStart = useCallback<OnConnectStart>(() => {
     // Delete any drop nodes when starting to drag a node
     setNodes((nds: Node[]) => nds.filter((n: Node) => n.type !== 'drop'));
-    setEdges((eds: Edge[]) => eds.filter((e: Edge) => e.type !== 'temporary'));
+    setEdges((eds) => (eds ?? []).filter((e: Edge) => e.type !== 'temporary'));
     save();
   }, [save]);
 

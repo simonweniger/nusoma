@@ -198,7 +198,7 @@ export const AudioTransform = ({
     toolbar.push({
       children: (
         <VoiceSelector
-          className="w-[200px] rounded-full"
+          className="w-[200px]"
           key={id}
           onChange={(value) => updateNodeData(id, { voice: value })}
           options={model.voices}
