@@ -5,7 +5,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 import { mutate } from 'swr';
-import { TableNodeLayout } from '@/components/nodes/table-layout';
+import { NodeLayout } from '@/components/nodes/layout';
 import { Button } from '@/components/ui/button';
 import { EditorProvider } from '@/components/ui/kibo-ui/editor';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -98,41 +98,23 @@ export const TextTableNode = ({
     }
   };
 
-  // Create toolbar
+  // Create toolbar (now empty for table nodes)
   const toolbar = useMemo(() => {
-    const items = [];
+    return [];
+  }, []);
 
-    if (loading) {
-      items.push({
-        tooltip: 'Generating...',
-        children: (
-          <Button className="rounded-full" disabled size="icon">
-            <Loader2Icon className="animate-spin" size={12} />
-          </Button>
-        ),
-      });
-    } else {
-      items.push({
-        tooltip: data.generated?.text ? 'Regenerate' : 'Generate',
-        children: (
-          <Button
-            className="rounded-full"
-            disabled={loading || !project?.id}
-            onClick={handleGenerate}
-            size="icon"
-          >
-            {data.generated?.text ? (
-              <RotateCcwIcon size={12} />
-            ) : (
-              <PlayIcon size={12} />
-            )}
-          </Button>
-        ),
-      });
-    }
+  // Create utility buttons for header
+  const utilityButtons = useMemo(() => {
+    const items: {
+      tooltip?: string;
+      children: React.ReactNode;
+    }[] = [];
+
+    // Add any utility buttons here if needed for table nodes
+    // (keeping them empty for now as per requirements)
 
     return items;
-  }, [loading, data.generated?.text, project?.id, handleGenerate]);
+  }, []);
 
   // Update fields with current values
   const fieldsWithValues = useMemo(() => {
@@ -188,10 +170,34 @@ export const TextTableNode = ({
       );
     }
 
-    // For transform nodes, show generate button
+    // For transform nodes, show generated text or generate button
+    if (data.generated?.text) {
+      return (
+        <div className="w-full p-4">
+          <pre className="whitespace-pre-wrap text-sm">
+            {data.generated.text}
+          </pre>
+        </div>
+      );
+    }
+
     return (
-      <div className="flex aspect-video w-full items-center justify-center bg-secondary p-4">
-        <p className="text-muted-foreground text-sm">
+      <div className="flex aspect-video w-full flex-col items-center justify-center gap-4 bg-secondary p-4">
+        {loading ? (
+          <Button className="rounded-full" disabled size="icon">
+            <Loader2Icon className="animate-spin" size={12} />
+          </Button>
+        ) : (
+          <Button
+            className="rounded-full"
+            disabled={loading || !project?.id}
+            onClick={handleGenerate}
+            size="icon"
+          >
+            <PlayIcon size={12} />
+          </Button>
+        )}
+        <p className="text-center text-muted-foreground text-sm">
           Press <PlayIcon className="-translate-y-px inline" size={12} /> to
           generate text
         </p>
@@ -200,7 +206,7 @@ export const TextTableNode = ({
   };
 
   return (
-    <TableNodeLayout
+    <NodeLayout
       data={data}
       fields={fieldsWithValues}
       id={id}
@@ -208,8 +214,9 @@ export const TextTableNode = ({
       title={title}
       toolbar={toolbar}
       type={type}
+      utilityButtons={utilityButtons}
     >
       {renderContent()}
-    </TableNodeLayout>
+    </NodeLayout>
   );
 };

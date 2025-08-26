@@ -4,10 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { mutate } from 'swr';
 
-import {
-  type TableField,
-  TableNodeLayout,
-} from '@/components/nodes/table-layout';
+import { NodeLayout, type TableField } from '@/components/nodes/layout';
 import { Button } from '@/components/ui/button';
 import {
   Dropzone,
@@ -142,41 +139,23 @@ export const AudioTableNode = ({
     [id, updateNodeData]
   );
 
-  // Create toolbar
+  // Create toolbar (now empty for table nodes)
   const toolbar = useMemo(() => {
-    const items = [];
+    return [];
+  }, []);
 
-    if (loading) {
-      items.push({
-        tooltip: 'Generating...',
-        children: (
-          <Button className="rounded-full" disabled size="icon">
-            <Loader2Icon className="animate-spin" size={12} />
-          </Button>
-        ),
-      });
-    } else {
-      items.push({
-        tooltip: data.generated?.url ? 'Regenerate' : 'Generate',
-        children: (
-          <Button
-            className="rounded-full"
-            disabled={loading || !project?.id}
-            onClick={handleGenerate}
-            size="icon"
-          >
-            {data.generated?.url ? (
-              <RotateCcwIcon size={12} />
-            ) : (
-              <PlayIcon size={12} />
-            )}
-          </Button>
-        ),
-      });
-    }
+  // Create utility buttons for header
+  const utilityButtons = useMemo(() => {
+    const items: {
+      tooltip?: string;
+      children: React.ReactNode;
+    }[] = [];
+
+    // Add any utility buttons here if needed for table nodes
+    // (keeping them empty for now as per requirements)
 
     return items;
-  }, [loading, data.generated?.url, project?.id, handleGenerate]);
+  }, []);
 
   // Update fields with current values
   const fieldsWithValues = useMemo(() => {
@@ -243,9 +222,31 @@ export const AudioTableNode = ({
       );
     }
 
-    // For transform nodes, show generate button
+    // For transform nodes, show generated audio or generate button
+    if (data.generated?.url) {
+      return (
+        <div className="w-full p-2">
+          <audio className="w-full" controls src={data.generated.url} />
+        </div>
+      );
+    }
+
     return (
-      <div className="flex h-[50px] w-full items-center justify-center rounded-full bg-secondary">
+      <div className="flex h-[50px] w-full items-center justify-center gap-3 bg-secondary">
+        {loading ? (
+          <Button className="rounded-full" disabled size="icon">
+            <Loader2Icon className="animate-spin" size={12} />
+          </Button>
+        ) : (
+          <Button
+            className="rounded-full"
+            disabled={loading || !project?.id}
+            onClick={handleGenerate}
+            size="icon"
+          >
+            <PlayIcon size={12} />
+          </Button>
+        )}
         <p className="text-muted-foreground text-sm">
           Press <PlayIcon className="-translate-y-px inline" size={12} /> to
           generate audio
@@ -255,7 +256,7 @@ export const AudioTableNode = ({
   };
 
   return (
-    <TableNodeLayout
+    <NodeLayout
       data={data}
       fields={fieldsWithValues}
       id={id}
@@ -263,8 +264,9 @@ export const AudioTableNode = ({
       title={title}
       toolbar={toolbar}
       type={type}
+      utilityButtons={utilityButtons}
     >
       {renderContent()}
-    </TableNodeLayout>
+    </NodeLayout>
   );
 };

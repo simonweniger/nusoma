@@ -1,5 +1,5 @@
 import { Position } from '@xyflow/react';
-import type { TableField } from '@/components/nodes/table-layout';
+import type { TableField } from '@/components/nodes/layout';
 import { imageModels } from './models/image';
 import { speechModels } from './models/speech';
 import { textModels } from './models/text';

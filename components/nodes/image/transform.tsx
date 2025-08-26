@@ -219,41 +219,30 @@ export const ImageTransform = ({
       });
     }
 
-    items.push(
-      loading
-        ? {
-            tooltip: 'Generating...',
-            children: (
-              <Button className="rounded-full" disabled size="icon">
-                <Loader2Icon className="animate-spin" size={12} />
-              </Button>
-            ),
-          }
-        : {
-            tooltip: data.generated?.url ? 'Regenerate' : 'Generate',
-            children: (
-              <Button
-                className="rounded-full"
-                disabled={loading || !project?.id}
-                onClick={handleGenerate}
-                size="icon"
-              >
-                {data.generated?.url ? (
-                  <RotateCcwIcon size={12} />
-                ) : (
-                  <PlayIcon size={12} />
-                )}
-              </Button>
-            ),
-          }
-    );
+    // No more play/generate button in toolbar - moved to content area
+
+    return items;
+  }, [
+    id,
+    updateNodeData,
+    selectedModel?.sizes,
+    size,
+    allImageModels,
+    selectedEndpoint,
+    modelId,
+    mediaStatus,
+  ]);
+
+  // Create utility buttons for header
+  const utilityButtons = useMemo(() => {
+    const items: ComponentProps<typeof NodeLayout>['utilityButtons'] = [];
 
     if (data.generated) {
       items.push({
         tooltip: 'Download',
         children: (
           <Button
-            className="rounded-full"
+            className="rounded-full text-muted-foreground/60 hover:text-muted-foreground"
             onClick={() => download(data.generated, id, 'png')}
             size="icon"
             variant="ghost"
@@ -268,7 +257,7 @@ export const ImageTransform = ({
         tooltip: 'View in Gallery',
         children: (
           <Button
-            className="rounded-full"
+            className="rounded-full text-muted-foreground/60 hover:text-muted-foreground"
             onClick={() => {
               // Get all selected nodes from the canvas
               const selectedNodes = getNodes().filter((node) => node.selected);
@@ -294,7 +283,11 @@ export const ImageTransform = ({
           timeStyle: 'short',
         }).format(new Date(data.updatedAt))}`,
         children: (
-          <Button className="rounded-full" size="icon" variant="ghost">
+          <Button
+            className="rounded-full text-muted-foreground/60"
+            size="icon"
+            variant="ghost"
+          >
             <ClockIcon size={12} />
           </Button>
         ),
@@ -302,22 +295,7 @@ export const ImageTransform = ({
     }
 
     return items;
-  }, [
-    id,
-    updateNodeData,
-    selectedModel?.sizes,
-    size,
-    loading,
-    data.generated,
-    data.updatedAt,
-    handleGenerate,
-    project?.id,
-    allImageModels,
-    selectedEndpoint,
-    modelId,
-    mediaStatus,
-    openMedia,
-  ]);
+  }, [data.generated, data.updatedAt, id, getNodes, openMedia]);
 
   const aspectRatio = useMemo(() => {
     if (!data.size) {
@@ -336,6 +314,7 @@ export const ImageTransform = ({
         title={title}
         toolbar={toolbar}
         type={type}
+        utilityButtons={utilityButtons}
       >
         {loading && (
           <Skeleton
@@ -350,10 +329,18 @@ export const ImageTransform = ({
         )}
         {!(loading || data.generated?.url) && (
           <div
-            className="flex w-full items-center justify-center bg-secondary p-4"
+            className="flex w-full flex-col items-center justify-center gap-4 bg-secondary p-4"
             style={{ aspectRatio }}
           >
-            <p className="text-muted-foreground text-sm">
+            <Button
+              className="rounded-full"
+              disabled={loading || !project?.id}
+              onClick={handleGenerate}
+              size="icon"
+            >
+              <PlayIcon size={12} />
+            </Button>
+            <p className="text-center text-muted-foreground text-sm">
               Press <PlayIcon className="-translate-y-px inline" size={12} /> to
               create an image
             </p>

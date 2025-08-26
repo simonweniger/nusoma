@@ -125,13 +125,12 @@ export const TableNodeLayout = ({
         <ContextMenuTrigger>
           <div
             className={cn(
-              'w-66 overflow-hidden rounded-xl bg-card font-mono shadow-[0_1px_1px_rgba(0,0,0,0.02),_0_2px_2px_rgba(0,0,0,0.02),_0_4px_4px_rgba(0,0,0,0.02),_0_8px_8px_rgba(0,0,0,0.02),_0_16px_16px_rgba(0,0,0,0.02),_0_32px_32px_rgba(0,0,0,0.02)]',
-              data?.selected ? 'ring-2 ring-primary ring-offset-2' : '',
+              'node-container w-72 rounded-xl bg-card font-mono shadow-[0_1px_1px_rgba(0,0,0,0.02),_0_2px_2px_rgba(0,0,0,0.02),_0_4px_4px_rgba(0,0,0,0.02),_0_8px_8px_rgba(0,0,0,0.02),_0_16px_16px_rgba(0,0,0,0.02),_0_32px_32px_rgba(0,0,0,0.02)]',
               className
             )}
           >
             {/* Header with title and menu */}
-            <div className="flex items-center justify-between border-border/80 border-b bg-gradient-to-b from-muted/30 to-background/50 px-4 py-3 backdrop-blur-sm">
+            <div className="flex items-center justify-between rounded-t-xl border-border/80 border-b bg-gradient-to-b from-muted/30 to-background/50 px-4 py-3 backdrop-blur-sm">
               <div className="text-[13px]">
                 <span className="text-muted-foreground/80">/</span>{' '}
                 <span className="font-medium">{title}</span>
@@ -147,7 +146,7 @@ export const TableNodeLayout = ({
             </div>
 
             {/* Media content area */}
-            <div className="node-container relative z-10 overflow-hidden bg-card">
+            <div className="relative z-10 overflow-hidden border-b bg-card">
               {children}
             </div>
 
