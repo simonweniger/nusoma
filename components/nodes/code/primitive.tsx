@@ -33,7 +33,7 @@ export const CodePrimitive = ({
     {
       children: (
         <LanguageSelector
-          className="w-[200px] rounded-full"
+          className="w-[200px]"
           onChange={handleLanguageChange}
           value={data.content?.language ?? 'javascript'}
         />

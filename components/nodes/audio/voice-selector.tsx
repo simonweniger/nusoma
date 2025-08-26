@@ -10,7 +10,6 @@ import {
   ComboboxTrigger,
 } from '@/components/ui/kibo-ui/combobox';
 import { capitalize, cn } from '@/lib/utils';
-import { useSubscription } from '@/providers/subscription';
 
 type ModelSelectorProps = {
   options: string[];
@@ -30,7 +29,6 @@ export const VoiceSelector = ({
   disabled,
 }: ModelSelectorProps) => {
   const [open, setOpen] = useState(false);
-  const { plan } = useSubscription();
   const activeVoice = options.find((voice) => voice === value);
 
   return (

@@ -38,7 +38,7 @@ export const TextPrimitive = ({
 
   return (
     <NodeLayout
-      className="overflow-hidden p-0"
+      className="overflow-hidden"
       data={data}
       id={id}
       title={title}

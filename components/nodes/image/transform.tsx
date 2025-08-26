@@ -33,7 +33,7 @@ import {
   convertFalEndpointsToModels,
   createFalJob,
 } from '@/lib/fal-integration';
-import db from '@/lib/instantdb';
+
 import { imageModels } from '@/lib/models/image';
 import { getImagesFromImageNodes, getTextFromTextNodes } from '@/lib/xyflow';
 import { useProject } from '@/providers/project';
@@ -95,8 +95,14 @@ export const ImageTransform = ({
   const size = data.size ?? selectedModel?.sizes?.at(0);
 
   // Combine original image models with FAL AI endpoints
-  const falImageModels = convertFalEndpointsToModels('image');
-  const allImageModels = { ...imageModels, ...falImageModels };
+  const falImageModels = useMemo(
+    () => convertFalEndpointsToModels('image'),
+    []
+  );
+  const allImageModels = useMemo(
+    () => ({ ...imageModels, ...falImageModels }),
+    [falImageModels]
+  );
   const selectedEndpoint = data.falEndpoint || Object.keys(falImageModels)[0];
 
   const handleGenerate = useCallback(async () => {
@@ -158,7 +164,6 @@ export const ImageTransform = ({
     getEdges,
     selectedEndpoint,
     getNodes,
-    updateNodeData,
   ]);
 
   const handleInstructionsChange: ChangeEventHandler<HTMLTextAreaElement> = (
@@ -209,7 +214,7 @@ export const ImageTransform = ({
       items.push({
         children: (
           <ImageSizeSelector
-            className="w-[200px] rounded-full"
+            className="w-[200px]"
             id={id}
             onChange={(value) => updateNodeData(id, { size: value })}
             options={selectedModel?.sizes ?? []}
@@ -313,10 +318,12 @@ export const ImageTransform = ({
     handleGenerate,
     project?.id,
     allImageModels,
-    selectedEndpoint,
+    data.falEndpoint,
     modelId,
     mediaStatus,
     openMedia,
+    getNodes,
+    falImageModels,
   ]);
 
   const aspectRatio = useMemo(() => {
@@ -381,7 +388,7 @@ export const ImageTransform = ({
           mediaType="image"
           nodeIds={selectedNodeIds.length > 0 ? selectedNodeIds : undefined}
           onClose={closeMedia}
-          open={!!selectedMediaId}
+          open={Boolean(selectedMediaId)}
           projectId={project.id}
           selectedMediaId={
             selectedMediaId === 'latest' ? '' : selectedMediaId || ''

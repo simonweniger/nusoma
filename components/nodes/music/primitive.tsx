@@ -78,7 +78,7 @@ export const MusicPrimitive = ({
           accept={{
             'audio/*': [],
           }}
-          className="rounded-none border-none bg-transparent shadow-none hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent"
+          className="border-none bg-transparent shadow-none hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent"
           maxFiles={1}
           maxSize={1024 * 1024 * 10}
           minSize={1024}

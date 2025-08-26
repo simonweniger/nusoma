@@ -199,7 +199,7 @@ export const TextTransform = ({
     items.push({
       children: (
         <ModelSelector
-          className="w-[200px] rounded-full"
+          className="w-[200px]"
           key={id}
           onChange={(value) => updateNodeData(id, { model: value })}
           options={textModels}
