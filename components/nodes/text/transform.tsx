@@ -17,7 +17,10 @@ import {
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 import { mutate } from 'swr';
-import { NodeLayout } from '@/components/nodes/layout';
+import {
+  mapChatStatusToNodeStatus,
+  NodeLayout,
+} from '@/components/nodes/layout';
 import { Button } from '@/components/ui/button';
 import {
   AIMessage,
@@ -321,7 +324,14 @@ export const TextTransform = ({
   }, [messages, isReasoning, status, setIsReasoning, setIsGenerating]);
 
   return (
-    <NodeLayout data={data} id={id} title={title} toolbar={toolbar} type={type}>
+    <NodeLayout
+      data={data}
+      id={id}
+      status={mapChatStatusToNodeStatus(status)}
+      title={title}
+      toolbar={toolbar}
+      type={type}
+    >
       <div className="nowheel h-full max-h-[30rem] flex-1 overflow-auto bg-secondary p-4">
         {status === 'submitted' && (
           <div className="flex flex-col gap-2">
@@ -412,7 +422,7 @@ export const TextTransform = ({
           ))}
       </div>
       <Textarea
-        className="shrink-0 resize-none rounded-none border-none bg-transparent! shadow-none focus-visible:ring-0"
+        className="shrink-0 resize-none rounded-none border-none bg-transparent! p-0 shadow-none focus-visible:ring-0"
         onChange={handleInstructionsChange}
         placeholder="Enter instructions"
         value={data.instructions ?? ''}

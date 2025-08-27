@@ -22,9 +22,63 @@ import {
   BaseNodeHeader,
   BaseNodeHeaderTitle,
 } from '@/components/ui/reactflow/base-node';
+import {
+  type NodeStatus,
+  NodeStatusIndicator,
+  type NodeStatusVariant,
+} from '@/components/ui/reactflow/node-status-indicator';
 import { cn } from '@/lib/utils';
 import { useNodeOperations } from '@/providers/node-operations';
 import { NodeToolbar } from './toolbar';
+
+// Utility function to map media status to node status
+export const mapMediaStatusToNodeStatus = (
+  mediaStatus?: {
+    status: string;
+    isGenerating?: boolean;
+    isCompleted?: boolean;
+  } | null
+): NodeStatus => {
+  if (!mediaStatus) {
+    return 'initial';
+  }
+
+  if (mediaStatus.isGenerating) {
+    switch (mediaStatus.status) {
+      case 'pending':
+      case 'running':
+        return 'loading';
+      case 'failed':
+        return 'error';
+      default:
+        return 'loading';
+    }
+  }
+
+  if (mediaStatus.isCompleted) {
+    return 'success';
+  }
+
+  return 'initial';
+};
+
+// Utility function to map chat status to node status
+export const mapChatStatusToNodeStatus = (
+  chatStatus?: 'submitted' | 'streaming' | 'idle' | 'error' | 'ready'
+): NodeStatus => {
+  switch (chatStatus) {
+    case 'submitted':
+    case 'streaming': {
+      return 'loading';
+    }
+    case 'error': {
+      return 'error';
+    }
+    default: {
+      return 'initial';
+    }
+  }
+};
 
 type NodeLayoutProps = {
   children: ReactNode;
@@ -43,6 +97,8 @@ type NodeLayoutProps = {
   className?: string;
   headerActions?: ReactNode;
   showHeader?: boolean;
+  status?: NodeStatus;
+  statusVariant?: NodeStatusVariant;
 };
 
 export const NodeLayout = ({
@@ -55,6 +111,8 @@ export const NodeLayout = ({
   className,
   headerActions,
   showHeader = true,
+  status,
+  statusVariant = 'border',
 }: NodeLayoutProps) => {
   const { deleteElements, setCenter, getNode, updateNode } = useReactFlow();
   const { duplicateNode } = useNodeOperations();
@@ -111,19 +169,26 @@ export const NodeLayout = ({
       {type !== 'file' && type !== 'tweet' && type !== 'text' && (
         <BaseHandle position={Position.Left} type="target" />
       )}
+      <BaseNodeHeaderTitle className="mb-1 font-mono text-muted-foreground text-xs tracking-tighter">
+        {title}
+      </BaseNodeHeaderTitle>
       <ContextMenu onOpenChange={handleSelect}>
         <ContextMenuTrigger>
-          <BaseNode className={cn('relative w-sm transition-all', className)}>
-            {showHeader && type !== 'drop' && (
-              <BaseNodeHeader className="border-b">
-                <BaseNodeHeaderTitle className="font-mono text-muted-foreground text-xs tracking-tighter">
-                  {title}
-                </BaseNodeHeaderTitle>
-                {headerActions}
-              </BaseNodeHeader>
-            )}
-            <BaseNodeContent className="p-0">{children}</BaseNodeContent>
-          </BaseNode>
+          <div className="relative">
+            <NodeStatusIndicator status={status} variant={statusVariant}>
+              <BaseNode className={cn('w-sm transition-all', className)}>
+                {showHeader && type !== 'drop' && (
+                  <BaseNodeHeader>
+                    {/*<BaseNodeHeaderTitle className="font-mono text-muted-foreground text-xs tracking-tighter">
+                      {title}
+                    </BaseNodeHeaderTitle>*/}
+                    {headerActions}
+                  </BaseNodeHeader>
+                )}
+                <BaseNodeContent>{children}</BaseNodeContent>
+              </BaseNode>
+            </NodeStatusIndicator>
+          </div>
         </ContextMenuTrigger>
         <ContextMenuContent>
           <ContextMenuItem onClick={() => duplicateNode(id)}>

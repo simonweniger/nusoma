@@ -7,7 +7,7 @@ export const BaseNode = forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     className={cn(
-      'relative rounded-md border bg-card text-card-foreground',
+      'relative border bg-card px-4 text-card-foreground',
       'hover:ring-1',
       // React Flow displays node elements inside of a `NodeWrapper` component,
       // which compiles down to a div with the class `react-flow__node`.
@@ -38,7 +38,7 @@ export const BaseNodeHeader = forwardRef<
     ref={ref}
     {...props}
     className={cn(
-      '-mb-1 mx-0 my-0 flex flex-row items-center justify-between gap-2 px-3 py-2',
+      '-mb-1 mx-0 my-0 flex flex-row items-center justify-between gap-2 px-1 py-2',
       // Remove or modify these classes if you modify the padding in the
       // `<BaseNode />` component.
       className
@@ -69,7 +69,7 @@ export const BaseNodeContent = forwardRef<
   HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
-    className={cn('flex flex-col gap-y-2 p-3', className)}
+    className={cn('flex flex-col gap-y-2', className)}
     data-slot="base-node-content"
     ref={ref}
     {...props}

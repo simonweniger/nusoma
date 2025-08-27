@@ -10,7 +10,10 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 import { mutate } from 'swr';
-import { NodeLayout } from '@/components/nodes/layout';
+import {
+  mapChatStatusToNodeStatus,
+  NodeLayout,
+} from '@/components/nodes/layout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
@@ -265,7 +268,14 @@ export const CodeTransform = ({
   const nonUserMessages = messages.filter((message) => message.role !== 'user');
 
   return (
-    <NodeLayout data={data} id={id} title={title} toolbar={toolbar} type={type}>
+    <NodeLayout
+      data={data}
+      id={id}
+      status={mapChatStatusToNodeStatus(status)}
+      title={title}
+      toolbar={toolbar}
+      type={type}
+    >
       <Editor
         className="aspect-square w-full overflow-hidden"
         language={language}
@@ -292,7 +302,7 @@ export const CodeTransform = ({
         }
       />
       <Textarea
-        className="shrink-0 resize-none rounded-none border-none bg-transparent! shadow-none focus-visible:ring-0"
+        className="shrink-0 resize-none rounded-none border-none bg-transparent! p-0 shadow-none focus-visible:ring-0"
         onChange={handleInstructionsChange}
         placeholder="Enter instructions"
         value={data.instructions ?? ''}

@@ -19,7 +19,10 @@ import {
 import { toast } from 'sonner';
 import { mutate } from 'swr';
 import { MediaGallerySheet } from '@/components/media-gallery';
-import { NodeLayout } from '@/components/nodes/layout';
+import {
+  mapMediaStatusToNodeStatus,
+  NodeLayout,
+} from '@/components/nodes/layout';
 import { StatusIndicator } from '@/components/status-indicator';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -340,6 +343,7 @@ export const ImageTransform = ({
       <NodeLayout
         data={data}
         id={id}
+        status={mapMediaStatusToNodeStatus(mediaStatus)}
         title={title}
         toolbar={toolbar}
         type={type}
@@ -376,7 +380,7 @@ export const ImageTransform = ({
           />
         )}
         <Textarea
-          className="shrink-0 resize-none rounded-none border-none bg-transparent! shadow-none focus-visible:ring-0"
+          className="shrink-0 resize-none rounded-none border-none bg-transparent! p-0 shadow-none focus-visible:ring-0"
           onChange={handleInstructionsChange}
           placeholder="Enter instructions"
           value={data.instructions ?? ''}

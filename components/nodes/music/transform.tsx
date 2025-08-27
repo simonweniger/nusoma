@@ -16,7 +16,10 @@ import {
 import { toast } from 'sonner';
 import { mutate } from 'swr';
 import { MediaGallerySheet } from '@/components/media-gallery';
-import { NodeLayout } from '@/components/nodes/layout';
+import {
+  mapMediaStatusToNodeStatus,
+  NodeLayout,
+} from '@/components/nodes/layout';
 import { StatusIndicator } from '@/components/status-indicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -304,6 +307,7 @@ export const MusicTransform = ({
       <NodeLayout
         data={data}
         id={id}
+        status={mapMediaStatusToNodeStatus(mediaStatus)}
         title={title}
         toolbar={toolbar}
         type={type}

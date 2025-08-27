@@ -6,15 +6,14 @@ import { cn } from '@/lib/utils';
 export type BaseHandleProps = HandleProps;
 
 export const BaseHandle = forwardRef<HTMLDivElement, BaseHandleProps>(
-  ({ className, children, ...props }, ref) => {
+  ({ className, children, style, ...props }, ref) => {
     return (
       <Handle
-        ref={ref}
-        {...props}
         className={cn(
-          'h-[11px] w-[11px] rounded-full border border-slate-300 bg-slate-100 transition dark:border-secondary dark:bg-secondary',
+          '!h-3 !w-3 !z-50 !rounded-full !border-2 !border-white !shadow-md !transition-colors hover:!bg-blue-600 dark:!border-gray-800 dark:!bg-blue-400 dark:hover:!bg-blue-300',
           className
         )}
+        ref={ref}
         {...props}
       >
         {children}

@@ -205,30 +205,6 @@
   .react-flow__controls-button > svg {
     @apply size-4;
   }
-  .react-flow__handle {
-    @apply !size-6 !border-none !bg-card !rounded-full !shadow-lg;
-    @apply !flex !items-center !justify-center;
-    @apply !transition-all !duration-200;
-  }
-  .react-flow__handle:hover {
-    @apply !scale-110 !shadow-xl;
-  }
-  .react-flow__handle-left {
-    @apply !-left-3 !translate-x-0;
-  }
-  .react-flow__handle-right {
-    @apply !-right-3 !translate-x-0;
-  }
-  .react-flow__handle::before {
-    content: "+";
-    @apply text-foreground text-sm font-bold;
-  }
-  .react-flow__handle.connecting {
-    @apply !bg-primary !text-primary-foreground;
-  }
-  .react-flow__handle.connecting::before {
-    @apply !text-primary-foreground;
-  }
 }
 
 nextjs-portal {

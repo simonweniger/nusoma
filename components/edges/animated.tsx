@@ -101,10 +101,70 @@ export const AnimatedEdge = ({
 
   return (
     <>
-      <BaseEdge id={id} markerEnd={markerEnd} path={edgePath} style={style} />
-      <circle fill="var(--primary)" r="4">
-        <animateMotion dur="2s" path={edgePath} repeatCount="indefinite" />
-      </circle>
+      <BaseEdge
+        className="!opacity-80"
+        id={id}
+        markerEnd={markerEnd}
+        path={edgePath}
+        style={style}
+      />
+
+      {/* Main gradient flare */}
+      <path
+        d={edgePath}
+        fill="none"
+        filter={`url(#glow-${id})`}
+        opacity="1"
+        stroke={`url(#flare-gradient-${id})`}
+        strokeDasharray="60 1000"
+        strokeLinecap="round"
+        strokeWidth="1"
+      >
+        <animate
+          attributeName="stroke-dashoffset"
+          dur="4s"
+          repeatCount="indefinite"
+          values="1060;0"
+        />
+      </path>
+
+      {/* Outer glow layer */}
+      <path
+        d={edgePath}
+        fill="none"
+        filter={`url(#glow-${id})`}
+        opacity="0.6"
+        stroke="oklch(0.555 0.2449 266.68)"
+        strokeDasharray="80 1000"
+        strokeLinecap="round"
+        strokeWidth="1"
+      >
+        <animate
+          attributeName="stroke-dashoffset"
+          dur="4s"
+          repeatCount="indefinite"
+          values="1080;0"
+        />
+      </path>
+
+      {/* Subtle background glow */}
+      <path
+        d={edgePath}
+        fill="none"
+        filter={`url(#glow-${id})`}
+        opacity="0.2"
+        stroke="oklch(0.7 0.15 266.68)"
+        strokeDasharray="100 1000"
+        strokeLinecap="round"
+        strokeWidth="1"
+      >
+        <animate
+          attributeName="stroke-dashoffset"
+          dur="4s"
+          repeatCount="indefinite"
+          values="1100;0"
+        />
+      </path>
     </>
   );
 };
