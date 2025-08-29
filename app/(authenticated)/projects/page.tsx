@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { createProjectAction } from '@/app/actions/project/create';
+import { createProject } from '@/data/mutations/create-project';
 import { currentUser, currentUserProfile } from '@/lib/auth';
 import { adminDb } from '@/lib/instantdb-admin';
 
@@ -33,15 +33,11 @@ const Projects = async () => {
   let project = userProjects[0];
 
   if (!project) {
-    const newProject = await createProjectAction('Untitled Project');
-
-    if ('error' in newProject) {
-      throw new Error(newProject.error);
-    }
+    const newProjectId = await createProject('Untitled Project');
 
     const { projects: newProjects } = await adminDb.query({
       projects: {
-        $: { where: { id: newProject.id } },
+        $: { where: { id: newProjectId } },
       },
     });
 

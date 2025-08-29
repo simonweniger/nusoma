@@ -99,13 +99,7 @@ export const DropNode = ({ data, id }: DropNodeProps) => {
 
   return (
     <div ref={ref}>
-      <NodeLayout
-        data={data}
-        id={id}
-        showHeader={false}
-        title="Add a new node"
-        type="drop"
-      >
+      <NodeLayout data={data} id={id} title="Add a new node" type="drop">
         <div className="p-4">
           <h3 className="mb-3 font-semibold">Add a new node</h3>
           <Command className="rounded-lg">

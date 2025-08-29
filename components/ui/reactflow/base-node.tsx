@@ -8,7 +8,8 @@ export const BaseNode = forwardRef<
   <div
     className={cn(
       'relative border bg-card px-4 text-card-foreground',
-      'hover:ring-1',
+      'shadow-[0_1px_1px_rgba(0,0,0,0.01),_0_2px_2px_rgba(0,0,0,0.01),_0_8px_8px_rgba(0,0,0,0.01)]',
+      'transition-all duration-200 ease-in hover:border-1 hover:border-primary focus:shadow-[0_1px_1px_rgba(0,0,0,0.04),_0_2px_2px_rgba(0,0,0,0.04),_0_4px_4px_rgba(0,0,0,0.02),_0_8px_8px_rgba(0,0,0,0.02),_0_16px_16px_rgba(0,0,0,0.02),_0_32px_32px_rgba(0,0,0,0.02)]',
       // React Flow displays node elements inside of a `NodeWrapper` component,
       // which compiles down to a div with the class `react-flow__node`.
       // When a node is selected, the class `selected` is added to the

@@ -19,7 +19,7 @@ import { BaseHandle } from '@/components/ui/reactflow/base-handle';
 import {
   BaseNode,
   BaseNodeContent,
-  BaseNodeHeader,
+  //BaseNodeHeader,
   BaseNodeHeaderTitle,
 } from '@/components/ui/reactflow/base-node';
 import {
@@ -96,7 +96,6 @@ type NodeLayoutProps = {
   }[];
   className?: string;
   headerActions?: ReactNode;
-  showHeader?: boolean;
   status?: NodeStatus;
   statusVariant?: NodeStatusVariant;
 };
@@ -109,8 +108,7 @@ export const NodeLayout = ({
   toolbar,
   title,
   className,
-  headerActions,
-  showHeader = true,
+  //headerActions,
   status,
   statusVariant = 'border',
 }: NodeLayoutProps) => {
@@ -176,15 +174,7 @@ export const NodeLayout = ({
         <ContextMenuTrigger>
           <div className="relative">
             <NodeStatusIndicator status={status} variant={statusVariant}>
-              <BaseNode className={cn('w-sm transition-all', className)}>
-                {showHeader && type !== 'drop' && (
-                  <BaseNodeHeader>
-                    {/*<BaseNodeHeaderTitle className="font-mono text-muted-foreground text-xs tracking-tighter">
-                      {title}
-                    </BaseNodeHeaderTitle>*/}
-                    {headerActions}
-                  </BaseNodeHeader>
-                )}
+              <BaseNode className={cn('w-sm pt-4 transition-all', className)}>
                 <BaseNodeContent>{children}</BaseNodeContent>
               </BaseNode>
             </NodeStatusIndicator>

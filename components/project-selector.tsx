@@ -52,8 +52,21 @@ export const ProjectSelector = ({ currentProject }: ProjectSelectorProps) => {
   // Get the current InstantDB user
   const instantUser = db.useAuth();
 
-  // Query all projects with their owners and members (only when authenticated)
-  const { data: projectData } = db.useQuery(
+  // Debug: Let's see what we're working with first
+  console.log('ProjectSelector Debug:', {
+    isSignedIn,
+    isLoaded,
+    instantUser: instantUser.user,
+    currentProject,
+  });
+
+  // Alternative approach: Query all projects with owner info, then filter client-side
+  // This follows the pattern used in the server-side code that works
+  const {
+    data: projectData,
+    isLoading,
+    error,
+  } = db.useQuery(
     isSignedIn && isLoaded && instantUser.user
       ? {
           projects: {
@@ -63,7 +76,70 @@ export const ProjectSelector = ({ currentProject }: ProjectSelectorProps) => {
         }
       : {}
   );
-  const allProjects = projectData?.projects || [];
+
+  // Debug the query results
+  console.log('Query results:', {
+    projectData,
+    isLoading,
+    error,
+  });
+
+  const allProjectsFromDB = projectData?.projects || [];
+
+  console.log('All projects from DB:', allProjectsFromDB);
+
+  // Filter and categorize projects based on user relationship
+  const allProjects = useMemo(() => {
+    if (!instantUser.user?.id || allProjectsFromDB.length === 0) {
+      return [];
+    }
+
+    const currentUserId = instantUser.user.id;
+    const userProjects: Array<
+      (typeof allProjectsFromDB)[0] & { isOwner: boolean }
+    > = [];
+
+    for (const project of allProjectsFromDB) {
+      console.log(`Checking project ${project.name}:`, {
+        project,
+        hasOwner: Boolean(project.owner),
+        ownerId: project.owner?.id,
+        currentUserId,
+        members: project.members,
+      });
+
+      // Check if user owns the project
+      const isOwner = project.owner?.id === currentUserId;
+
+      // Check if user is a member of the project
+      const isMember = project.members?.some(
+        (member) => member.id === currentUserId
+      );
+
+      const shouldInclude = isOwner || isMember || !project.owner;
+
+      console.log(`Project ${project.name} relationship:`, {
+        isOwner,
+        isMember,
+        hasOwnerData: Boolean(project.owner),
+        shouldInclude,
+      });
+
+      // TEMPORARY FIX: Since owner relationships aren't being populated,
+      // include all projects for now (you're the only user)
+      // TODO: Fix the owner relationship query issue
+
+      if (shouldInclude) {
+        userProjects.push({
+          ...project,
+          isOwner: isOwner || !project.owner, // Assume ownership if no owner data
+        });
+      }
+    }
+
+    console.log('Filtered user projects:', userProjects);
+    return userProjects;
+  }, [allProjectsFromDB, instantUser.user?.id]);
 
   const fuse = useMemo(
     () =>
@@ -119,31 +195,17 @@ export const ProjectSelector = ({ currentProject }: ProjectSelectorProps) => {
       return [];
     }
 
-    const currentUserId = instantUser.user.id;
-
-    const ownedProjects = allProjects.filter((project) => {
-      return project.owner?.id === currentUserId;
-    });
-
-    const sharedProjects = allProjects.filter((project) => {
-      if (project.owner?.id === currentUserId) {
-        return false;
-      }
-
-      // Check if current user is in the members relationship
-      return (
-        project.members?.some((member) => member.id === currentUserId) ?? false
-      );
-    });
+    const owned = allProjects.filter((project) => project.isOwner);
+    const shared = allProjects.filter((project) => !project.isOwner);
 
     return [
       {
         label: 'My Projects',
-        data: ownedProjects,
+        data: owned,
       },
       {
         label: 'Shared Projects',
-        data: sharedProjects,
+        data: shared,
       },
     ];
   }, [allProjects, instantUser.user?.id]);

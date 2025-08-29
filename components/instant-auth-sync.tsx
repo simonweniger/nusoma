@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth, useUser } from '@clerk/nextjs';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { env } from '@/lib/env';
 import db from '@/lib/instantdb';
 
@@ -13,28 +13,69 @@ import db from '@/lib/instantdb';
  * Clerk's session token. When they sign out from Clerk, they are signed out from InstantDB.
  */
 export default function InstantDBAuthSync() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
   const { getToken } = useAuth();
 
-  useEffect(() => {
-    if (isSignedIn) {
-      getToken()
-        .then((token) => {
-          // Create a long-lived session with InstantDB for your Clerk user
-          // It will look up the user by email or create a new user with
-          // the email address in the session token.
-          db.auth.signInWithIdToken({
-            clientName: env.NEXT_PUBLIC_CLERK_CLIENT_NAME,
-            idToken: token as string,
-          });
-        })
-        .catch((error) => {
-          console.error('Error signing in with InstantDB:', error);
-        });
-    } else {
-      db.auth.signOut();
+  // Monitor InstantDB auth state as recommended in docs
+  const {
+    isLoading: instantLoading,
+    user: instantUser,
+    error: instantError,
+  } = db.useAuth();
+
+  const signInToInstantWithClerkToken = useCallback(async () => {
+    try {
+      // Get JWT from Clerk for signed-in user
+      const idToken = await getToken();
+
+      if (!idToken) {
+        console.warn('No token received from Clerk');
+        return;
+      }
+
+      // Create a long-lived session with InstantDB for your Clerk user
+      // It will look up the user by email or create a new user with
+      // the email address in the session token.
+      await db.auth.signInWithIdToken({
+        clientName: env.NEXT_PUBLIC_CLERK_CLIENT_NAME,
+        idToken,
+      });
+
+      console.log('Successfully signed in to InstantDB');
+    } catch (error) {
+      console.error('Error signing in with InstantDB:', error);
     }
-  }, [isSignedIn, getToken]);
+  }, [getToken]);
+
+  useEffect(() => {
+    // Don't proceed until Clerk auth is fully loaded
+    if (!isLoaded) {
+      return;
+    }
+
+    if (isSignedIn && !instantUser && !instantLoading) {
+      // Sign in to Instant if Clerk user is signed in but Instant user is not
+      signInToInstantWithClerkToken();
+    } else if (!isSignedIn && instantUser) {
+      // Sign out from InstantDB when user signs out from Clerk
+      db.auth.signOut().catch((error) => {
+        console.error('Error signing out from InstantDB:', error);
+      });
+    }
+  }, [
+    isLoaded,
+    isSignedIn,
+    instantUser,
+    instantLoading,
+    signInToInstantWithClerkToken,
+  ]);
+
+  // Log InstantDB auth errors for debugging
+  useEffect(() => {
+    if (instantError) {
+      console.error('InstantDB auth error:', instantError);
+    }
+  }, [instantError]);
 
   return null;
 }
