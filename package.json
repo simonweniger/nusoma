@@ -142,7 +142,7 @@
     "react-tweet": "^3.2.2",
     "recharts": "^2.15.4",
     "remark-gfm": "^4.0.1",
-    "replicate": "^1.0.1",
+    "replicate": "^1.1.0",
     "resend": "^6.0.1",
     "shadcn-prose": "^1.1.0",
     "shiki": "^3.9.2",
