@@ -129,7 +129,7 @@
     "perfect-cursors": "^1.0.5",
     "postgres": "^3.4.7",
     "posthog-js": "^1.260.1",
-    "posthog-node": "^5.7.0",
+    "posthog-node": "^5.8.1",
     "react": "^19.1.1",
     "react-day-picker": "9.8.1",
     "react-dom": "^19.1.1",
