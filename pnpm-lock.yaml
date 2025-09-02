@@ -467,7 +467,7 @@ importers:
         version: 4.2.8
       tailwindcss:
         specifier: ^4
-        version: 4.1.11
+        version: 4.1.12
       typescript:
         specifier: ^5
         version: 5.8.3
@@ -7045,8 +7045,8 @@ packages:
     engines: {node: '>=14.0.0'}
     hasBin: true
 
-  tailwindcss@4.1.11:
-    resolution: {integrity: sha512-2E9TBm6MDD/xKYe+dvJZAmg3yxIEDNRc0jwlNyDg/4Fil2QcSLjFKGVff0lAf1jjeaArlG/M75Ey/EYr/OJtBA==}
+  tailwindcss@4.1.12:
+    resolution: {integrity: sha512-DzFtxOi+7NsFf7DBtI3BJsynR+0Yp6etH+nRPTbpWnS2pZBaSksv/JGctNwSWzbFjp0vxSqknaUylseZqMDGrA==}
 
   tailwindcss@4.1.8:
     resolution: {integrity: sha512-kjeW8gjdxasbmFKpVGrGd5T4i40mV5J2Rasw48QARfYeQ8YS9x02ON9SFWax3Qf616rt4Cp3nVNIj6Hd1mP3og==}
@@ -14964,7 +14964,7 @@ snapshots:
     transitivePeerDependencies:
       - ts-node
 
-  tailwindcss@4.1.11: {}
+  tailwindcss@4.1.12: {}
 
   tailwindcss@4.1.8: {}
 
