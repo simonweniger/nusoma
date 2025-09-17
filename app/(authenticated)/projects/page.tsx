@@ -33,11 +33,15 @@ const Projects = async () => {
   let project = userProjects[0];
 
   if (!project) {
-    const newProjectId = await createProject('Untitled Project');
+    const result = await createProject('Untitled Project');
+
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
 
     const { projects: newProjects } = await adminDb.query({
       projects: {
-        $: { where: { id: newProjectId } },
+        $: { where: { id: result.id } },
       },
     });
 

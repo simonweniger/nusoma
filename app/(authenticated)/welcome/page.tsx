@@ -35,11 +35,15 @@ const Welcome = async () => {
   let welcomeProject = welcomeProjects?.[0];
 
   if (!welcomeProject) {
-    const projectId = await createProject('Welcome', true);
+    const result = await createProject('Welcome', true);
+
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
 
     const { projects: newProjects } = await adminDb.query({
       projects: {
-        $: { where: { id: projectId } },
+        $: { where: { id: result.id } },
       },
     });
 

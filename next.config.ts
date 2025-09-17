@@ -13,6 +13,24 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/files/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'v3b.fal.media',
+        port: '',
+        pathname: '/files/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'v2.fal.media',
+        port: '',
+        pathname: '/files/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.fal.media',
+        port: '',
+        pathname: '/files/**',
+      },
     ],
   },
 

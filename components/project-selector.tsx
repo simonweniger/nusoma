@@ -162,11 +162,15 @@ export const ProjectSelector = ({ currentProject }: ProjectSelectorProps) => {
       setIsCreating(true);
 
       try {
-        const projectId = await createProject(name.trim());
+        const result = await createProject(name.trim());
+
+        if ('error' in result) {
+          throw new Error(result.error);
+        }
 
         setOpen(false);
         setName('');
-        router.push(`/projects/${projectId}`);
+        router.push(`/projects/${result.id}`);
       } catch (error) {
         handleError('Error creating project', error);
       } finally {

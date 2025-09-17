@@ -176,5 +176,5 @@
     "typescript": "^5",
     "ultracite": "^5.1.6"
   },
-  "packageManager": "pnpm@10.15.0"
+  "packageManager": "pnpm@10.17.0"
 }

@@ -1,5 +1,15 @@
 'use client';
 
+import { useControllableState } from '@radix-ui/react-use-controllable-state';
+import { ChevronsUpDownIcon } from 'lucide-react';
+import {
+  type ComponentProps,
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -16,16 +26,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { useControllableState } from '@radix-ui/react-use-controllable-state';
-import { ChevronsUpDownIcon } from 'lucide-react';
-import {
-  type ComponentProps,
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
 
 type ComboboxData = {
   label: string;
@@ -47,11 +47,17 @@ const ComboboxContext = createContext<ComboboxContextType>({
   data: [],
   type: 'item',
   value: '',
-  onValueChange: () => {},
+  onValueChange: () => {
+    return;
+  },
   open: false,
-  onOpenChange: () => {},
+  onOpenChange: () => {
+    return;
+  },
   width: 200,
-  setWidth: () => {},
+  setWidth: () => {
+    return;
+  },
 });
 
 export type ComboboxProps = ComponentProps<typeof Popover> & {
@@ -100,7 +106,7 @@ export const Combobox = ({
         setWidth,
       }}
     >
-      <Popover {...props} open={open} onOpenChange={onOpenChange} />
+      <Popover {...props} onOpenChange={onOpenChange} open={open} />
     </ComboboxContext.Provider>
   );
 };
@@ -144,8 +150,8 @@ export const ComboboxTrigger = ({
               ? data.find((item) => item.value === value)?.label
               : `Select ${type}...`}
             <ChevronsUpDownIcon
-              size={16}
               className="shrink-0 text-muted-foreground"
+              size={16}
             />
           </span>
         )}
@@ -209,7 +215,7 @@ export const ComboboxGroup = (props: ComboboxGroupProps) => (
 export type ComboboxItemProps = ComponentProps<typeof CommandItem>;
 
 export const ComboboxItem = (props: ComboboxItemProps) => {
-  const { value, onValueChange, onOpenChange } = useContext(ComboboxContext);
+  const { onValueChange, onOpenChange } = useContext(ComboboxContext);
 
   return (
     <CommandItem
