@@ -129,7 +129,7 @@ Uses Bria's specialized background removal model:
 ### Setup
 
 1. Clone the repository
-2. Install dependencies: `npm install`
+2. Install dependencies: `pnpm install`
 3. Add your fal.ai API key to `.env.local`:
 
    ```
@@ -141,13 +141,13 @@ Uses Bria's specialized background removal model:
    KV_REST_API_TOKEN=
    ```
 
-4. Run development server: `npm run dev`
+4. Run development server: `pnpm run dev`
 
 ### Pre-commit Hooks
 
 The project uses [Husky](https://github.com/typicode/husky) and [lint-staged](https://github.com/lint-staged/lint-staged) for automated code formatting and linting before commits.
 
-Pre-commit hooks are automatically installed when you run `npm install` (via the `prepare` script).
+Pre-commit hooks are automatically installed when you run `pnpm install` (via the `prepare` script).
 
 The hooks will:
 
