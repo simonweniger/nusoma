@@ -1,7 +1,0 @@
-onlyBuiltDependencies:
-  - '@biomejs/biome'
-  - '@clerk/shared'
-  - '@tailwindcss/oxide'
-  - core-js
-  - esbuild
-  - sharp
