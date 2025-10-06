@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useState, useCallback } from "react";
-import { Stage, Layer, Rect, Group, Line } from "react-konva";
+import { Stage, Layer } from "react-konva";
 import Konva from "konva";
 import { canvasStorage, type CanvasState } from "@/lib/storage";
 import { motion, AnimatePresence } from "framer-motion";
@@ -89,10 +89,9 @@ import { convertImageToVideo } from "@/utils/video-utils";
 import { useFalClient } from "@/hooks/useFalClient";
 import { CanvasGrid } from "@/components/canvas/CanvasGrid";
 import { SelectionBoxComponent } from "@/components/canvas/SelectionBox";
-import { MiniMap } from "@/components/canvas/MiniMap";
+//import { MiniMap } from "@/components/canvas/MiniMap";
 import { ZoomControls } from "@/components/canvas/ZoomControls";
 import { MobileToolbar } from "@/components/canvas/MobileToolbar";
-import { PoweredByFalBadge } from "@/components/canvas/PoweredByFalBadge";
 import { CanvasContextMenu } from "@/components/canvas/CanvasContextMenu";
 import { useTheme } from "next-themes";
 import { VideoOverlays } from "@/components/canvas/VideoOverlays";
@@ -114,7 +113,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { GithubBadge } from "@/components/canvas/GithubBadge";
+//mport { GithubBadge } from "@/components/canvas/GithubBadge";
 import { GenerationsIndicator } from "@/components/generations-indicator";
 
 export default function OverlayPage() {
@@ -182,7 +181,7 @@ export default function OverlayPage() {
   const [isIsolating, setIsIsolating] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
-  const [showMinimap, setShowMinimap] = useState(true);
+  //const [showMinimap, setShowMinimap] = useState(true);
   const [isStyleDialogOpen, setIsStyleDialogOpen] = useState(false);
   const [isApiKeyDialogOpen, setIsApiKeyDialogOpen] = useState(false);
   const [isImageToVideoDialogOpen, setIsImageToVideoDialogOpen] =
@@ -946,12 +945,12 @@ export default function OverlayPage() {
   }, []);
 
   // Load minimap setting from localStorage on mount
-  useEffect(() => {
-    const savedShowMinimap = localStorage.getItem("showMinimap");
-    if (savedShowMinimap !== null) {
-      setShowMinimap(savedShowMinimap === "true");
-    }
-  }, []);
+  //useEffect(() => {
+  //  const savedShowMinimap = localStorage.getItem("showMinimap");
+  //  if (savedShowMinimap !== null) {
+  //    setShowMinimap(savedShowMinimap === "true");
+  //  }
+  //}, []);
 
   // Save grid setting to localStorage when it changes
   useEffect(() => {
@@ -959,9 +958,9 @@ export default function OverlayPage() {
   }, [showGrid]);
 
   // Save minimap setting to localStorage when it changes
-  useEffect(() => {
-    localStorage.setItem("showMinimap", showMinimap.toString());
-  }, [showMinimap]);
+  //useEffect(() => {
+  //  localStorage.setItem("showMinimap", showMinimap.toString());
+  //}, [showMinimap]);
 
   // Track previous style when changing styles (but not when reverting from custom)
   useEffect(() => {
@@ -3548,7 +3547,7 @@ export default function OverlayPage() {
             </div>
           </div>
 
-          {/* Mini-map */}
+          {/* Mini-map -- Disabled for now
           {showMinimap && (
             <MiniMap
               images={images}
@@ -3557,6 +3556,7 @@ export default function OverlayPage() {
               canvasSize={canvasSize}
             />
           )}
+          */}
 
           {/* {isSaving && (
             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30 bg-background/95 border rounded-xl px-3 py-2 flex items-center gap-2 shadow-sm">
@@ -3571,9 +3571,7 @@ export default function OverlayPage() {
             setViewport={setViewport}
             canvasSize={canvasSize}
           />
-
-          <PoweredByFalBadge />
-          <GithubBadge />
+          {/* <GithubBadge /> */}
 
           {/* Dimension display for selected images */}
           <DimensionDisplay
@@ -3839,7 +3837,7 @@ export default function OverlayPage() {
               />
             </div>
 
-            {/* Minimap */}
+            {/* Minimap -- Disabled for now
             <div className="flex justify-between">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="minimap">Show Minimap</Label>
@@ -3853,6 +3851,7 @@ export default function OverlayPage() {
                 onCheckedChange={setShowMinimap}
               />
             </div>
+            */}
           </div>
         </DialogContent>
       </Dialog>
