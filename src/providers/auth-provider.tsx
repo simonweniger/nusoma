@@ -72,16 +72,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     data: profileData,
     isLoading: profileIsLoading,
     error: profileError,
-  } = db.useQuery({
-    userProfiles: {
-      $: {
-        where: { "user.id": user?.id ?? "" },
-      },
-    },
-  });
+  } = db.useQuery(
+    user
+      ? {
+          userProfiles: {
+            $: {
+              where: { "user.id": user.id },
+            },
+          },
+        }
+      : {},
+  );
 
   useEffect(() => {
-    if (profileData) {
+    if (
+      profileData &&
+      profileData.userProfiles &&
+      profileData.userProfiles.length > 0
+    ) {
       setProfile(profileData.userProfiles[0]);
     }
   }, [profileData]);

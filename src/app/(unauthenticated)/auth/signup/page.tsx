@@ -26,7 +26,7 @@ declare global {
   }
 }
 
-export default function SignIn() {
+export default function SignUp() {
   const [sentEmail, setSentEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -58,7 +58,7 @@ export default function SignIn() {
     try {
       await db.auth.signInWithMagicCode({ email: sentEmail, code });
     } catch (err: any) {
-      alert("Error signing in: " + err.body?.message);
+      alert("Error signing up: " + err.body?.message);
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +74,7 @@ export default function SignIn() {
         nonce,
       });
     } catch (err: any) {
-      alert("Error signing in with Google: " + err.body?.message);
+      alert("Error signing up with Google: " + err.body?.message);
     }
   };
 
@@ -104,19 +104,19 @@ export default function SignIn() {
       }
     } catch (err: any) {
       console.error("Apple Sign In error:", err);
-      alert("Error signing in with Apple: " + err.message);
+      alert("Error signing up with Apple: " + err.message);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
-            Sign in
+            Create account
           </CardTitle>
           <CardDescription className="text-center">
-            Welcome back! Please sign in to your account
+            Get started with your free account
           </CardDescription>
         </CardHeader>
 
@@ -127,7 +127,7 @@ export default function SignIn() {
               <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
-                  onError={() => alert("Google Sign In failed")}
+                  onError={() => alert("Google Sign Up failed")}
                   useOneTap={false}
                   theme="outline"
                   size="large"
@@ -200,7 +200,7 @@ export default function SignIn() {
                 </p>
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Verifying..." : "Verify Code"}
+                {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
               <Button
                 type="button"
@@ -216,12 +216,12 @@ export default function SignIn() {
 
         <CardFooter>
           <p className="text-center text-sm text-muted-foreground w-full">
-            Don't have an account?{" "}
+            Already have an account?{" "}
             <Link
-              href="/auth/signup"
+              href="/auth/signin"
               className="font-medium text-primary hover:underline"
             >
-              Sign up
+              Sign in
             </Link>
           </p>
         </CardFooter>
