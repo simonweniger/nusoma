@@ -39,7 +39,7 @@ import {
   TooltipTrigger,
   TooltipContent,
   Tooltip,
-} from "@/components/ui/tooltip";
+} from "@/components/ui/Tooltip";
 import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import {
   Dialog,
@@ -47,7 +47,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
+} from "@/components/ui/Dialog";
 import { styleModels } from "@/lib/models";
 import { useToast } from "@/hooks/use-toast";
 import { createFalClient } from "@fal-ai/client";
@@ -112,7 +112,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "@/components/ui/Switch";
 //mport { GithubBadge } from "@/components/canvas/GithubBadge";
 import { GenerationsIndicator } from "@/components/generations-indicator";
 

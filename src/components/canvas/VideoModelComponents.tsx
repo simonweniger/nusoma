@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "@/components/ui/Switch";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@/components/ui/Tooltip";
 import { Info, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +25,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "@/components/ui/Dialog";
 import { SpinnerIcon } from "@/components/icons";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 

@@ -6,7 +6,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/button";
 import { VideoGenerationSettings } from "@/types/canvas";
 import { SpinnerIcon } from "@/components/icons";
