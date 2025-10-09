@@ -55,7 +55,7 @@ export default function PlansDialog() {
             </span>
 
             <p className="text-gray-10 text-[11px] max-w-xs text-right">
-              Chaterface is fully open source so you can also use it for free by
+              nusoma is fully open source so you can also use it for free by
               hosting it yourself.{" "}
               <a
                 href="https://github.com/simonweniger/nusoma"

@@ -218,7 +218,7 @@ export default function AppLayout({
             </p>
             <div className="flex flex-wrap w-full gap-2">
               <Link
-                href="https://github.com/hyperaide/chaterface"
+                href="https://github.com/simonweniger/nusoma"
                 target="_blank"
                 className="flex flex-row items-center gap-1 group bg-sage-2 dark:bg-sage-4 hover:bg-sage-5 hover:border-sage-6 transition-colors duration-300 border border-sage-5 rounded-md p-1 px-2"
               >
@@ -231,7 +231,7 @@ export default function AppLayout({
                   Github
                 </p>
               </Link>
-              {/* <Link href="https://github.com/hyperaide/chaterface" target="_blank" className="flex flex-row items-center gap-1 group bg-sage-2 dark:bg-sage-4 hover:bg-sage-5 hover:border-sage-6 transition-colors duration-300 border border-sage-5 rounded-md p-1 px-2">
+              {/* <Link href="https://github.com/simonweniger/nusoma" target="_blank" className="flex flex-row items-center gap-1 group bg-sage-2 dark:bg-sage-4 hover:bg-sage-5 hover:border-sage-6 transition-colors duration-300 border border-sage-5 rounded-md p-1 px-2">
                 <Book size={12} weight="bold" className="text-sage-11 dark:text-sage-11 group-hover:text-sage-12 transition-colors duration-300" />
                 <p className="text-xs text-sage-11 dark:text-sage-11 hover:text-sage-12 transition-colors duration-300">Docs</p>
               </Link> */}

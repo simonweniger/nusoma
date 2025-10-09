@@ -1,4 +1,4 @@
-import { CreditCard, GithubLogo } from "@phosphor-icons/react";
+import { CreditCardIcon, GithubLogoIcon } from "@phosphor-icons/react";
 import { Button } from "./ui/button";
 import Link from "next/link";
 
@@ -8,15 +8,15 @@ export default function Pricing({ userId }: { userId: string }) {
       <div className="bg-sage-2 p-4 rounded-lg border border-sage-4 flex flex-col justify-between gap-2">
         <h2 className="text-lg font-medium text-sage-12">Free Forever</h2>
         <p className="text-sm text-sage-11">
-          Chaterface is fully open source so you can host your own instance for
+          nusoma is fully open source so you can host your own instance for
           free. forever.
         </p>
-        <Link href="https://github.com/hyperaide/chaterface" target="_blank">
+        <Link href="https://github.com/simonweniger/nusoma" target="_blank">
           <Button
             size="sm"
             className="bg-sage-4 mt-auto hover:bg-sage-5 text-sage-12 border border-sage-6"
           >
-            <GithubLogo size={14} weight="bold" />
+            <GithubLogoIcon size={8} weight="bold" />
             View on GitHub
           </Button>
         </Link>
@@ -45,7 +45,7 @@ export default function Pricing({ userId }: { userId: string }) {
             size="sm"
             className="bg-sage-4 mt-auto hover:bg-sage-5 text-sage-12 border border-sage-6"
           >
-            <CreditCard size={14} weight="bold" />
+            <CreditCardIcon size={8} weight="bold" />
             Buy Now
           </Button>
         </Link>

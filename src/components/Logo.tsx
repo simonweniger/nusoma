@@ -24,7 +24,7 @@ export default function Logo({
           width={24}
           height={24}
         />
-        <h1 className={`text-sm font-medium text-sage-12`}>Chaterface</h1>
+        <h1 className={`text-sm font-medium text-sage-12`}>nusoma</h1>
       </Link>
     );
   }
@@ -40,7 +40,7 @@ export default function Logo({
         width={32}
         height={32}
       />
-      <h1 className={`text-xl font-medium text-sage-12`}>Chaterface</h1>
+      <h1 className={`text-xl font-medium text-sage-12`}>nusoma</h1>
     </Link>
   );
 }
