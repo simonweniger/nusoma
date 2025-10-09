@@ -14,6 +14,9 @@ import { makeQueryClient } from "@/lib/query-client";
 import { AppRouter } from "@/server/trpc/routers/_app";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "next-themes";
+import { PostHogProvider } from "@/providers/posthog-provider";
+import { AuthProvider } from "@/providers/auth-provider";
+import { DatabaseProvider } from "@/providers/database-provider";
 
 let browserQueryClient: QueryClient | undefined = undefined;
 
@@ -53,18 +56,24 @@ export function CoreProviders({ children }: { children: ReactNode }) {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <Toaster />
-        </ThemeProvider>
-      </TRPCProvider>
-    </QueryClientProvider>
+    <PostHogProvider>
+      <AuthProvider>
+        <DatabaseProvider>
+          <QueryClientProvider client={queryClient}>
+            <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                {children}
+                <Toaster />
+              </ThemeProvider>
+            </TRPCProvider>
+          </QueryClientProvider>
+        </DatabaseProvider>
+      </AuthProvider>
+    </PostHogProvider>
   );
 }

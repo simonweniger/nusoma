@@ -109,6 +109,11 @@ export default function RootLayout({
     >
       <head>
         <meta name="color-scheme" content="dark" />
+        <script
+          type="text/javascript"
+          src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"
+          async
+        />
         <BotIdClient
           protect={[
             {
@@ -123,7 +128,9 @@ export default function RootLayout({
         />
       </head>
       <body className={`font-sans bg-background text-foreground min-h-screen`}>
-        <CoreProviders>{children}</CoreProviders>
+        <CoreProviders>
+          <div className="root">{children}</div>
+        </CoreProviders>
       </body>
       <Analytics />
     </html>

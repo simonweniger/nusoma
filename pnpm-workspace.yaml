@@ -1,7 +1,9 @@
 onlyBuiltDependencies:
+  - '@tailwindcss/oxide'
   - '@vercel/speed-insights'
   - bufferutil
   - canvas
+  - core-js
   - keccak
   - sharp
   - unrs-resolver
