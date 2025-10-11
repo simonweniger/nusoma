@@ -34,6 +34,43 @@ const _schema = i.schema({
       prompt: i.string(),
       description: i.string().optional(),
     }),
+    canvasProjects: i.entity({
+      name: i.string().optional(),
+      backgroundColor: i.string().optional(),
+      viewportX: i.number(),
+      viewportY: i.number(),
+      viewportScale: i.number(),
+      lastModified: i.date().indexed(),
+      sessionId: i.string().optional().indexed(), // For unauthenticated users
+    }),
+    canvasElements: i.entity({
+      type: i.string().indexed(), // "image", "video", "text", "shape"
+      x: i.number(),
+      y: i.number(),
+      width: i.number().optional(),
+      height: i.number().optional(),
+      rotation: i.number(),
+      scale: i.number(),
+      zIndex: i.number(),
+      // Crop properties
+      cropX: i.number().optional(),
+      cropY: i.number().optional(),
+      cropWidth: i.number().optional(),
+      cropHeight: i.number().optional(),
+      // Video-specific properties
+      duration: i.number().optional(),
+      currentTime: i.number().optional(),
+      isPlaying: i.boolean().optional(),
+      volume: i.number().optional(),
+      muted: i.boolean().optional(),
+    }),
+    canvasAssets: i.entity({
+      type: i.string().indexed(), // "image" or "video"
+      filePath: i.string(), // Path in InstantDB storage
+      fileUrl: i.string(), // URL from InstantDB storage
+      duration: i.number().optional(), // For videos
+      createdAt: i.date().indexed(),
+    }),
   },
   links: {
     conversationMessages: {
@@ -55,6 +92,23 @@ const _schema = i.schema({
     messagePersona: {
       forward: { on: "messages", has: "one", label: "persona" },
       reverse: { on: "personas", has: "many", label: "messages" },
+    },
+    // Canvas links
+    canvasProjectUser: {
+      forward: { on: "canvasProjects", has: "one", label: "user" },
+      reverse: { on: "$users", has: "many", label: "canvasProjects" },
+    },
+    canvasProjectElements: {
+      forward: { on: "canvasElements", has: "one", label: "project" },
+      reverse: { on: "canvasProjects", has: "many", label: "elements" },
+    },
+    canvasElementAsset: {
+      forward: { on: "canvasElements", has: "one", label: "asset" },
+      reverse: { on: "canvasAssets", has: "many", label: "elements" },
+    },
+    canvasAssetUser: {
+      forward: { on: "canvasAssets", has: "one", label: "user" },
+      reverse: { on: "$users", has: "many", label: "canvasAssets" },
     },
   },
   rooms: {},

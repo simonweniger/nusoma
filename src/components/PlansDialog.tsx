@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/Dialog";
-import { Slider, SliderValue } from "@/components/ui/Slider";
+import { Slider } from "@/components/ui/Slider";
 import Link from "next/link";
 
 export default function PlansDialog() {

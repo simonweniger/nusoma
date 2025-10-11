@@ -14,16 +14,9 @@ export default function Logo({
     return (
       <Link
         href="/"
-        className={`flex flex-row items-center justify-center ${className}`}
+        className={`flex flex-row items-center justify-center space-x-2 ${className}`}
       >
-        <Image
-          src={
-            color === "black" ? "/black-logomark.svg" : "/white-logomark.svg"
-          }
-          alt="Logo"
-          width={24}
-          height={24}
-        />
+        <Image src="logo.svg" alt="Logo" width={24} height={24} />
         <h1 className={`text-sm font-medium text-sage-12`}>nusoma</h1>
       </Link>
     );
@@ -32,14 +25,9 @@ export default function Logo({
   return (
     <Link
       href="/"
-      className={`flex flex-row items-center justify-center ${className}`}
+      className={`flex flex-row items-center justify-center space-x-2 ${className}`}
     >
-      <Image
-        src={color === "black" ? "/black-logomark.svg" : "/white-logomark.svg"}
-        alt="Logo"
-        width={32}
-        height={32}
-      />
+      <Image src="logo.svg" alt="Logo" width={32} height={32} />
       <h1 className={`text-xl font-medium text-sage-12`}>nusoma</h1>
     </Link>
   );

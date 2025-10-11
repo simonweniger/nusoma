@@ -1,5 +1,5 @@
 import type { PlacedImage, PlacedVideo } from "@/types/canvas";
-import type { CanvasElement } from "@/lib/storage";
+import type { CanvasElement } from "@/lib/instant-storage";
 
 export interface Viewport {
   x: number;

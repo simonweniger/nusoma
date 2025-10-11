@@ -181,6 +181,36 @@ export default function AppLayout({
         </div>
         {/* <Button onClick={createConversationAndRedirect} size="small" className="mt-2 w-full bg-sage-3 text-sage-11 hover:bg-sage-4 dark:bg-sage-3 dark:text-sage-11 dark:hover:bg-sage-4 duration-300 border border-sage-6 dark:border-sage-6" icon={<Plus size={16} weight="bold" />}>New Conversation</Button> */}
 
+        {/* Projects List */}
+        <div className="w-full flex flex-col h-full relative">
+          <div className="flex flex-row items-center justify-between gap-2 py-4">
+            <p className="text-xs font-mono px-2 text-sage-11 dark:text-sage-11">
+              Projects
+            </p>
+            <Link
+              href="/"
+              className="w-max bg-sage-3 text-sage-11 hover:bg-sage-4 dark:bg-sage-3 dark:text-sage-11 dark:hover:bg-sage-4 duration-300 border border-sage-6 dark:border-sage-6 rounded p-1 hover:cursor-pointer"
+            >
+              <PlusIcon size={8} weight="bold" />
+            </Link>
+          </div>
+          <div className="flex flex-col w-full overflow-y-auto gap-px relative">
+            {conversations.map((conv) => (
+              <Link
+                key={conv.id}
+                href={`/conversations/${conv.id}`}
+                className={`flex flex-col justify-between text-sm px-2 py-1 w-full rounded-md hover:bg-sage-2 duration-300 ${conv.id === conversationId ? "bg-sage-3 font-medium text-sage-12 dark:text-sage-12" : "text-sage-11 dark:text-sage-11"}`}
+              >
+                <p className="truncate">{conv.name}</p>
+                <p className="text-xs text-sage-10 dark:text-sage-10">
+                  {DateTime.fromISO(conv.createdAt as string).toRelative()}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Credits section */}
         <div className="flex flex-col gap-2 border border-border bg-muted/50 rounded-md p-2 w-full mt-1 divide-y divide-border">
           <div className="flex flex-row gap-2 items-center justify-between pb-2">
             <div className="flex flex-row gap-1 items-center">
@@ -236,35 +266,6 @@ export default function AppLayout({
                 <p className="text-xs text-sage-11 dark:text-sage-11 hover:text-sage-12 transition-colors duration-300">Docs</p>
               </Link> */}
             </div>
-          </div>
-        </div>
-
-        {/* Conversation List */}
-        <div className="w-full flex flex-col h-full relative">
-          <div className="flex flex-row items-center justify-between gap-2 py-4">
-            <p className="text-xs font-mono px-2 text-sage-11 dark:text-sage-11">
-              Conversations
-            </p>
-            <Link
-              href="/"
-              className="w-max bg-sage-3 text-sage-11 hover:bg-sage-4 dark:bg-sage-3 dark:text-sage-11 dark:hover:bg-sage-4 duration-300 border border-sage-6 dark:border-sage-6 rounded p-1 hover:cursor-pointer"
-            >
-              <PlusIcon size={8} weight="bold" />
-            </Link>
-          </div>
-          <div className="flex flex-col w-full overflow-y-auto gap-px relative">
-            {conversations.map((conv) => (
-              <Link
-                key={conv.id}
-                href={`/conversations/${conv.id}`}
-                className={`flex flex-col justify-between text-sm px-2 py-1 w-full rounded-md hover:bg-sage-2 duration-300 ${conv.id === conversationId ? "bg-sage-3 font-medium text-sage-12 dark:text-sage-12" : "text-sage-11 dark:text-sage-11"}`}
-              >
-                <p className="truncate">{conv.name}</p>
-                <p className="text-xs text-sage-10 dark:text-sage-10">
-                  {DateTime.fromISO(conv.createdAt as string).toRelative()}
-                </p>
-              </Link>
-            ))}
           </div>
         </div>
       </div>
