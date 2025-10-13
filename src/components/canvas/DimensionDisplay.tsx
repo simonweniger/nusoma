@@ -15,10 +15,16 @@ export const DimensionDisplay: React.FC<DimensionDisplayProps> = ({
   selectedImages,
   viewport,
 }) => {
-  // Only show for single image selection to avoid clutter
-  if (selectedImages.length !== 1) return null;
+  // Move hooks to the top before any conditional returns
+  const [apiDimensions, setApiDimensions] = React.useState<{
+    width: number;
+    height: number;
+    isCropped: boolean;
+  } | null>(null);
 
-  const image = selectedImages[0];
+  // Only show for single image selection to avoid clutter
+  const shouldShow = selectedImages.length === 1;
+  const image = shouldShow ? selectedImages[0] : null;
 
   /**
    * Calculate the natural (API) dimensions that get sent to generation endpoints.
@@ -28,7 +34,7 @@ export const DimensionDisplay: React.FC<DimensionDisplayProps> = ({
    * - They're consistent regardless of canvas zoom/scaling
    * - Users need to know the true resolution for generation quality
    */
-  const getApiDimensions = async (img: PlacedImage) => {
+  const getApiDimensions = React.useCallback(async (img: PlacedImage) => {
     try {
       // Load the image to get natural dimensions
       const imgElement = new window.Image();
@@ -54,24 +60,29 @@ export const DimensionDisplay: React.FC<DimensionDisplayProps> = ({
     } catch (error) {
       // Fallback to display dimensions if image loading fails
       return {
-        width: Math.round(image.width),
-        height: Math.round(image.height),
+        width: Math.round(img.width),
+        height: Math.round(img.height),
         isCropped: false,
       };
     }
-  };
-
-  const [apiDimensions, setApiDimensions] = React.useState<{
-    width: number;
-    height: number;
-    isCropped: boolean;
-  } | null>(null);
+  }, []);
 
   React.useEffect(() => {
-    getApiDimensions(image).then(setApiDimensions);
-  }, [image.src, image.cropWidth, image.cropHeight]);
+    if (image) {
+      getApiDimensions(image).then(setApiDimensions);
+    } else {
+      setApiDimensions(null);
+    }
+  }, [
+    image?.src,
+    image?.cropWidth,
+    image?.cropHeight,
+    image,
+    getApiDimensions,
+  ]);
 
-  if (!apiDimensions) return null;
+  // Now do conditional rendering after all hooks
+  if (!shouldShow || !image || !apiDimensions) return null;
 
   // Get rotation-aware bottom center position using bounding box
   const boundingBox = calculateBoundingBox(image);

@@ -115,6 +115,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/Switch";
+//mport { GithubBadge } from "@/components/canvas/GithubBadge";
 import { GenerationsIndicator } from "@/components/generations-indicator";
 import { useParams } from "next/navigation";
 
@@ -795,9 +796,8 @@ export default function OverlayPage() {
 
       // Save actual image data to InstantDB
       for (const image of images) {
-        // Skip if src is undefined or if it's a placeholder for generation
+        // Skip if it's a placeholder for generation
         if (
-          !image.src ||
           image.src.startsWith("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP")
         )
           continue;
@@ -811,9 +811,8 @@ export default function OverlayPage() {
 
       // Save video data to InstantDB
       for (const video of videos) {
-        // Skip if src is undefined or if it's a placeholder for generation
+        // Skip if it's a placeholder for generation
         if (
-          !video.src ||
           video.src.startsWith("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP")
         )
           continue;
@@ -921,48 +920,6 @@ export default function OverlayPage() {
       // Restore viewport if available
       if (canvasState.viewport) {
         setViewport(canvasState.viewport);
-      }
-
-      // Check if any elements are missing asset links and fix them
-      const missingAssets = canvasState.elements.filter(
-        (el) => el.type === "image" && !el.imageId,
-      );
-      if (missingAssets.length > 0) {
-        console.log(
-          `Found ${missingAssets.length} elements with missing asset links, fixing...`,
-        );
-        await canvasStorage.fixMissingAssetLinks();
-        // Reload after fixing
-        const fixedState = await canvasStorage.getCanvasState();
-        if (fixedState) {
-          // Reload images with fixed asset links
-          const reloadedImages: PlacedImage[] = [];
-          for (const element of fixedState.elements) {
-            if (element.type === "image" && element.imageId) {
-              const imageData = await canvasStorage.getImage(element.imageId);
-              if (imageData) {
-                reloadedImages.push({
-                  id: element.id,
-                  src: imageData.originalDataUrl,
-                  x: element.transform.x,
-                  y: element.transform.y,
-                  width: element.width || 300,
-                  height: element.height || 300,
-                  rotation: element.transform.rotation,
-                  ...(element.transform.cropBox && {
-                    cropX: element.transform.cropBox.x,
-                    cropY: element.transform.cropBox.y,
-                    cropWidth: element.transform.cropBox.width,
-                    cropHeight: element.transform.cropBox.height,
-                  }),
-                });
-              }
-            }
-          }
-          if (reloadedImages.length > 0) {
-            setImages(reloadedImages);
-          }
-        }
       }
     } catch (error) {
       console.error("Failed to load from storage:", error);
@@ -1174,7 +1131,7 @@ export default function OverlayPage() {
             const img = new window.Image();
             img.crossOrigin = "anonymous"; // Enable CORS
             img.onload = () => {
-              const imageId = id(); // Generate proper UUID
+              const id = `default-${path.replace("/", "").replace(".png", "")}-${Date.now()}`;
               const aspectRatio = img.width / img.height;
               const maxSize = 200;
               let width = maxSize;
@@ -1197,7 +1154,7 @@ export default function OverlayPage() {
               setImages((prev) => [
                 ...prev,
                 {
-                  id: imageId,
+                  id,
                   src: e.target?.result as string,
                   x,
                   y,

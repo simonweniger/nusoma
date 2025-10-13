@@ -37,21 +37,21 @@ const _schema = i.schema({
     canvasProjects: i.entity({
       name: i.string().optional(),
       backgroundColor: i.string().optional(),
-      viewportX: i.number(),
-      viewportY: i.number(),
-      viewportScale: i.number(),
-      lastModified: i.date().indexed(),
+      viewportX: i.number().optional(),
+      viewportY: i.number().optional(),
+      viewportScale: i.number().optional(),
+      lastModified: i.date().indexed().optional(),
       sessionId: i.string().optional().indexed(), // For unauthenticated users
     }),
     canvasElements: i.entity({
-      type: i.string().indexed(), // "image", "video", "text", "shape"
-      x: i.number(),
-      y: i.number(),
+      type: i.string().indexed().optional(), // "image", "video", "text", "shape"
+      x: i.number().optional(),
+      y: i.number().optional(),
       width: i.number().optional(),
       height: i.number().optional(),
-      rotation: i.number(),
-      scale: i.number(),
-      zIndex: i.number(),
+      rotation: i.number().optional(),
+      scale: i.number().optional(),
+      zIndex: i.number().optional(),
       // Crop properties
       cropX: i.number().optional(),
       cropY: i.number().optional(),
@@ -65,11 +65,9 @@ const _schema = i.schema({
       muted: i.boolean().optional(),
     }),
     canvasAssets: i.entity({
-      type: i.string().indexed(), // "image" or "video"
-      filePath: i.string(), // Path in InstantDB storage
-      fileUrl: i.string(), // URL from InstantDB storage
+      type: i.string().indexed().optional(), // "image" or "video"
       duration: i.number().optional(), // For videos
-      createdAt: i.date().indexed(),
+      createdAt: i.date().indexed().optional(),
     }),
   },
   links: {
@@ -109,6 +107,10 @@ const _schema = i.schema({
     canvasAssetUser: {
       forward: { on: "canvasAssets", has: "one", label: "user" },
       reverse: { on: "$users", has: "many", label: "canvasAssets" },
+    },
+    canvasAssetFile: {
+      forward: { on: "canvasAssets", has: "one", label: "file" },
+      reverse: { on: "$files", has: "one", label: "canvasAsset" },
     },
   },
   rooms: {},

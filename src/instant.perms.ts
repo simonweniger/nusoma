@@ -30,6 +30,34 @@ const rules = {
       delete: "true",
     },
   },
+  canvasProjects: {
+    allow: {
+      view: "auth.id in data.ref('user.id') || ruleParams.sessionId == data.sessionId",
+      create: "true",
+      update:
+        "auth.id in data.ref('user.id') || ruleParams.sessionId == data.sessionId",
+      delete:
+        "auth.id in data.ref('user.id') || ruleParams.sessionId == data.sessionId",
+    },
+  },
+  canvasElements: {
+    allow: {
+      view: "auth.id in data.ref('project.user.id') || ruleParams.sessionId in data.ref('project.sessionId')",
+      create: "true",
+      update:
+        "auth.id in data.ref('project.user.id') || ruleParams.sessionId in data.ref('project.sessionId')",
+      delete:
+        "auth.id in data.ref('project.user.id') || ruleParams.sessionId in data.ref('project.sessionId')",
+    },
+  },
+  canvasAssets: {
+    allow: {
+      view: "true", // Allow public viewing since asset IDs are UUIDs
+      create: "true",
+      update: "auth.id in data.ref('user.id')",
+      delete: "auth.id in data.ref('user.id')",
+    },
+  },
 } satisfies InstantRules;
 
 export default rules;

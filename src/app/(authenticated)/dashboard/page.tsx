@@ -73,23 +73,49 @@ export default function Dashboard() {
     }
 
     try {
-      // Get all elements for this project
+      // Get all elements with their assets for this project
       const result = await db.queryOnce({
         canvasElements: {
           $: {
             where: { "project.id": projectId },
           },
+          asset: {
+            file: {}, // Include the linked file to get the path
+          },
         },
       });
 
-      // Delete all elements first
+      // Collect all unique asset IDs and their file paths
+      const assetMap = new Map<string, string>();
+      result.data.canvasElements.forEach((el: any) => {
+        if (el.asset?.file) {
+          assetMap.set(el.asset.id, el.asset.file.path);
+        }
+      });
+
+      // Delete files from storage first
+      for (const [assetId, filePath] of assetMap.entries()) {
+        try {
+          if (filePath) {
+            await db.storage.delete(filePath);
+          }
+        } catch (error) {
+          console.error(`Failed to delete file ${filePath}:`, error);
+        }
+      }
+
+      // Delete all elements and assets
       const elementTxs = result.data.canvasElements.map((el: any) =>
         db.tx.canvasElements[el.id].delete(),
+      );
+      const assetTxs = Array.from(assetMap.keys()).map((assetId) =>
+        db.tx.canvasAssets[assetId].delete(),
       );
 
       // Then delete the project
       await db.transact([
         ...elementTxs,
+        ...assetTxs,
         db.tx.canvasProjects[projectId].delete(),
       ]);
     } catch (error) {

@@ -189,19 +189,24 @@ class InstantCanvasStorage {
       // Upload to InstantDB storage
       const path = `canvas-images/${this.userId || this.sessionId}/${assetId}`;
 
+      console.log(`Uploading image ${assetId} to path: ${path}`);
+
       // Convert blob to File
       const file = new File([blob], `${assetId}.png`, { type: blob.type });
-      const uploadResult = await db.storage.upload(path, file);
-      const url = uploadResult ? (uploadResult as any).url : "";
 
-      // Create asset record
+      // Upload returns { data: { id, path } }
+      const { data: fileData } = await db.storage.uploadFile(path, file);
+
+      console.log("Upload successful! File ID:", fileData.id);
+
+      // Create asset record and link to the file
       const txs = [
-        db.tx.canvasAssets[assetId].update({
-          type: "image",
-          filePath: path,
-          fileUrl: url,
-          createdAt: new Date(),
-        }),
+        db.tx.canvasAssets[assetId]
+          .update({
+            type: "image",
+            createdAt: new Date(),
+          })
+          .link({ file: fileData.id }),
       ];
 
       if (this.userId) {
@@ -210,7 +215,7 @@ class InstantCanvasStorage {
 
       await db.transact(txs);
 
-      // Remove from temporary storage
+      // Clear temporary storage now that upload is successful
       this.imageDataUrls.delete(assetId);
 
       return assetId;
@@ -244,17 +249,28 @@ class InstantCanvasStorage {
               type: "image",
             },
           },
+          file: {}, // Query the linked file to get the URL
         },
       });
 
       const asset = result.data.canvasAssets[0];
-      if (!asset) return undefined;
+      if (!asset) {
+        console.warn(`Asset ${assetId} not found`);
+        return undefined;
+      }
+
+      console.log(`Asset ${assetId}:`, {
+        hasFile: !!asset.file,
+        fileUrl: asset.file?.url,
+      });
 
       return {
         id: asset.id,
-        originalDataUrl: asset.fileUrl,
-        uploadedUrl: asset.fileUrl,
-        createdAt: new Date(asset.createdAt).getTime(),
+        originalDataUrl: asset.file?.url || "",
+        uploadedUrl: asset.file?.url || "",
+        createdAt: asset.createdAt
+          ? new Date(asset.createdAt).getTime()
+          : Date.now(),
       };
     } catch (error) {
       console.error("Failed to get image:", error);
@@ -269,6 +285,21 @@ class InstantCanvasStorage {
     this.imageDataUrls.delete(assetId);
 
     try {
+      // Get the asset to find the file path
+      const result = await db.queryOnce({
+        canvasAssets: {
+          $: { where: { id: assetId } },
+          file: {},
+        },
+      });
+
+      const asset = result.data.canvasAssets[0];
+      if (asset?.file) {
+        // Delete the actual file from storage
+        await db.storage.delete(asset.file.path);
+      }
+
+      // Delete the asset record (this will also remove the link to the file)
       await db.transact(db.tx.canvasAssets[assetId].delete());
     } catch (error) {
       console.error("Failed to delete image:", error);
@@ -298,18 +329,19 @@ class InstantCanvasStorage {
 
       // Convert blob to File
       const file = new File([blob], `${assetId}.mp4`, { type: blob.type });
-      const uploadResult = await db.storage.upload(path, file);
-      const url = uploadResult ? (uploadResult as any).url : "";
 
-      // Create asset record
+      // Upload returns { data: { id, path } }
+      const { data: fileData } = await db.storage.uploadFile(path, file);
+
+      // Create asset record and link to the file
       const txs = [
-        db.tx.canvasAssets[assetId].update({
-          type: "video",
-          filePath: path,
-          fileUrl: url,
-          duration,
-          createdAt: new Date(),
-        }),
+        db.tx.canvasAssets[assetId]
+          .update({
+            type: "video",
+            duration,
+            createdAt: new Date(),
+          })
+          .link({ file: fileData.id }),
       ];
 
       if (this.userId) {
@@ -353,6 +385,7 @@ class InstantCanvasStorage {
               type: "video",
             },
           },
+          file: {}, // Query the linked file to get the URL
         },
       });
 
@@ -361,10 +394,12 @@ class InstantCanvasStorage {
 
       return {
         id: asset.id,
-        originalDataUrl: asset.fileUrl,
-        uploadedUrl: asset.fileUrl,
+        originalDataUrl: asset.file?.url || "",
+        uploadedUrl: asset.file?.url || "",
         duration: asset.duration || 0,
-        createdAt: new Date(asset.createdAt).getTime(),
+        createdAt: asset.createdAt
+          ? new Date(asset.createdAt).getTime()
+          : Date.now(),
       };
     } catch (error) {
       console.error("Failed to get video:", error);
@@ -379,6 +414,21 @@ class InstantCanvasStorage {
     this.videoDataUrls.delete(assetId);
 
     try {
+      // Get the asset to find the file path
+      const result = await db.queryOnce({
+        canvasAssets: {
+          $: { where: { id: assetId } },
+          file: {},
+        },
+      });
+
+      const asset = result.data.canvasAssets[0];
+      if (asset?.file) {
+        // Delete the actual file from storage
+        await db.storage.delete(asset.file.path);
+      }
+
+      // Delete the asset record (this will also remove the link to the file)
       await db.transact(db.tx.canvasAssets[assetId].delete());
     } catch (error) {
       console.error("Failed to delete video:", error);
@@ -403,7 +453,7 @@ class InstantCanvasStorage {
         }),
       ]);
 
-      // Delete existing elements
+      // Query existing elements
       const existingElements = await db.queryOnce({
         canvasElements: {
           $: {
@@ -414,41 +464,56 @@ class InstantCanvasStorage {
         },
       });
 
-      const deleteTxs = existingElements.data.canvasElements.map((el) =>
-        db.tx.canvasElements[el.id].delete(),
+      const existingIds = new Set(
+        existingElements.data.canvasElements.map((el) => el.id),
       );
+      const newElementIds = new Set(state.elements.map((el) => el.id));
+
+      // Delete elements that are no longer in the state
+      const deleteTxs = existingElements.data.canvasElements
+        .filter((el) => !newElementIds.has(el.id))
+        .map((el) => db.tx.canvasElements[el.id].delete());
 
       if (deleteTxs.length > 0) {
         await db.transact(deleteTxs);
       }
 
-      // Create new elements
+      // Update or create elements
       const elementTxs = state.elements.flatMap((element) => {
         const elementId = element.id;
-        const txs = [
-          db.tx.canvasElements[elementId].update({
-            type: element.type,
-            x: element.transform.x,
-            y: element.transform.y,
-            width: element.width,
-            height: element.height,
-            rotation: element.transform.rotation,
-            scale: element.transform.scale,
-            zIndex: element.zIndex,
-            cropX: element.transform.cropBox?.x,
-            cropY: element.transform.cropBox?.y,
-            cropWidth: element.transform.cropBox?.width,
-            cropHeight: element.transform.cropBox?.height,
-            duration: element.duration,
-            currentTime: element.currentTime,
-            isPlaying: element.isPlaying,
-            volume: element.volume,
-            muted: element.muted,
-          }),
-          db.tx.canvasElements[elementId].link({ project: projectId }),
-        ];
+        const exists = existingIds.has(elementId);
 
-        // Link to asset if it exists
+        // Build update transaction
+        const updateTx = db.tx.canvasElements[elementId].update({
+          type: element.type,
+          x: element.transform.x,
+          y: element.transform.y,
+          width: element.width,
+          height: element.height,
+          rotation: element.transform.rotation,
+          scale: element.transform.scale,
+          zIndex: element.zIndex,
+          cropX: element.transform.cropBox?.x,
+          cropY: element.transform.cropBox?.y,
+          cropWidth: element.transform.cropBox?.width,
+          cropHeight: element.transform.cropBox?.height,
+          duration: element.duration,
+          currentTime: element.currentTime,
+          isPlaying: element.isPlaying,
+          volume: element.volume,
+          muted: element.muted,
+        });
+
+        const txs: any[] = [updateTx];
+
+        // Link to project if this is a new element
+        if (!exists) {
+          txs.push(
+            db.tx.canvasElements[elementId].link({ project: projectId }),
+          );
+        }
+
+        // Always ensure asset link is present (for both new and existing elements)
         if (element.imageId) {
           txs.push(
             db.tx.canvasElements[elementId].link({ asset: element.imageId }),
@@ -486,72 +551,178 @@ class InstantCanvasStorage {
             : undefined;
 
       if (!whereClause) {
+        console.log("No where clause - no user or session ID set");
         return null;
       }
 
-      const result = await db.queryOnce({
-        canvasProjects: {
-          $: {
-            where: whereClause,
-            limit: 1,
-          },
-          elements: {
-            asset: {},
+      console.log("Querying canvas state with:", {
+        currentProjectId: this.currentProjectId,
+        userId: this.userId,
+        sessionId: this.sessionId,
+        whereClause,
+      });
+
+      const result = await db.queryOnce(
+        {
+          canvasProjects: {
+            $: {
+              where: whereClause,
+              limit: 1,
+            },
+            elements: {
+              asset: {
+                file: {}, // Include the linked file to get URLs
+              },
+            },
           },
         },
-      });
+        // Pass sessionId as a parameter for permission checks via ruleParams
+        this.sessionId
+          ? { ruleParams: { sessionId: this.sessionId } }
+          : undefined,
+      );
+
+      console.log("Query result:", result);
 
       const projects = result.data.canvasProjects || [];
       const project = projects[0];
-      if (!project) return null;
+
+      if (!project) {
+        console.log("No project found - returning null");
+        return null;
+      }
 
       this.currentProjectId = project.id;
 
       const elements: CanvasElement[] = (project.elements || []).map(
-        (el: any) => ({
-          id: el.id,
-          type: el.type,
-          imageId: el.type === "image" ? el.asset?.id : undefined,
-          videoId: el.type === "video" ? el.asset?.id : undefined,
-          transform: {
-            x: el.x,
-            y: el.y,
-            rotation: el.rotation,
-            scale: el.scale,
-            cropBox:
-              el.cropX !== undefined
-                ? {
-                    x: el.cropX,
-                    y: el.cropY,
-                    width: el.cropWidth,
-                    height: el.cropHeight,
-                  }
-                : undefined,
-          },
-          zIndex: el.zIndex,
-          width: el.width,
-          height: el.height,
-          duration: el.duration,
-          currentTime: el.currentTime,
-          isPlaying: el.isPlaying,
-          volume: el.volume,
-          muted: el.muted,
-        }),
+        (el: any) => {
+          const imageId = el.type === "image" ? el.asset?.id : undefined;
+          const videoId = el.type === "video" ? el.asset?.id : undefined;
+
+          // Log if asset is missing
+          if (el.type === "image" && !el.asset) {
+            console.warn(`Element ${el.id} is missing asset link!`);
+          }
+
+          return {
+            id: el.id,
+            type: el.type,
+            imageId,
+            videoId,
+            transform: {
+              x: el.x,
+              y: el.y,
+              rotation: el.rotation,
+              scale: el.scale,
+              cropBox:
+                el.cropX !== undefined
+                  ? {
+                      x: el.cropX,
+                      y: el.cropY,
+                      width: el.cropWidth,
+                      height: el.cropHeight,
+                    }
+                  : undefined,
+            },
+            zIndex: el.zIndex,
+            width: el.width,
+            height: el.height,
+            duration: el.duration,
+            currentTime: el.currentTime,
+            isPlaying: el.isPlaying,
+            volume: el.volume,
+            muted: el.muted,
+          };
+        },
+      );
+
+      console.log(
+        "Successfully loaded canvas state with",
+        elements.length,
+        "elements",
+      );
+      console.log(
+        "Elements with imageId:",
+        elements.filter((e) => e.imageId).length,
+      );
+      console.log(
+        "Elements without imageId:",
+        elements.filter((e) => e.type === "image" && !e.imageId).length,
       );
 
       return {
         elements,
         backgroundColor: project.backgroundColor,
-        lastModified: new Date(project.lastModified).getTime(),
+        lastModified: project.lastModified
+          ? new Date(project.lastModified).getTime()
+          : Date.now(),
         viewport: {
-          x: project.viewportX,
-          y: project.viewportY,
-          scale: project.viewportScale,
+          x: project.viewportX ?? 0,
+          y: project.viewportY ?? 0,
+          scale: project.viewportScale ?? 1,
         },
       };
     } catch (error) {
       console.error("Failed to get canvas state:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
       return null;
+    }
+  }
+
+  /**
+   * Fix missing asset links for existing elements (one-time migration)
+   */
+  async fixMissingAssetLinks(): Promise<void> {
+    try {
+      console.log("Starting asset link fix...");
+
+      const projectId = await this.getCurrentProject();
+
+      // Get all elements for this project
+      const result = await db.queryOnce({
+        canvasElements: {
+          $: {
+            where: {
+              "project.id": projectId,
+            },
+          },
+          asset: {},
+        },
+      });
+
+      const fixTxs: any[] = [];
+
+      for (const element of result.data.canvasElements) {
+        // If element has no asset link but should have one, add it
+        if (!element.asset) {
+          // Try to find asset by matching element ID with asset ID
+          const assetResult = await db.queryOnce({
+            canvasAssets: {
+              $: {
+                where: { id: element.id },
+              },
+            },
+          });
+
+          if (assetResult.data.canvasAssets.length > 0) {
+            console.log(`Fixing asset link for element ${element.id}`);
+            fixTxs.push(
+              db.tx.canvasElements[element.id].link({
+                asset: assetResult.data.canvasAssets[0].id,
+              }),
+            );
+          }
+        }
+      }
+
+      if (fixTxs.length > 0) {
+        await db.transact(fixTxs);
+        console.log(`Fixed ${fixTxs.length} missing asset links`);
+      } else {
+        console.log("No missing asset links found");
+      }
+    } catch (error) {
+      console.error("Failed to fix asset links:", error);
     }
   }
 
@@ -571,14 +742,20 @@ class InstantCanvasStorage {
       }
 
       // Get all projects
-      const result = await db.queryOnce({
-        canvasProjects: {
-          $: {
-            where: whereClause,
+      const result = await db.queryOnce(
+        {
+          canvasProjects: {
+            $: {
+              where: whereClause,
+            },
+            elements: {},
           },
-          elements: {},
         },
-      });
+        // Pass sessionId as a parameter for permission checks via ruleParams
+        this.sessionId
+          ? { ruleParams: { sessionId: this.sessionId } }
+          : undefined,
+      );
 
       const projects = result.data.canvasProjects || [];
 
@@ -639,14 +816,20 @@ class InstantCanvasStorage {
       }
 
       // Get all projects sorted by last modified
-      const result = await db.queryOnce({
-        canvasProjects: {
-          $: {
-            where: whereClause,
-            order: { lastModified: "desc" },
+      const result = await db.queryOnce(
+        {
+          canvasProjects: {
+            $: {
+              where: whereClause,
+              order: { lastModified: "desc" },
+            },
           },
         },
-      });
+        // Pass sessionId as a parameter for permission checks via ruleParams
+        this.sessionId
+          ? { ruleParams: { sessionId: this.sessionId } }
+          : undefined,
+      );
 
       const projects = result.data.canvasProjects || [];
       // Keep only the most recent project, delete others
