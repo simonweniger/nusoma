@@ -30,7 +30,7 @@ export default function Dashboard() {
     },
   });
 
-  const projects = projectsData?.canvasProjects || [];
+  const canvasProjects = projectsData?.canvasProjects || [];
 
   const handleSignOut = async () => {
     try {
@@ -55,7 +55,7 @@ export default function Dashboard() {
       ]);
 
       // Navigate to the new canvas
-      router.push(`/projects/${projectId}`);
+      router.push(`/canvas/${projectId}`);
     } catch (error) {
       console.error("Error creating canvas:", error);
     }
@@ -194,11 +194,11 @@ export default function Dashboard() {
             <CardContent>
               <div className="space-y-2">
                 <p>
-                  <strong>Total Canvases:</strong> {projects.length}
+                  <strong>Total Canvases:</strong> {canvasProjects.length}
                 </p>
                 <p>
                   <strong>Total Elements:</strong>{" "}
-                  {projects.reduce(
+                  {canvasProjects.reduce(
                     (acc: number, p: any) => acc + (p.elements?.length || 0),
                     0,
                   )}
@@ -216,9 +216,9 @@ export default function Dashboard() {
               <p className="text-muted-foreground">
                 {isLoading
                   ? "Loading..."
-                  : projects.length === 0
+                  : canvasProjects.length === 0
                     ? "No canvases yet. Create your first one!"
-                    : `${projects.length} canvas${projects.length === 1 ? "" : "es"}`}
+                    : `${canvasProjects.length} canvas${canvasProjects.length === 1 ? "" : "es"}`}
               </p>
             </div>
             <Button onClick={handleCreateCanvas}>
@@ -241,7 +241,7 @@ export default function Dashboard() {
                 </Card>
               ))}
             </div>
-          ) : projects.length === 0 ? (
+          ) : canvasProjects.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Image className="h-12 w-12 text-muted-foreground mb-4" />
@@ -257,20 +257,20 @@ export default function Dashboard() {
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {projects.map((project: any) => (
+              {canvasProjects.map((canvas: any) => (
                 <Card
-                  key={project.id}
+                  key={canvas.id}
                   className="cursor-pointer hover:border-primary transition-colors group"
-                  onClick={() => router.push(`/projects/${project.id}`)}
+                  onClick={() => router.push(`/canvas/${canvas.id}`)}
                 >
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <CardTitle className="truncate">
-                          {project.name || "Untitled Canvas"}
+                          {canvas.name || "Untitled Canvas"}
                         </CardTitle>
                         <CardDescription className="text-xs">
-                          {formatDistanceToNow(new Date(project.lastModified), {
+                          {formatDistanceToNow(new Date(canvas.lastModified), {
                             addSuffix: true,
                           })}
                         </CardDescription>
@@ -279,7 +279,7 @@ export default function Dashboard() {
                         variant="ghost"
                         size="icon"
                         className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => handleDeleteCanvas(project.id, e)}
+                        onClick={(e) => handleDeleteCanvas(canvas.id, e)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -290,8 +290,8 @@ export default function Dashboard() {
                       <div className="text-center">
                         <Image className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground">
-                          {project.elements?.length || 0} element
-                          {project.elements?.length === 1 ? "" : "s"}
+                          {canvas.elements?.length || 0} element
+                          {canvas.elements?.length === 1 ? "" : "s"}
                         </p>
                       </div>
                     </div>
