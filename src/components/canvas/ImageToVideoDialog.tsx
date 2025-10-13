@@ -7,7 +7,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { VideoGenerationSettings } from "@/types/canvas";
 import { SpinnerIcon } from "@/components/icons";
 import {
@@ -167,7 +167,7 @@ export const ImageToVideoDialog: React.FC<ImageToVideoDialogProps> = ({
             </Button>
             <Button
               type="submit"
-              variant="primary"
+              variant="default"
               disabled={isConverting}
               className="flex items-center gap-2"
             >

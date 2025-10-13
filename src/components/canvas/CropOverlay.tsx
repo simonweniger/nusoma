@@ -9,7 +9,7 @@ import {
 import { Html } from "react-konva-utils";
 import Konva from "konva";
 import type { PlacedImage } from "@/types/canvas";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 
 interface CropOverlayProps {
   image: PlacedImage;

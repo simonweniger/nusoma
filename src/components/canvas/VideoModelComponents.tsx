@@ -9,7 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/Tooltip";
 import { Info, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import {
   getVideoModelsByCategory,
   formatPricingMessage,

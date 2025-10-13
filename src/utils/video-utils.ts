@@ -1,3 +1,5 @@
+import { id } from "@instantdb/react";
+
 // We no longer need to generate thumbnails since we're using the video element directly
 
 /**
@@ -88,7 +90,7 @@ export const placeGeneratedVideo = async (
   return new Promise((resolve, reject) => {
     video.onloadedmetadata = () => {
       try {
-        const id = `video-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        const videoId = id(); // Use UUID from InstantDB
 
         // Calculate aspect ratio and size
         const aspectRatio = video.videoWidth / video.videoHeight;
@@ -111,7 +113,7 @@ export const placeGeneratedVideo = async (
 
         // Create the placed video object
         const placedVideo = createPlacedVideo(
-          id,
+          videoId,
           videoUrl,
           x,
           y,
@@ -161,13 +163,11 @@ export const convertImageToVideo = (
   duration: number,
   replaceOriginal: boolean = false,
 ) => {
-  const id = replaceOriginal
-    ? image.id
-    : `video-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  const videoId = replaceOriginal ? image.id : id(); // Use UUID from InstantDB
 
   // Create the placed video object, preserving position and dimensions of the original image
   return createPlacedVideo(
-    id,
+    videoId,
     videoUrl,
     image.x,
     image.y,

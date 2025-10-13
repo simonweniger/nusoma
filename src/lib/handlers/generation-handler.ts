@@ -4,12 +4,12 @@ import type {
   ActiveGeneration,
 } from "@/types/canvas";
 import type { FalClient } from "@fal-ai/client";
+import { id } from "@instantdb/react";
 
 interface GenerationHandlerDeps {
   images: PlacedImage[];
   selectedIds: string[];
   generationSettings: GenerationSettings;
-  customApiKey?: string;
   canvasSize: { width: number; height: number };
   viewport: { x: number; y: number; scale: number };
   falClient: FalClient;
@@ -19,7 +19,6 @@ interface GenerationHandlerDeps {
     React.SetStateAction<Map<string, ActiveGeneration>>
   >;
   setIsGenerating: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsApiKeyDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   toast: (props: {
     title: string;
     description?: string;
@@ -32,7 +31,6 @@ export const uploadImageDirect = async (
   dataUrl: string,
   falClient: FalClient,
   toast: GenerationHandlerDeps["toast"],
-  setIsApiKeyDialogOpen: GenerationHandlerDeps["setIsApiKeyDialogOpen"],
 ) => {
   // Convert data URL to blob first
   const response = await fetch(dataUrl);
@@ -67,8 +65,6 @@ export const uploadImageDirect = async (
           "Add your FAL API key to bypass rate limits. Without an API key, uploads are limited.",
         variant: "destructive",
       });
-      // Open API key dialog automatically
-      setIsApiKeyDialogOpen(true);
     } else {
       toast({
         title: "Failed to upload image",
@@ -93,7 +89,7 @@ export const generateImage = (
   width: number = 300,
   height: number = 300,
 ) => {
-  const placeholderId = `generated-${Date.now()}`;
+  const placeholderId = id(); // Use UUID from InstantDB
   setImages((prev) => [
     ...prev,
     {
@@ -124,7 +120,6 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
     images,
     selectedIds,
     generationSettings,
-    customApiKey,
     canvasSize,
     viewport,
     falClient,
@@ -132,7 +127,6 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
     setSelectedIds,
     setActiveGenerations,
     setIsGenerating,
-    setIsApiKeyDialogOpen,
     toast,
     generateTextToImage,
   } = deps;
@@ -156,11 +150,10 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
         prompt: generationSettings.prompt,
         loraUrl: generationSettings.loraUrl || undefined,
         imageSize: "square",
-        apiKey: customApiKey || undefined,
       });
 
       // Add the generated image to the canvas
-      const id = `generated-${Date.now()}-${Math.random()}`;
+      const imageId = id(); // Use UUID from InstantDB
 
       // Place at center of viewport
       const viewportCenterX =
@@ -175,7 +168,7 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
       setImages((prev) => [
         ...prev,
         {
-          id,
+          id: imageId,
           src: result.url,
           x: viewportCenterX - width / 2,
           y: viewportCenterY - height / 2,
@@ -187,7 +180,7 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
       ]);
 
       // Select the new image
-      setSelectedIds([id]);
+      setSelectedIds([imageId]);
     } catch (error) {
       console.error("Error generating image:", error);
       toast({
@@ -270,12 +263,7 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
 
       let uploadResult;
       try {
-        uploadResult = await uploadImageDirect(
-          dataUrl,
-          falClient,
-          toast,
-          setIsApiKeyDialogOpen,
-        );
+        uploadResult = await uploadImageDirect(dataUrl, falClient, toast);
       } catch (uploadError) {
         console.error("Failed to upload image:", uploadError);
         failureCount++;
@@ -302,7 +290,7 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
         outputWidth = Math.round(baseSize * aspectRatio);
       }
 
-      const groupId = `single-${Date.now()}-${Math.random()}`;
+      const groupId = id(); // Use UUID from InstantDB
       generateImage(
         uploadResult.url,
         img.x + img.width + 20,

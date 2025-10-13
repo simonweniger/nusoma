@@ -9,7 +9,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { motion, AnimatePresence } from "framer-motion";
 import { id } from "@instantdb/react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import {
   X,
   ChevronDown,
@@ -126,9 +126,9 @@ export default function OverlayPage() {
   const [videos, setVideos] = useState<PlacedVideo[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isStorageLoaded, setIsStorageLoaded] = useState(false);
-  const [visibleIndicators, setVisibleIndicators] = useState<Set<string>>(
-    new Set(),
-  );
+  // const [visibleIndicators, setVisibleIndicators] = useState<Set<string>>(
+  //   new Set(),
+  // );
   const simpsonsStyle = styleModels.find((m) => m.id === "simpsons");
   const { toast } = useToast();
 
@@ -187,7 +187,6 @@ export default function OverlayPage() {
   const [showGrid, setShowGrid] = useState(true);
   //const [showMinimap, setShowMinimap] = useState(true);
   const [isStyleDialogOpen, setIsStyleDialogOpen] = useState(false);
-  const [isApiKeyDialogOpen, setIsApiKeyDialogOpen] = useState(false);
   const [isImageToVideoDialogOpen, setIsImageToVideoDialogOpen] =
     useState(false);
   const [selectedImageForVideo, setSelectedImageForVideo] = useState<
@@ -215,8 +214,6 @@ export default function OverlayPage() {
   ] = useState<string | null>(null);
   const [isRemovingVideoBackground, setIsRemovingVideoBackground] =
     useState(false);
-  const [customApiKey, setCustomApiKey] = useState<string>("");
-  const [tempApiKey, setTempApiKey] = useState<string>("");
   const [_, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -266,12 +263,11 @@ export default function OverlayPage() {
   ]);
 
   // Create FAL client instance with proxy
-  const falClient = useFalClient(customApiKey);
+  const falClient = useFalClient();
 
   const trpc = useTRPC();
 
   // Direct FAL upload function using proxy
-
   const { mutateAsync: removeBackground } = useMutation(
     trpc.removeBackground.mutationOptions(),
   );
@@ -631,7 +627,7 @@ export default function OverlayPage() {
           if (sourceVideo) {
             // Create a new video based on the source video
             const newVideo: PlacedVideo = {
-              id: `video_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+              id: id(), // Use UUID from InstantDB
               src: videoUrl,
               x: sourceVideo.x + sourceVideo.width + 20, // Position to the right
               y: sourceVideo.y,
@@ -983,15 +979,6 @@ export default function OverlayPage() {
     }
   }, [user, sessionId, projectId]);
 
-  // Load API key from localStorage on mount
-  useEffect(() => {
-    const savedKey = localStorage.getItem("fal-api-key");
-    if (savedKey) {
-      setCustomApiKey(savedKey);
-      setTempApiKey(savedKey);
-    }
-  }, []);
-
   // Load grid setting from localStorage on mount
   useEffect(() => {
     const savedShowGrid = localStorage.getItem("showGrid");
@@ -1029,15 +1016,6 @@ export default function OverlayPage() {
       setPreviousStyleId(currentStyleId);
     }
   }, [generationSettings.styleId, previousStyleId]);
-
-  // Save API key to localStorage when it changes
-  useEffect(() => {
-    if (customApiKey) {
-      localStorage.setItem("fal-api-key", customApiKey);
-    } else {
-      localStorage.removeItem("fal-api-key");
-    }
-  }, [customApiKey]);
 
   // Save state to history
   const saveToHistory = useCallback(() => {
@@ -1346,7 +1324,7 @@ export default function OverlayPage() {
       if (file.type.startsWith("image/")) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          const id = `img-${Date.now()}-${Math.random()}`;
+          const imageId = id(); // Use UUID from InstantDB
           const img = new window.Image();
           img.crossOrigin = "anonymous"; // Enable CORS
           img.onload = () => {
@@ -1385,7 +1363,7 @@ export default function OverlayPage() {
             setImages((prev) => [
               ...prev,
               {
-                id,
+                id: imageId,
                 src: e.target?.result as string,
                 x,
                 y,
@@ -1768,7 +1746,6 @@ export default function OverlayPage() {
       images,
       selectedIds,
       generationSettings,
-      customApiKey,
       canvasSize,
       viewport,
       falClient,
@@ -1776,7 +1753,6 @@ export default function OverlayPage() {
       setSelectedIds,
       setActiveGenerations,
       setIsGenerating,
-      setIsApiKeyDialogOpen,
       toast,
       generateTextToImage,
     });
@@ -1798,7 +1774,7 @@ export default function OverlayPage() {
     const selectedImages = images.filter((img) => selectedIds.includes(img.id));
     const newImages = selectedImages.map((img) => ({
       ...img,
-      id: `img-${Date.now()}-${Math.random()}`,
+      id: id(), // Use UUID from InstantDB
       x: img.x + 20,
       y: img.y + 20,
     }));
@@ -1807,7 +1783,7 @@ export default function OverlayPage() {
     const selectedVideos = videos.filter((vid) => selectedIds.includes(vid.id));
     const newVideos = selectedVideos.map((vid) => ({
       ...vid,
-      id: `vid-${Date.now()}-${Math.random()}`,
+      id: id(), // Use UUID from InstantDB
       x: vid.x + 20,
       y: vid.y + 20,
       // Reset playback state for duplicated videos
@@ -1835,9 +1811,7 @@ export default function OverlayPage() {
       toast,
       saveToHistory,
       removeBackground,
-      customApiKey,
       falClient,
-      setIsApiKeyDialogOpen,
     });
   };
 
@@ -2113,12 +2087,7 @@ export default function OverlayPage() {
       });
 
       // Upload the processed image
-      const uploadResult = await uploadImageDirect(
-        dataUrl,
-        falClient,
-        toast,
-        setIsApiKeyDialogOpen,
-      );
+      const uploadResult = await uploadImageDirect(dataUrl, falClient, toast);
 
       // Isolate object using EVF-SAM2
       console.log("Calling isolateObject with:", {
@@ -2129,7 +2098,6 @@ export default function OverlayPage() {
       const result = await isolateObject({
         imageUrl: uploadResult?.url || "",
         textInput: isolateInputValue,
-        apiKey: customApiKey || undefined,
       });
 
       console.log("IsolateObject result:", result);
@@ -2200,10 +2168,10 @@ export default function OverlayPage() {
             return;
           }
 
-          // Create new image with isolated- prefix ID
+          // Create new image with UUID
           const newImage: PlacedImage = {
             ...currentImage,
-            id: `isolated-${Date.now()}-${Math.random()}`,
+            id: id(), // Use UUID from InstantDB
             src: newImageUrl,
             // Remove crop values since we've applied them
             cropX: undefined,
@@ -2423,7 +2391,7 @@ export default function OverlayPage() {
 
     // Create new combined image
     const combinedImage: PlacedImage = {
-      id: `combined-${Date.now()}-${Math.random()}`,
+      id: id(), // Use UUID from InstantDB
       src: dataUrl,
       x: minX,
       y: minY,
@@ -2604,7 +2572,6 @@ export default function OverlayPage() {
           key={imageId}
           imageId={imageId}
           generation={generation}
-          apiKey={customApiKey}
           onStreamingUpdate={(id, url) => {
             setImages((prev) =>
               prev.map((img) => (img.id === id ? { ...img, src: url } : img)),
@@ -2690,7 +2657,7 @@ export default function OverlayPage() {
                   touchAction: "none", // For touch devices
                 }}
               >
-                {isCanvasReady && (
+                {isCanvasReady && isStorageLoaded && (
                   <Stage
                     ref={stageRef}
                     width={canvasSize.width}
@@ -3182,9 +3149,8 @@ export default function OverlayPage() {
                   <div className="flex items-center gap-3">
                     <div
                       className={cn(
-                        "rounded-xl overflow-clip flex items-center",
+                        "rounded-xl overflow-clip flex items-center border border-border",
                         "shadow-[0_0_0_1px_rgba(50,50,50,0.12),0_4px_8px_-0.5px_rgba(50,50,50,0.04),0_8px_16px_-2px_rgba(50,50,50,0.02)]",
-                        "dark:shadow-none dark:border dark:border-border",
                       )}
                     >
                       <Button
@@ -3282,9 +3248,6 @@ export default function OverlayPage() {
                         render={<TooltipTrigger />}
                       >
                         <SlidersHorizontal className="h-4 w-4" />
-                        {customApiKey && (
-                          <div className="absolute size-2.5 -top-0.5 -right-0.5 bg-blue-500 rounded-full" />
-                        )}
                       </Button>
                       <TooltipContent>
                         <span>Settings</span>
@@ -3715,97 +3678,6 @@ export default function OverlayPage() {
           </DialogHeader>
 
           <div className="space-y-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="api-key">FAL API Key</Label>
-                <p className="text-sm text-muted-foreground">
-                  Add your own FAL API key to bypass rate limits and use your
-                  own quota.
-                </p>
-                <Input
-                  id="api-key"
-                  type="password"
-                  placeholder="Enter your API key"
-                  value={tempApiKey}
-                  onChange={(e) => setTempApiKey(e.target.value)}
-                  className="font-mono"
-                  style={{ fontSize: "16px" }}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Get your API key from{" "}
-                  <Link
-                    href="https://fal.ai/dashboard/keys"
-                    target="_blank"
-                    className="underline hover:text-foreground"
-                  >
-                    fal.ai/dashboard/keys
-                  </Link>
-                </p>
-              </div>
-
-              {customApiKey && (
-                <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-3">
-                  <div className="flex items-center gap-2 text-sm text-green-600">
-                    <Check className="h-4 w-4" />
-                    <span>Currently using custom API key</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-between gap-2">
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setCustomApiKey("");
-                    setTempApiKey("");
-                    setIsApiKeyDialogOpen(false);
-                    toast({
-                      title: "API key removed",
-                      description: "Using default rate-limited API",
-                    });
-                  }}
-                  disabled={!customApiKey}
-                >
-                  Remove Key
-                </Button>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      setTempApiKey(customApiKey);
-                      setIsApiKeyDialogOpen(false);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="default"
-                    onClick={() => {
-                      const trimmedKey = tempApiKey.trim();
-                      if (trimmedKey) {
-                        setCustomApiKey(trimmedKey);
-                        setIsApiKeyDialogOpen(false);
-                        toast({
-                          title: "API key saved",
-                          description: "Your custom API key is now active",
-                        });
-                      } else if (trimmedKey) {
-                        toast({
-                          title: "Invalid API key",
-                          description: "FAL API keys should start with 'fal_'",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
-                    disabled={!tempApiKey.trim()}
-                  >
-                    Save Key
-                  </Button>
-                </div>
-              </div>
-            </div>
-
             <div className="h-px bg-border/40" />
 
             {/* Appearance */}
@@ -3968,7 +3840,6 @@ export default function OverlayPage() {
           onComplete={handleVideoGenerationComplete}
           onError={handleVideoGenerationError}
           onProgress={handleVideoGenerationProgress}
-          apiKey={customApiKey}
         />
       ))}
 

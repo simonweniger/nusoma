@@ -15,9 +15,7 @@ interface BackgroundHandlerDeps {
     imageUrl: string;
     apiKey?: string;
   }) => Promise<{ url: string }>;
-  customApiKey?: string;
   falClient: any;
-  setIsApiKeyDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const handleRemoveBackground = async (deps: BackgroundHandlerDeps) => {
@@ -28,9 +26,7 @@ export const handleRemoveBackground = async (deps: BackgroundHandlerDeps) => {
     toast,
     saveToHistory,
     removeBackground,
-    customApiKey,
     falClient,
-    setIsApiKeyDialogOpen,
   } = deps;
 
   if (selectedIds.length === 0) return;
@@ -96,17 +92,11 @@ export const handleRemoveBackground = async (deps: BackgroundHandlerDeps) => {
       });
 
       // Upload the processed image
-      const uploadResult = await uploadImageDirect(
-        dataUrl,
-        falClient,
-        toast,
-        setIsApiKeyDialogOpen,
-      );
+      const uploadResult = await uploadImageDirect(dataUrl, falClient, toast);
 
       // Remove background using the API
       const result = await removeBackground({
         imageUrl: uploadResult?.url || "",
-        apiKey: customApiKey || undefined,
       });
 
       // Update the image in place

@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/providers/auth-provider";
 import { useState } from "react";
 import { CreditCardIcon, DiamondsFourIcon } from "@phosphor-icons/react";

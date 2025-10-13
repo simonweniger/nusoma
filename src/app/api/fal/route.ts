@@ -22,30 +22,27 @@ export const POST = async (req: NextRequest) => {
 
   // Check if user has provided their own API key
   const authHeader = req.headers.get("authorization");
-  const hasCustomApiKey = authHeader && authHeader.length > 0;
 
   // Only apply rate limiting if no custom API key is provided
-  if (!hasCustomApiKey) {
-    const ip = req.headers.get("x-forwarded-for") || "";
-    const limiterResult = await shouldLimitRequest(limiter, ip);
-    if (limiterResult.shouldLimitRequest) {
-      return new Response(
-        `Rate limit exceeded per ${limiterResult.period}. Add your FAL API key to bypass rate limits.`,
-        {
-          status: 429,
-          headers: {
-            "Content-Type": "text/plain",
-            "X-RateLimit-Limit":
-              limiterResult.period === "perMinute"
-                ? "10"
-                : limiterResult.period === "perHour"
-                  ? "30"
-                  : "100",
-            "X-RateLimit-Period": limiterResult.period,
-          },
+  const ip = req.headers.get("x-forwarded-for") || "";
+  const limiterResult = await shouldLimitRequest(limiter, ip);
+  if (limiterResult.shouldLimitRequest) {
+    return new Response(
+      `Rate limit exceeded per ${limiterResult.period}. Add your FAL API key to bypass rate limits.`,
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "text/plain",
+          "X-RateLimit-Limit":
+            limiterResult.period === "perMinute"
+              ? "10"
+              : limiterResult.period === "perHour"
+                ? "30"
+                : "100",
+          "X-RateLimit-Period": limiterResult.period,
         },
-      );
-    }
+      },
+    );
   }
 
   return route.POST(req);

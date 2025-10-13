@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/providers/auth-provider";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import {
   Card,
   CardContent,
