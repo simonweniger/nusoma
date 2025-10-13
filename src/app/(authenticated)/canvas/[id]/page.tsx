@@ -800,7 +800,10 @@ export default function OverlayPage() {
         // Check if we already have this image stored
         const existingImage = await canvasStorage.getImage(image.id);
         if (!existingImage) {
-          await canvasStorage.saveImage(image.src, image.id);
+          await canvasStorage.saveImage(image.src, image.id, {
+            prompt: image.generationPrompt,
+            creditsConsumed: image.creditsConsumed,
+          });
         }
       }
 
@@ -2578,9 +2581,19 @@ export default function OverlayPage() {
             );
           }}
           onComplete={(id, finalUrl) => {
+            // Get the generation data to attach metadata
+            const generation = activeGenerations.get(id);
             setImages((prev) =>
               prev.map((img) =>
-                img.id === id ? { ...img, src: finalUrl } : img,
+                img.id === id
+                  ? {
+                      ...img,
+                      src: finalUrl,
+                      generationPrompt: generation?.prompt,
+                      // Credits info not available from API yet
+                      creditsConsumed: undefined,
+                    }
+                  : img,
               ),
             );
             setActiveGenerations((prev) => {

@@ -32,55 +32,8 @@ export default function AppLayout({
   children: React.ReactNode;
 }>) {
   const { user, profile, db, sessionId } = useAuth();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [messageCount, setMessageCount] = useState<number>(0);
   const pathname = usePathname();
   const router = useRouter();
-  // Determine the active conversation ID from the pathname
-  const conversationId = pathname.startsWith("/conversations/")
-    ? pathname.split("/").pop()
-    : null;
-
-  // Fetch conversations associated with the current session
-  const { data } = db.useQuery(
-    {
-      conversations: {
-        $: {
-          where: {
-            or: [{ "user.id": user?.id ?? "" }, { sessionId: sessionId ?? "" }],
-          },
-          order: { createdAt: "desc" },
-        },
-      },
-      messages: {
-        $: {
-          where: {
-            role: "assistant",
-            or: [
-              { "conversation.sessionId": sessionId ?? "" },
-              { "conversation.user.id": user?.id ?? "" },
-            ],
-          },
-        },
-      },
-    },
-    {
-      ruleParams: {
-        sessionId: sessionId ?? "",
-      },
-    },
-  );
-
-  useEffect(() => {
-    if (data?.conversations) {
-      // No need to map createdAt to Date, keep as ISO string from DB
-      setConversations(data.conversations as Conversation[]);
-    }
-
-    if (data?.messages) {
-      setMessageCount(data.messages.length);
-    }
-  }, [data]);
 
   // Set up keyboard shortcuts
   useEffect(() => {
@@ -226,7 +179,7 @@ export default function AppLayout({
                 />
               ) : (
                 <NumberFlow
-                  value={100 - messageCount}
+                  value={0}
                   className="text-xs font-semibold text-sage-12 dark:text-sage-12"
                 />
               )}

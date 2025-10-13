@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { id } from "@instantdb/react";
 import { useRouter, usePathname } from "next/navigation";
 import Cookies from "js-cookie";
-import { CircleNotch } from "@phosphor-icons/react";
+import { CircleNotchIcon } from "@phosphor-icons/react";
 import { db } from "@/lib/db";
 
 interface AuthContextType {
@@ -96,8 +96,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <CircleNotch size={24} weight="bold" className="animate-spin" />
+      <div className="flex flex-col items-center justify-center h-screen bg-background">
+        <CircleNotchIcon size={24} weight="bold" className="animate-spin" />
       </div>
     );
   }

@@ -102,6 +102,8 @@ export const generateImage = (
       rotation: 0,
       isGenerated: true,
       parentGroupId: groupId,
+      generationPrompt: generationSettings.prompt,
+      creditsConsumed: undefined,
     },
   ]);
 
@@ -176,6 +178,10 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
           height,
           rotation: 0,
           isGenerated: true,
+          generationPrompt: generationSettings.prompt,
+          // For now, we don't have credit info from the API
+          // This can be set later when we track credits properly
+          creditsConsumed: undefined,
         },
       ]);
 

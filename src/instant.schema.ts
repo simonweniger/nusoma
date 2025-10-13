@@ -16,24 +16,6 @@ const _schema = i.schema({
       theme: i.string().optional(),
       hasPurchasedCredits: i.boolean().optional(),
     }),
-    conversations: i.entity({
-      name: i.string(),
-      createdAt: i.date().indexed(),
-      sessionId: i.string().optional(),
-    }),
-    messages: i.entity({
-      role: i.string(),
-      content: i.string(),
-      createdAt: i.date(),
-      model: i.string(),
-      creditsConsumed: i.number().optional(),
-    }),
-    personas: i.entity({
-      name: i.string(),
-      createdAt: i.date(),
-      prompt: i.string(),
-      description: i.string().optional(),
-    }),
     canvasProjects: i.entity({
       name: i.string().optional(),
       backgroundColor: i.string().optional(),
@@ -68,29 +50,11 @@ const _schema = i.schema({
       type: i.string().indexed().optional(), // "image" or "video"
       duration: i.number().optional(), // For videos
       createdAt: i.date().indexed().optional(),
+      prompt: i.string().optional(), // Generation prompt used to create this asset
+      creditsConsumed: i.number().optional(), // Credits consumed for generating this asset
     }),
   },
   links: {
-    conversationMessages: {
-      forward: { on: "messages", has: "one", label: "conversation" },
-      reverse: { on: "conversations", has: "many", label: "messages" },
-    },
-    conversationUser: {
-      forward: { on: "conversations", has: "one", label: "user" },
-      reverse: { on: "$users", has: "many", label: "conversations" },
-    },
-    userProfile: {
-      forward: { on: "userProfiles", has: "one", label: "user" },
-      reverse: { on: "$users", has: "one", label: "profile" },
-    },
-    userPersonas: {
-      forward: { on: "personas", has: "one", label: "user" },
-      reverse: { on: "$users", has: "many", label: "personas" },
-    },
-    messagePersona: {
-      forward: { on: "messages", has: "one", label: "persona" },
-      reverse: { on: "personas", has: "many", label: "messages" },
-    },
     // Canvas links
     canvasProjectUser: {
       forward: { on: "canvasProjects", has: "one", label: "user" },

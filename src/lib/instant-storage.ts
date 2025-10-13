@@ -175,7 +175,14 @@ class InstantCanvasStorage {
   /**
    * Save an image to InstantDB storage
    */
-  async saveImage(dataUrl: string, imageId?: string): Promise<string> {
+  async saveImage(
+    dataUrl: string,
+    imageId?: string,
+    metadata?: {
+      prompt?: string;
+      creditsConsumed?: number;
+    },
+  ): Promise<string> {
     const assetId = imageId || id();
 
     // Store data URL temporarily
@@ -205,6 +212,10 @@ class InstantCanvasStorage {
           .update({
             type: "image",
             createdAt: new Date(),
+            ...(metadata?.prompt && { prompt: metadata.prompt }),
+            ...(metadata?.creditsConsumed !== undefined && {
+              creditsConsumed: metadata.creditsConsumed,
+            }),
           })
           .link({ file: fileData.id }),
       ];
