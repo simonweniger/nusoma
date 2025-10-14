@@ -11,36 +11,38 @@ import {
 } from "@/components/ui/card";
 import { db } from "@/lib/db";
 import { id } from "@instantdb/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
-import { Plus, Image, Trash2 } from "lucide-react";
+import { Plus, Image, Trash2, Edit, FolderOpen } from "lucide-react";
+import { useState } from "react";
+import FolderDialog from "@/components/FolderDialog";
 
-export default function Dashboard() {
-  const { user, profile } = useAuth();
+export default function FolderPage() {
+  const { user } = useAuth();
   const router = useRouter();
+  const params = useParams();
+  const folderId = params.id as string;
 
-  // Query for user's canvas projects
-  const { data: projectsData, isLoading } = db.useQuery({
-    canvasProjects: {
+  const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
+
+  // Query the specific folder with its projects
+  const { data, isLoading } = db.useQuery({
+    folders: {
       $: {
-        where: { "user.id": user?.id },
-        order: { lastModified: "desc" },
+        where: { id: folderId },
       },
-      elements: {},
+      projects: {
+        elements: {},
+      },
     },
   });
 
-  const canvasProjects = projectsData?.canvasProjects || [];
-
-  const handleSignOut = async () => {
-    try {
-      await db.auth.signOut();
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
-  };
+  const folder = data?.folders?.[0];
+  const canvasProjects = folder?.projects || [];
 
   const handleCreateCanvas = async () => {
+    if (!user || !folder) return;
+
     try {
       const projectId = id();
       await db.transact([
@@ -51,13 +53,51 @@ export default function Dashboard() {
           viewportScale: 1,
           lastModified: new Date(),
         }),
-        db.tx.canvasProjects[projectId].link({ user: user?.id }),
+        db.tx.canvasProjects[projectId].link({ user: user.id }),
+        db.tx.canvasProjects[projectId].link({ folder: folderId }),
       ]);
 
       // Navigate to the new canvas
       router.push(`/canvas/${projectId}`);
     } catch (error) {
       console.error("Error creating canvas:", error);
+    }
+  };
+
+  const handleRenameFolder = async (name: string) => {
+    if (!folder) return;
+
+    await db.transact([db.tx.folders[folderId].update({ name })]);
+    setIsFolderDialogOpen(false);
+  };
+
+  const handleDeleteFolder = async () => {
+    if (!folder) return;
+
+    if (
+      !confirm(
+        "Delete this folder? All canvases will be moved to Drafts. This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      // Unlink all projects from this folder
+      if (folder.projects && folder.projects.length > 0) {
+        const unlinkTxs = folder.projects.map((project: any) =>
+          db.tx.canvasProjects[project.id].unlink({ folder: folderId }),
+        );
+        await db.transact(unlinkTxs);
+      }
+
+      // Delete the folder
+      await db.transact([db.tx.folders[folderId].delete()]);
+
+      // Navigate back to dashboard
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Error deleting folder:", error);
     }
   };
 
@@ -123,131 +163,93 @@ export default function Dashboard() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-muted rounded w-1/3 mb-4"></div>
+            <div className="h-4 bg-muted rounded w-1/4 mb-8"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!folder) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center py-12">
+            <FolderOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Folder not found</h2>
+            <p className="text-muted-foreground mb-4">
+              This folder doesn&apos;t exist or you don&apos;t have access to
+              it.
+            </p>
+            <Button onClick={() => router.push("/dashboard")}>
+              Go to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, {user?.email}</p>
+        {/* Folder Header */}
+        <div className="flex justify-between items-start mb-8">
+          <div className="flex items-start gap-3">
+            <FolderOpen className="h-8 w-8 text-sage-11 mt-1" />
+            <div>
+              <h1 className="text-3xl font-bold">{folder.name}</h1>
+              <p className="text-muted-foreground">
+                {canvasProjects.length} canvas
+                {canvasProjects.length === 1 ? "" : "es"} in this folder
+              </p>
+            </div>
           </div>
-          <Button onClick={handleSignOut} variant="secondary">
-            Sign Out
-          </Button>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile</CardTitle>
-              <CardDescription>Your account information</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p>
-                  <strong>Email:</strong> {user?.email}
-                </p>
-                <p>
-                  <strong>User ID:</strong> {user?.id}
-                </p>
-                {profile && (
-                  <>
-                    <p>
-                      <strong>Credits:</strong> {profile.credits || 0}
-                    </p>
-                    <p>
-                      <strong>Theme:</strong> {profile.theme || "Default"}
-                    </p>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common tasks</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Button
-                  className="w-full"
-                  variant="secondary"
-                  onClick={handleCreateCanvas}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create New Canvas
-                </Button>
-                <Button className="w-full" variant="secondary">
-                  Settings
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Statistics</CardTitle>
-              <CardDescription>Your canvas stats</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p>
-                  <strong>Total Canvases:</strong> {canvasProjects.length}
-                </p>
-                <p>
-                  <strong>Total Elements:</strong>{" "}
-                  {canvasProjects.reduce(
-                    (acc: number, p: any) => acc + (p.elements?.length || 0),
-                    0,
-                  )}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsFolderDialogOpen(true)}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Rename
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDeleteFolder}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Folder
+            </Button>
+          </div>
         </div>
 
         {/* Canvas Projects Section */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            <div>
-              <h2 className="text-2xl font-bold">Your Canvases</h2>
-              <p className="text-muted-foreground">
-                {isLoading
-                  ? "Loading..."
-                  : canvasProjects.length === 0
-                    ? "No canvases yet. Create your first one!"
-                    : `${canvasProjects.length} canvas${canvasProjects.length === 1 ? "" : "es"}`}
-              </p>
-            </div>
+            <h2 className="text-2xl font-bold">Canvases</h2>
             <Button onClick={handleCreateCanvas}>
               <Plus className="h-4 w-4 mr-2" />
               New Canvas
             </Button>
           </div>
 
-          {isLoading ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardHeader>
-                    <div className="h-5 bg-muted rounded w-3/4"></div>
-                    <div className="h-4 bg-muted rounded w-1/2 mt-2"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-32 bg-muted rounded"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : canvasProjects.length === 0 ? (
+          {canvasProjects.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Image className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No canvases yet</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  No canvases in this folder
+                </h3>
                 <p className="text-sm text-muted-foreground text-center mb-4">
-                  Create your first canvas to start designing
+                  Create your first canvas in this folder
                 </p>
                 <Button onClick={handleCreateCanvas}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -264,12 +266,10 @@ export default function Dashboard() {
                   onDragStart={(e) => {
                     e.dataTransfer.setData("projectId", canvas.id);
                     e.dataTransfer.effectAllowed = "move";
-                    // Add visual feedback to the dragged element
                     const target = e.currentTarget as HTMLElement;
                     target.style.opacity = "0.5";
                   }}
                   onDragEnd={(e) => {
-                    // Reset opacity when drag ends
                     const target = e.currentTarget as HTMLElement;
                     target.style.opacity = "1";
                   }}
@@ -315,6 +315,15 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Rename Folder Dialog */}
+      <FolderDialog
+        isOpen={isFolderDialogOpen}
+        onClose={() => setIsFolderDialogOpen(false)}
+        onSubmit={handleRenameFolder}
+        initialName={folder.name}
+        mode="rename"
+      />
     </div>
   );
 }

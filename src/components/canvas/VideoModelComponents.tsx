@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/Input";
 import { Switch } from "@/components/ui/Switch";
 import {
   Tooltip,

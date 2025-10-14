@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 
 interface DatabaseContextType {
   db: typeof db;
-  data: any;
+  //data: any;
 }
 
 const DatabaseContext = createContext<DatabaseContextType | undefined>(
@@ -14,43 +14,11 @@ const DatabaseContext = createContext<DatabaseContextType | undefined>(
 );
 
 export function DatabaseProvider({ children }: { children: React.ReactNode }) {
-  const { sessionId } = useAuth();
-  const { user } = useAuth();
-
-  const { data } = db.useQuery(
-    {
-      conversations: {
-        $: {
-          where: {
-            or: [
-              {
-                "user.id": user ? user.id : undefined,
-              },
-              {
-                sessionId: sessionId ?? "",
-              },
-            ],
-          },
-        },
-        messages: {},
-      },
-      personas: {
-        $: {
-          where: {
-            "user.id": user ? user.id : undefined,
-          },
-        },
-      },
-    },
-    {
-      ruleParams: {
-        sessionId: sessionId ?? "",
-      },
-    },
-  );
+  //const { sessionId } = useAuth();
+  //const { user } = useAuth();
 
   return (
-    <DatabaseContext.Provider value={{ db, data }}>
+    <DatabaseContext.Provider value={{ db }}>
       {children}
     </DatabaseContext.Provider>
   );

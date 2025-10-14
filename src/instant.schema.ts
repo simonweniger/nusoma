@@ -53,8 +53,18 @@ const _schema = i.schema({
       prompt: i.string().optional(), // Generation prompt used to create this asset
       creditsConsumed: i.number().optional(), // Credits consumed for generating this asset
     }),
+    folders: i.entity({
+      name: i.string(),
+      order: i.number().indexed().optional(), // For sorting folders
+      createdAt: i.date().indexed().optional(),
+    }),
   },
   links: {
+    // User Profile link
+    userProfileUser: {
+      forward: { on: "userProfiles", has: "one", label: "user" },
+      reverse: { on: "$users", has: "one", label: "profile" },
+    },
     // Canvas links
     canvasProjectUser: {
       forward: { on: "canvasProjects", has: "one", label: "user" },
@@ -75,6 +85,15 @@ const _schema = i.schema({
     canvasAssetFile: {
       forward: { on: "canvasAssets", has: "one", label: "file" },
       reverse: { on: "$files", has: "one", label: "canvasAsset" },
+    },
+    // Folder links
+    folderUser: {
+      forward: { on: "folders", has: "one", label: "user" },
+      reverse: { on: "$users", has: "many", label: "folders" },
+    },
+    projectFolder: {
+      forward: { on: "canvasProjects", has: "one", label: "folder" },
+      reverse: { on: "folders", has: "many", label: "projects" },
     },
   },
   rooms: {},
