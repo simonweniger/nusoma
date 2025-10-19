@@ -15,6 +15,11 @@ const _schema = i.schema({
       credits: i.number().optional(),
       theme: i.string().optional(),
       hasPurchasedCredits: i.boolean().optional(),
+      name: i.string().optional(),
+      username: i.string().unique().indexed().optional(),
+      language: i.string().optional(),
+      bio: i.string().optional(),
+      avatar: i.string().optional(), // URL to avatar image
     }),
     canvasProjects: i.entity({
       name: i.string().optional(),

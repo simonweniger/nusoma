@@ -13,13 +13,13 @@ import { db } from "@/lib/db";
 import { id } from "@instantdb/react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
-import { Plus, Image, Trash2, Grid3x3, FolderIcon } from "lucide-react";
+import { Plus, Image, Trash2, FolderIcon } from "lucide-react";
 
-export default function AllProjectsPage() {
+export default function DraftsPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  // Query all canvas projects with their folders
+  // Query canvas projects without folders
   const { data, isLoading } = db.useQuery({
     canvasProjects: {
       $: {
@@ -31,7 +31,10 @@ export default function AllProjectsPage() {
     },
   });
 
-  const canvasProjects = data?.canvasProjects || [];
+  // Filter out projects that have a folder
+  const canvasProjects = (data?.canvasProjects || []).filter(
+    (project: any) => !project.folder,
+  );
 
   const handleCreateCanvas = async () => {
     if (!user) return;
@@ -132,17 +135,16 @@ export default function AllProjectsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="container mx-auto py-10 px-4">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-start mb-8">
           <div className="flex items-start gap-3">
-            <Grid3x3 className="h-8 w-8 text-sage-11 mt-1" />
             <div>
-              <h1 className="text-3xl font-bold">All Projects</h1>
+              <h1 className="text-3xl font-bold">Drafts</h1>
               <p className="text-muted-foreground">
                 {canvasProjects.length} canvas
-                {canvasProjects.length === 1 ? "" : "es"} across all folders
+                {canvasProjects.length === 1 ? "" : "es"} without a folder
               </p>
             </div>
           </div>
@@ -158,9 +160,12 @@ export default function AllProjectsPage() {
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Image className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No canvases yet</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  No draft canvases
+                </h3>
                 <p className="text-sm text-muted-foreground text-center mb-4">
-                  Create your first canvas to get started
+                  Create a new canvas or move canvases here by removing them
+                  from folders
                 </p>
                 <Button onClick={handleCreateCanvas}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -193,13 +198,7 @@ export default function AllProjectsPage() {
                         <CardTitle className="truncate">
                           {canvas.name || "Untitled Canvas"}
                         </CardTitle>
-                        <CardDescription className="text-xs flex items-center gap-1">
-                          {canvas.folder && (
-                            <span className="flex items-center gap-1 text-sage-11">
-                              <FolderIcon className="h-3 w-3" />
-                              {canvas.folder.name} •{" "}
-                            </span>
-                          )}
+                        <CardDescription className="text-xs">
                           {formatDistanceToNow(new Date(canvas.lastModified), {
                             addSuffix: true,
                           })}

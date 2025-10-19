@@ -13,9 +13,18 @@ import { db } from "@/lib/db";
 import { id } from "@instantdb/react";
 import { useRouter, useParams } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
-import { Plus, Image, Trash2, Edit, FolderOpen } from "lucide-react";
+import {
+  Plus,
+  Image,
+  Trash2,
+  Edit,
+  FolderOpen,
+  Settings,
+  ChevronDown,
+} from "lucide-react";
 import { useState } from "react";
 import FolderDialog from "@/components/FolderDialog";
+import FolderSettingsDialog from "@/components/FolderSettingsDialog";
 
 export default function FolderPage() {
   const { user } = useAuth();
@@ -24,6 +33,7 @@ export default function FolderPage() {
   const folderId = params.id as string;
 
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
 
   // Query the specific folder with its projects
   const { data, isLoading } = db.useQuery({
@@ -181,8 +191,7 @@ export default function FolderPage() {
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-12">
-            <FolderOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Folder not found</h2>
+            <h2 className="text-xl font-semibold mb-2">Folder not found</h2>
             <p className="text-muted-foreground mb-4">
               This folder doesn&apos;t exist or you don&apos;t have access to
               it.
@@ -197,36 +206,33 @@ export default function FolderPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="container mx-auto py-10 px-4">
+      <div className="max-w-7xl mx-auto">
         {/* Folder Header */}
         <div className="flex justify-between items-start mb-8">
           <div className="flex items-start gap-3">
-            <FolderOpen className="h-8 w-8 text-sage-11 mt-1" />
             <div>
-              <h1 className="text-3xl font-bold">{folder.name}</h1>
+              <h1 className="text-2xl font-semibold">{folder.name}</h1>
               <p className="text-muted-foreground">
                 {canvasProjects.length} canvas
                 {canvasProjects.length === 1 ? "" : "es"} in this folder
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setIsFolderDialogOpen(true)}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Rename
+
+          {/* Figma-style Action Panel */}
+          <div className="flex items-center gap-2">
+            <Button onClick={handleCreateCanvas} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create
+              <ChevronDown className="h-4 w-4" />
             </Button>
             <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleDeleteFolder}
+              variant="secondary"
+              size="icon"
+              onClick={() => setIsSettingsDialogOpen(true)}
             >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Folder
+              <Settings className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -323,6 +329,15 @@ export default function FolderPage() {
         onSubmit={handleRenameFolder}
         initialName={folder.name}
         mode="rename"
+      />
+
+      {/* Settings Dialog */}
+      <FolderSettingsDialog
+        isOpen={isSettingsDialogOpen}
+        onClose={() => setIsSettingsDialogOpen(false)}
+        onRename={handleRenameFolder}
+        onDelete={handleDeleteFolder}
+        initialName={folder.name}
       />
     </div>
   );
