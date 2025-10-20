@@ -10,7 +10,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { db } from "@/lib/db";
-import { id } from "@instantdb/react";
 import { useRouter, useParams } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -25,6 +24,7 @@ import {
 import { useState } from "react";
 import FolderDialog from "@/components/FolderDialog";
 import FolderSettingsDialog from "@/components/FolderSettingsDialog";
+import { useCanvasOperations } from "@/hooks/useCanvasOperations";
 
 export default function FolderPage() {
   const { user } = useAuth();
@@ -34,6 +34,8 @@ export default function FolderPage() {
 
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+
+  const { createCanvas, deleteCanvas } = useCanvasOperations({ folderId });
 
   // Query the specific folder with its projects
   const { data, isLoading } = db.useQuery({
@@ -49,30 +51,6 @@ export default function FolderPage() {
 
   const folder = data?.folders?.[0];
   const canvasProjects = folder?.projects || [];
-
-  const handleCreateCanvas = async () => {
-    if (!user || !folder) return;
-
-    try {
-      const projectId = id();
-      await db.transact([
-        db.tx.canvasProjects[projectId].update({
-          name: "Untitled Canvas",
-          viewportX: 0,
-          viewportY: 0,
-          viewportScale: 1,
-          lastModified: new Date(),
-        }),
-        db.tx.canvasProjects[projectId].link({ user: user.id }),
-        db.tx.canvasProjects[projectId].link({ folder: folderId }),
-      ]);
-
-      // Navigate to the new canvas
-      router.push(`/canvas/${projectId}`);
-    } catch (error) {
-      console.error("Error creating canvas:", error);
-    }
-  };
 
   const handleRenameFolder = async (name: string) => {
     if (!folder) return;
@@ -108,68 +86,6 @@ export default function FolderPage() {
       router.push("/dashboard");
     } catch (error) {
       console.error("Error deleting folder:", error);
-    }
-  };
-
-  const handleDeleteCanvas = async (projectId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent navigation when clicking delete
-
-    if (
-      !confirm(
-        "Are you sure you want to delete this canvas? This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
-
-    try {
-      // Get all elements with their assets for this project
-      const result = await db.queryOnce({
-        canvasElements: {
-          $: {
-            where: { "project.id": projectId },
-          },
-          asset: {
-            file: {}, // Include the linked file to get the path
-          },
-        },
-      });
-
-      // Collect all unique asset IDs and their file paths
-      const assetMap = new Map<string, string>();
-      result.data.canvasElements.forEach((el: any) => {
-        if (el.asset?.file) {
-          assetMap.set(el.asset.id, el.asset.file.path);
-        }
-      });
-
-      // Delete files from storage first
-      for (const [assetId, filePath] of assetMap.entries()) {
-        try {
-          if (filePath) {
-            await db.storage.delete(filePath);
-          }
-        } catch (error) {
-          console.error(`Failed to delete file ${filePath}:`, error);
-        }
-      }
-
-      // Delete all elements and assets
-      const elementTxs = result.data.canvasElements.map((el: any) =>
-        db.tx.canvasElements[el.id].delete(),
-      );
-      const assetTxs = Array.from(assetMap.keys()).map((assetId) =>
-        db.tx.canvasAssets[assetId].delete(),
-      );
-
-      // Then delete the project
-      await db.transact([
-        ...elementTxs,
-        ...assetTxs,
-        db.tx.canvasProjects[projectId].delete(),
-      ]);
-    } catch (error) {
-      console.error("Error deleting canvas:", error);
     }
   };
 
@@ -222,7 +138,7 @@ export default function FolderPage() {
 
           {/* Figma-style Action Panel */}
           <div className="flex items-center gap-2">
-            <Button onClick={handleCreateCanvas} className="gap-2">
+            <Button onClick={createCanvas} className="gap-2">
               <Plus className="h-4 w-4" />
               Create
               <ChevronDown className="h-4 w-4" />
@@ -241,7 +157,7 @@ export default function FolderPage() {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">Canvases</h2>
-            <Button onClick={handleCreateCanvas}>
+            <Button onClick={createCanvas}>
               <Plus className="h-4 w-4 mr-2" />
               New Canvas
             </Button>
@@ -257,7 +173,7 @@ export default function FolderPage() {
                 <p className="text-sm text-muted-foreground text-center mb-4">
                   Create your first canvas in this folder
                 </p>
-                <Button onClick={handleCreateCanvas}>
+                <Button onClick={createCanvas}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Canvas
                 </Button>
@@ -298,7 +214,7 @@ export default function FolderPage() {
                         variant="ghost"
                         size="icon"
                         className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => handleDeleteCanvas(canvas.id, e)}
+                        onClick={(e) => deleteCanvas(canvas.id, e)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>

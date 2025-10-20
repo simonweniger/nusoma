@@ -392,7 +392,7 @@ export default function AppLayout({
                     axis="y"
                     values={displayFolders}
                     onReorder={handleReorderFolders}
-                    className="flex flex-col gap-2"
+                    className="flex flex-col gap-1"
                   >
                     {displayFolders.map((folder) => (
                       <div

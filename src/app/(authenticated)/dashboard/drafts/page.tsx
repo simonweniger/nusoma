@@ -10,14 +10,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { db } from "@/lib/db";
-import { id } from "@instantdb/react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { Plus, Image, Trash2, FolderIcon } from "lucide-react";
+import { useCanvasOperations } from "@/hooks/useCanvasOperations";
 
 export default function DraftsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { createCanvas, deleteCanvas } = useCanvasOperations();
 
   // Query canvas projects without folders
   const { data, isLoading } = db.useQuery({
@@ -35,91 +36,6 @@ export default function DraftsPage() {
   const canvasProjects = (data?.canvasProjects || []).filter(
     (project: any) => !project.folder,
   );
-
-  const handleCreateCanvas = async () => {
-    if (!user) return;
-
-    try {
-      const projectId = id();
-      await db.transact([
-        db.tx.canvasProjects[projectId].update({
-          name: "Untitled Canvas",
-          viewportX: 0,
-          viewportY: 0,
-          viewportScale: 1,
-          lastModified: new Date(),
-        }),
-        db.tx.canvasProjects[projectId].link({ user: user.id }),
-      ]);
-
-      // Navigate to the new canvas
-      router.push(`/canvas/${projectId}`);
-    } catch (error) {
-      console.error("Error creating canvas:", error);
-    }
-  };
-
-  const handleDeleteCanvas = async (projectId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent navigation when clicking delete
-
-    if (
-      !confirm(
-        "Are you sure you want to delete this canvas? This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
-
-    try {
-      // Get all elements with their assets for this project
-      const result = await db.queryOnce({
-        canvasElements: {
-          $: {
-            where: { "project.id": projectId },
-          },
-          asset: {
-            file: {}, // Include the linked file to get the path
-          },
-        },
-      });
-
-      // Collect all unique asset IDs and their file paths
-      const assetMap = new Map<string, string>();
-      result.data.canvasElements.forEach((el: any) => {
-        if (el.asset?.file) {
-          assetMap.set(el.asset.id, el.asset.file.path);
-        }
-      });
-
-      // Delete files from storage first
-      for (const [assetId, filePath] of assetMap.entries()) {
-        try {
-          if (filePath) {
-            await db.storage.delete(filePath);
-          }
-        } catch (error) {
-          console.error(`Failed to delete file ${filePath}:`, error);
-        }
-      }
-
-      // Delete all elements and assets
-      const elementTxs = result.data.canvasElements.map((el: any) =>
-        db.tx.canvasElements[el.id].delete(),
-      );
-      const assetTxs = Array.from(assetMap.keys()).map((assetId) =>
-        db.tx.canvasAssets[assetId].delete(),
-      );
-
-      // Then delete the project
-      await db.transact([
-        ...elementTxs,
-        ...assetTxs,
-        db.tx.canvasProjects[projectId].delete(),
-      ]);
-    } catch (error) {
-      console.error("Error deleting canvas:", error);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -148,7 +64,7 @@ export default function DraftsPage() {
               </p>
             </div>
           </div>
-          <Button onClick={handleCreateCanvas}>
+          <Button onClick={createCanvas}>
             <Plus className="h-4 w-4 mr-2" />
             New Canvas
           </Button>
@@ -167,7 +83,7 @@ export default function DraftsPage() {
                   Create a new canvas or move canvases here by removing them
                   from folders
                 </p>
-                <Button onClick={handleCreateCanvas}>
+                <Button onClick={createCanvas}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Canvas
                 </Button>
@@ -208,7 +124,7 @@ export default function DraftsPage() {
                         variant="ghost"
                         size="icon"
                         className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => handleDeleteCanvas(canvas.id, e)}
+                        onClick={(e) => deleteCanvas(canvas.id, e)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>

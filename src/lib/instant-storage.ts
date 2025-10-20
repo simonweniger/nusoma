@@ -86,42 +86,44 @@ class InstantCanvasStorage {
    */
   private async getCurrentProject() {
     if (this.currentProjectId) {
-      // Verify the project exists and belongs to this user
-      const result = await db.queryOnce({
-        canvasProjects: {
-          $: {
-            where: {
-              id: this.currentProjectId,
+      // Verify the project exists - retry up to 5 times with delays
+      // This handles the race condition when navigating to a newly created project
+      let retries = 5;
+      let delay = 100; // Start with 100ms delay
+
+      while (retries > 0) {
+        const result = await db.queryOnce({
+          canvasProjects: {
+            $: {
+              where: {
+                id: this.currentProjectId,
+              },
             },
           },
-        },
-      });
+        });
 
-      if (result.data.canvasProjects.length > 0) {
-        return this.currentProjectId;
-      }
-      // If project doesn't exist, create it with this ID
-      const txs = [
-        db.tx.canvasProjects[this.currentProjectId].update({
-          name: "Untitled Canvas",
-          viewportX: 0,
-          viewportY: 0,
-          viewportScale: 1,
-          lastModified: new Date(),
-          ...(this.sessionId && { sessionId: this.sessionId }),
-        }),
-      ];
+        if (result.data.canvasProjects.length > 0) {
+          const project = result.data.canvasProjects[0];
+          return this.currentProjectId;
+        }
 
-      if (this.userId) {
-        txs.push(
-          db.tx.canvasProjects[this.currentProjectId].link({
-            user: this.userId,
-          }),
+        // Project not found yet - wait and retry
+        console.log(
+          `⏳ [STORAGE] Project ${this.currentProjectId} not found, retrying in ${delay}ms... (${retries} retries left)`,
         );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        retries--;
+        delay *= 2; // Exponential backoff
       }
 
-      await db.transact(txs);
-      return this.currentProjectId;
+      // After all retries, throw an error instead of creating a new project
+      // This prevents overwriting a project that was just created elsewhere
+      console.error(
+        `❌ [STORAGE] Project ${this.currentProjectId} not found after all retries`,
+      );
+      throw new Error(
+        `Project ${this.currentProjectId} not found after retries. It may not exist or you may not have access to it.`,
+      );
     }
 
     // Query for existing project

@@ -835,9 +835,6 @@ export default function OverlayPage() {
       };
       await canvasStorage.saveCanvasState(canvasState);
 
-      // Clean up unused images and videos
-      await canvasStorage.cleanupOldData();
-
       // Brief delay to show the indicator
       setTimeout(() => setIsSaving(false), 300);
     } catch (error) {
