@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/Button";
 import {
   X,
   ChevronDown,
-  Check,
   Plus,
   ImageIcon,
   Trash2,
@@ -88,16 +87,22 @@ import { convertImageToVideo } from "@/utils/video-utils";
 
 // Import additional extracted components
 import { useFalClient } from "@/hooks/useFalClient";
+import { useCanvasAssets } from "@/hooks/useCanvasAssets";
+import { useCanvasActions } from "@/hooks/useCanvasActions";
+import { useImageOperations } from "@/hooks/useImageOperations";
 import { CanvasGrid } from "@/components/canvas/CanvasGrid";
 import { SelectionBoxComponent } from "@/components/canvas/SelectionBox";
 //import { MiniMap } from "@/components/canvas/MiniMap";
 import { ZoomControls } from "@/components/canvas/ZoomControls";
 import { MobileToolbar } from "@/components/canvas/MobileToolbar";
 import { CanvasContextMenu } from "@/components/canvas/CanvasContextMenu";
+import { CanvasLeftSidebar } from "@/components/canvas/CanvasLeftSidebar";
+import { CanvasRightSidebar } from "@/components/canvas/CanvasRightSidebar";
 import { useTheme } from "next-themes";
 import { VideoOverlays } from "@/components/canvas/VideoOverlays";
 import { DimensionDisplay } from "@/components/canvas/DimensionDisplay";
 import Image from "next/image";
+import { db } from "@/lib/db";
 
 // Import handlers
 import {
@@ -271,6 +276,21 @@ export default function OverlayPage() {
   const { mutateAsync: removeBackground } = useMutation(
     trpc.removeBackground.mutationOptions(),
   );
+
+  // Fetch project metadata (title + folder)
+  const { data: projectData } = db.useQuery(
+    projectId
+      ? {
+          canvasProjects: {
+            $: { where: { id: projectId } },
+            folder: {},
+          },
+        }
+      : { canvasProjects: { $: { where: { id: "__none__" } } } },
+  );
+  const project = projectData?.canvasProjects?.[0];
+  const projectName = (project?.name as string) || "Untitled";
+  const folderName = (project?.folder?.name as string) || "Drafts";
 
   // Function to handle the "Convert to Video" option in the context menu
   const handleConvertToVideo = (imageId: string) => {
@@ -789,39 +809,67 @@ export default function OverlayPage() {
       setIsSaving(true);
 
       // Save actual image data to InstantDB
-      for (const image of images) {
-        // Skip if src is undefined or if it's a placeholder for generation
-        if (
-          !image.src ||
-          image.src.startsWith("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP")
-        )
-          continue;
+      const imageSavePromises = images.map(async (image) => {
+        try {
+          // Skip if src is undefined or if it's a placeholder for generation
+          if (
+            !image.src ||
+            image.src.startsWith("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP")
+          ) {
+            return;
+          }
 
-        // Check if we already have this image stored
-        const existingImage = await canvasStorage.getImage(image.id);
-        if (!existingImage) {
-          await canvasStorage.saveImage(image.src, image.id, {
-            prompt: image.generationPrompt,
-            creditsConsumed: image.creditsConsumed,
-          });
+          // Check if we already have this image stored
+          const existingImage = await canvasStorage.getImage(image.id);
+          if (!existingImage) {
+            console.log(`[CANVAS] Saving new image ${image.id}`);
+            await canvasStorage.saveImage(image.src, image.id, {
+              prompt: image.generationPrompt,
+              creditsConsumed: image.creditsConsumed,
+            });
+            console.log(`[CANVAS] Image ${image.id} saved successfully`);
+          } else {
+            console.log(
+              `[CANVAS] Image ${image.id} already exists, skipping save`,
+            );
+          }
+        } catch (error) {
+          console.error(`[CANVAS] Failed to save image ${image.id}:`, error);
         }
-      }
+      });
+
+      // Wait for all image saves to complete
+      await Promise.all(imageSavePromises);
 
       // Save video data to InstantDB
-      for (const video of videos) {
-        // Skip if src is undefined or if it's a placeholder for generation
-        if (
-          !video.src ||
-          video.src.startsWith("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP")
-        )
-          continue;
+      const videoSavePromises = videos.map(async (video) => {
+        try {
+          // Skip if src is undefined or if it's a placeholder for generation
+          if (
+            !video.src ||
+            video.src.startsWith("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP")
+          ) {
+            return;
+          }
 
-        // Check if we already have this video stored
-        const existingVideo = await canvasStorage.getVideo(video.id);
-        if (!existingVideo) {
-          await canvasStorage.saveVideo(video.src, video.duration, video.id);
+          // Check if we already have this video stored
+          const existingVideo = await canvasStorage.getVideo(video.id);
+          if (!existingVideo) {
+            console.log(`[CANVAS] Saving new video ${video.id}`);
+            await canvasStorage.saveVideo(video.src, video.duration, video.id);
+            console.log(`[CANVAS] Video ${video.id} saved successfully`);
+          } else {
+            console.log(
+              `[CANVAS] Video ${video.id} already exists, skipping save`,
+            );
+          }
+        } catch (error) {
+          console.error(`[CANVAS] Failed to save video ${video.id}:`, error);
         }
-      }
+      });
+
+      // Wait for all video saves to complete
+      await Promise.all(videoSavePromises);
 
       // Save canvas state (positions, transforms, etc.)
       const canvasState: CanvasState = {
@@ -838,7 +886,6 @@ export default function OverlayPage() {
       // Brief delay to show the indicator
       setTimeout(() => setIsSaving(false), 300);
     } catch (error) {
-      console.error("Failed to save to storage:", error);
       setIsSaving(false);
     }
   }, [images, videos, viewport]);
@@ -847,6 +894,7 @@ export default function OverlayPage() {
   const loadFromStorage = useCallback(async () => {
     try {
       const canvasState = await canvasStorage.getCanvasState();
+
       if (!canvasState) {
         setIsStorageLoaded(true);
         return;
@@ -973,11 +1021,25 @@ export default function OverlayPage() {
 
   // Initialize storage with user or session ID and project ID
   useEffect(() => {
-    canvasStorage.setUser(user?.id || null, sessionId);
-    if (projectId) {
-      canvasStorage.setCurrentProject(projectId);
-    }
-  }, [user, sessionId, projectId]);
+    const initializeStorage = async () => {
+      console.log("[CANVAS] Initializing storage with:", {
+        userId: user?.id || null,
+        sessionId,
+        projectId,
+      });
+
+      canvasStorage.setUser(user?.id || null, sessionId);
+
+      if (projectId) {
+        canvasStorage.setCurrentProject(projectId);
+        console.log("[CANVAS] Loading from storage for project:", projectId);
+        // Load from storage after project ID is set
+        await loadFromStorage();
+      }
+    };
+
+    initializeStorage();
+  }, [user?.id, sessionId, projectId]);
 
   // Load grid setting from localStorage on mount
   useEffect(() => {
@@ -1100,35 +1162,49 @@ export default function OverlayPage() {
     };
   }, []);
 
-  // Load from storage on mount
-  useEffect(() => {
-    loadFromStorage();
-  }, [loadFromStorage]);
-
-  // Auto-save to storage when images change (with debounce)
+  // Auto-save to storage when images or videos change (with debounce)
   useEffect(() => {
     if (!isStorageLoaded) return; // Don't save until we've loaded
     if (activeGenerations.size > 0) return;
 
     const timeoutId = setTimeout(() => {
       saveToStorage();
-    }, 1000); // Save after 1 second of no changes
+    }, 500); // Reduced to 500ms for faster saving
 
     return () => clearTimeout(timeoutId);
   }, [
     images,
+    videos,
     viewport,
     isStorageLoaded,
     saveToStorage,
     activeGenerations.size,
   ]);
 
+  // Save when page visibility changes (tab hidden, page closed, etc.)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden" && isStorageLoaded) {
+        console.log("[CANVAS] Page hidden, saving immediately...");
+        saveToStorage();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [isStorageLoaded, saveToStorage]);
+
   // Load default images only if no saved state
   useEffect(() => {
     if (!isStorageLoaded) return;
     if (images.length > 0) return; // Already have images from storage
 
+    let defaultImagesLoaded = 0;
+    const totalDefaultImages = 7;
+
     const loadDefaultImages = async () => {
+      console.log("[CANVAS] Loading default images...");
       const defaultImagePaths = [
         "/hat.png",
         "/man.png",
@@ -1138,7 +1214,6 @@ export default function OverlayPage() {
         "/cat.jpg",
         "/overlay.png",
       ];
-      const loadedImages: PlacedImage[] = [];
 
       for (let i = 0; i < defaultImagePaths.length; i++) {
         const path = defaultImagePaths[i];
@@ -1183,6 +1258,18 @@ export default function OverlayPage() {
                   rotation: 0,
                 },
               ]);
+
+              // Track loading progress
+              defaultImagesLoaded++;
+              if (defaultImagesLoaded === totalDefaultImages) {
+                console.log(
+                  "[CANVAS] All default images loaded, saving immediately...",
+                );
+                // Save immediately after all default images are loaded
+                setTimeout(() => {
+                  saveToStorage();
+                }, 100); // Small delay to ensure state updates are processed
+              }
             };
             img.src = e.target?.result as string;
           };
@@ -1195,7 +1282,7 @@ export default function OverlayPage() {
     };
 
     loadDefaultImages();
-  }, [isStorageLoaded, images.length]);
+  }, [isStorageLoaded, images.length, saveToStorage]);
 
   // Helper function to resize image if too large
   const resizeImageIfNeeded = async (
@@ -1758,51 +1845,6 @@ export default function OverlayPage() {
     });
   };
 
-  const handleDelete = () => {
-    // Save to history before deleting
-    saveToHistory();
-    setImages((prev) => prev.filter((img) => !selectedIds.includes(img.id)));
-    setVideos((prev) => prev.filter((vid) => !selectedIds.includes(vid.id)));
-    setSelectedIds([]);
-  };
-
-  const handleDuplicate = () => {
-    // Save to history before duplicating
-    saveToHistory();
-
-    // Duplicate selected images
-    const selectedImages = images.filter((img) => selectedIds.includes(img.id));
-    const newImages = selectedImages.map((img) => ({
-      ...img,
-      id: id(), // Use UUID from InstantDB
-      x: img.x + 20,
-      y: img.y + 20,
-    }));
-
-    // Duplicate selected videos
-    const selectedVideos = videos.filter((vid) => selectedIds.includes(vid.id));
-    const newVideos = selectedVideos.map((vid) => ({
-      ...vid,
-      id: id(), // Use UUID from InstantDB
-      x: vid.x + 20,
-      y: vid.y + 20,
-      // Reset playback state for duplicated videos
-      currentTime: 0,
-      isPlaying: false,
-    }));
-
-    // Update both arrays
-    setImages((prev) => [...prev, ...newImages]);
-    setVideos((prev) => [...prev, ...newVideos]);
-
-    // Select all duplicated items
-    const newIds = [
-      ...newImages.map((img) => img.id),
-      ...newVideos.map((vid) => vid.id),
-    ];
-    setSelectedIds(newIds);
-  };
-
   const handleRemoveBackground = async () => {
     await handleRemoveBackgroundHandler({
       images,
@@ -1934,90 +1976,6 @@ export default function OverlayPage() {
       setSelectedVideoForBackgroundRemoval(null);
     }
   };
-
-  const sendToFront = useCallback(() => {
-    if (selectedIds.length === 0) return;
-
-    saveToHistory();
-    setImages((prev) => {
-      // Get selected images in their current order
-      const selectedImages = selectedIds
-        .map((id) => prev.find((img) => img.id === id))
-        .filter(Boolean) as PlacedImage[];
-
-      // Get remaining images
-      const remainingImages = prev.filter(
-        (img) => !selectedIds.includes(img.id),
-      );
-
-      // Place selected images at the end (top layer)
-      return [...remainingImages, ...selectedImages];
-    });
-  }, [selectedIds, saveToHistory]);
-
-  const sendToBack = useCallback(() => {
-    if (selectedIds.length === 0) return;
-
-    saveToHistory();
-    setImages((prev) => {
-      // Get selected images in their current order
-      const selectedImages = selectedIds
-        .map((id) => prev.find((img) => img.id === id))
-        .filter(Boolean) as PlacedImage[];
-
-      // Get remaining images
-      const remainingImages = prev.filter(
-        (img) => !selectedIds.includes(img.id),
-      );
-
-      // Place selected images at the beginning (bottom layer)
-      return [...selectedImages, ...remainingImages];
-    });
-  }, [selectedIds, saveToHistory]);
-
-  const bringForward = useCallback(() => {
-    if (selectedIds.length === 0) return;
-
-    saveToHistory();
-    setImages((prev) => {
-      const result = [...prev];
-
-      // Process selected images from back to front to maintain relative order
-      for (let i = result.length - 2; i >= 0; i--) {
-        if (
-          selectedIds.includes(result[i].id) &&
-          !selectedIds.includes(result[i + 1].id)
-        ) {
-          // Swap with the next image if it's not also selected
-          [result[i], result[i + 1]] = [result[i + 1], result[i]];
-        }
-      }
-
-      return result;
-    });
-  }, [selectedIds, saveToHistory]);
-
-  const sendBackward = useCallback(() => {
-    if (selectedIds.length === 0) return;
-
-    saveToHistory();
-    setImages((prev) => {
-      const result = [...prev];
-
-      // Process selected images from front to back to maintain relative order
-      for (let i = 1; i < result.length; i++) {
-        if (
-          selectedIds.includes(result[i].id) &&
-          !selectedIds.includes(result[i - 1].id)
-        ) {
-          // Swap with the previous image if it's not also selected
-          [result[i], result[i - 1]] = [result[i - 1], result[i]];
-        }
-      }
-
-      return result;
-    });
-  }, [selectedIds, saveToHistory]);
 
   const handleIsolate = async () => {
     if (!isolateTarget || !isolateInputValue.trim() || isIsolating) {
@@ -2236,179 +2194,40 @@ export default function OverlayPage() {
     }
   };
 
-  const handleCombineImages = async () => {
-    if (selectedIds.length < 2) return;
+  // Use custom hooks for canvas operations
+  const { handleAssetNavigation, handleAssetSelect } = useCanvasAssets({
+    images,
+    videos,
+    viewport,
+    canvasSize,
+    setViewport,
+    setSelectedIds,
+  });
 
-    // Save to history before combining
-    saveToHistory();
+  const {
+    handleDelete,
+    handleDuplicate,
+    sendToFront,
+    sendToBack,
+    bringForward,
+    sendBackward,
+  } = useCanvasActions({
+    images,
+    videos,
+    selectedIds,
+    setImages,
+    setVideos,
+    setSelectedIds,
+    saveToHistory,
+  });
 
-    // Get selected images and sort by layer order
-    const selectedImages = selectedIds
-      .map((id) => images.find((img) => img.id === id))
-      .filter((img) => img !== undefined) as PlacedImage[];
-
-    const sortedImages = [...selectedImages].sort((a, b) => {
-      const indexA = images.findIndex((img) => img.id === a.id);
-      const indexB = images.findIndex((img) => img.id === b.id);
-      return indexA - indexB;
-    });
-
-    // Load all images to calculate scale factors
-    const imageElements: {
-      img: PlacedImage;
-      element: HTMLImageElement;
-      scale: number;
-    }[] = [];
-    let maxScale = 1;
-
-    for (const img of sortedImages) {
-      const imgElement = new window.Image();
-      imgElement.crossOrigin = "anonymous"; // Enable CORS
-      imgElement.src = img.src;
-      await new Promise((resolve) => {
-        imgElement.onload = resolve;
-      });
-
-      // Calculate scale factor (original size / display size)
-      // Account for crops if they exist
-      const effectiveWidth = img.cropWidth
-        ? imgElement.naturalWidth * img.cropWidth
-        : imgElement.naturalWidth;
-      const effectiveHeight = img.cropHeight
-        ? imgElement.naturalHeight * img.cropHeight
-        : imgElement.naturalHeight;
-
-      const scaleX = effectiveWidth / img.width;
-      const scaleY = effectiveHeight / img.height;
-      const scale = Math.min(scaleX, scaleY); // Use min to maintain aspect ratio
-
-      maxScale = Math.max(maxScale, scale);
-      imageElements.push({ img, element: imgElement, scale });
-    }
-
-    // Use a reasonable scale - not too large to avoid memory issues
-    const optimalScale = Math.min(maxScale, 4); // Cap at 4x to prevent huge images
-
-    // Calculate bounding box of all selected images
-    let minX = Infinity,
-      minY = Infinity;
-    let maxX = -Infinity,
-      maxY = -Infinity;
-
-    sortedImages.forEach((img) => {
-      minX = Math.min(minX, img.x);
-      minY = Math.min(minY, img.y);
-      maxX = Math.max(maxX, img.x + img.width);
-      maxY = Math.max(maxY, img.y + img.height);
-    });
-
-    const combinedWidth = maxX - minX;
-    const combinedHeight = maxY - minY;
-
-    // Create canvas at higher resolution
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      console.error("Failed to get canvas context");
-      return;
-    }
-
-    canvas.width = Math.round(combinedWidth * optimalScale);
-    canvas.height = Math.round(combinedHeight * optimalScale);
-
-    console.log(
-      `Creating combined image at ${canvas.width}x${canvas.height} (scale: ${optimalScale.toFixed(2)}x)`,
-    );
-
-    // Draw each image in order using the pre-loaded elements
-    for (const { img, element: imgElement } of imageElements) {
-      // Calculate position relative to the combined canvas, scaled up
-      const relX = (img.x - minX) * optimalScale;
-      const relY = (img.y - minY) * optimalScale;
-      const scaledWidth = img.width * optimalScale;
-      const scaledHeight = img.height * optimalScale;
-
-      ctx.save();
-
-      // Handle rotation if needed
-      if (img.rotation) {
-        ctx.translate(relX + scaledWidth / 2, relY + scaledHeight / 2);
-        ctx.rotate((img.rotation * Math.PI) / 180);
-        ctx.drawImage(
-          imgElement,
-          -scaledWidth / 2,
-          -scaledHeight / 2,
-          scaledWidth,
-          scaledHeight,
-        );
-      } else {
-        // Handle cropping if exists
-        if (
-          img.cropX !== undefined &&
-          img.cropY !== undefined &&
-          img.cropWidth !== undefined &&
-          img.cropHeight !== undefined
-        ) {
-          ctx.drawImage(
-            imgElement,
-            img.cropX * imgElement.naturalWidth,
-            img.cropY * imgElement.naturalHeight,
-            img.cropWidth * imgElement.naturalWidth,
-            img.cropHeight * imgElement.naturalHeight,
-            relX,
-            relY,
-            scaledWidth,
-            scaledHeight,
-          );
-        } else {
-          ctx.drawImage(
-            imgElement,
-            0,
-            0,
-            imgElement.naturalWidth,
-            imgElement.naturalHeight,
-            relX,
-            relY,
-            scaledWidth,
-            scaledHeight,
-          );
-        }
-      }
-
-      ctx.restore();
-    }
-
-    // Convert to blob and create data URL
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((blob) => resolve(blob!), "image/png");
-    });
-
-    const reader = new FileReader();
-    const dataUrl = await new Promise<string>((resolve) => {
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.readAsDataURL(blob);
-    });
-
-    // Create new combined image
-    const combinedImage: PlacedImage = {
-      id: id(), // Use UUID from InstantDB
-      src: dataUrl,
-      x: minX,
-      y: minY,
-      width: combinedWidth,
-      height: combinedHeight,
-      rotation: 0,
-    };
-
-    // Remove the original images and add the combined one
-    setImages((prev) => [
-      ...prev.filter((img) => !selectedIds.includes(img.id)),
-      combinedImage,
-    ]);
-
-    // Select the new combined image
-    setSelectedIds([combinedImage.id]);
-  };
+  const { handleCombineImages } = useImageOperations({
+    images,
+    selectedIds,
+    setImages,
+    setSelectedIds,
+    saveToHistory,
+  });
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -2559,1010 +2378,1036 @@ export default function OverlayPage() {
 
   return (
     <div
-      className="bg-background text-foreground font-focal relative flex flex-col w-full overflow-hidden h-screen"
+      className="bg-background text-foreground font-focal relative flex flex-row w-full overflow-hidden h-screen"
       style={{ height: "100dvh" }}
       onDrop={handleDrop}
       onDragOver={(e) => e.preventDefault()}
       onDragEnter={(e) => e.preventDefault()}
       onDragLeave={(e) => e.preventDefault()}
     >
-      {/* Render streaming components for active generations */}
-      {Array.from(activeGenerations.entries()).map(([imageId, generation]) => (
-        <StreamingImage
-          key={imageId}
-          imageId={imageId}
-          generation={generation}
-          onStreamingUpdate={(id, url) => {
-            setImages((prev) =>
-              prev.map((img) => (img.id === id ? { ...img, src: url } : img)),
-            );
-          }}
-          onComplete={(id, finalUrl) => {
-            // Get the generation data to attach metadata
-            const generation = activeGenerations.get(id);
-            setImages((prev) =>
-              prev.map((img) =>
-                img.id === id
-                  ? {
-                      ...img,
-                      src: finalUrl,
-                      generationPrompt: generation?.prompt,
-                      // Credits info not available from API yet
-                      creditsConsumed: undefined,
-                    }
-                  : img,
-              ),
-            );
-            setActiveGenerations((prev) => {
-              const newMap = new Map(prev);
-              newMap.delete(id);
-              return newMap;
-            });
-            setIsGenerating(false);
+      <CanvasLeftSidebar
+        images={images}
+        videos={videos}
+        selectedIds={selectedIds}
+        onAssetClick={handleAssetNavigation}
+        onAssetSelect={handleAssetSelect}
+        projectName={projectName}
+        folderName={folderName}
+      />
 
-            // Immediately save after generation completes
-            setTimeout(() => {
-              saveToStorage();
-            }, 100); // Small delay to ensure state updates are processed
-          }}
-          onError={(id, error) => {
-            console.error(`Generation error for ${id}:`, error);
-            // Remove the failed image
-            setImages((prev) => prev.filter((img) => img.id !== id));
-            setActiveGenerations((prev) => {
-              const newMap = new Map(prev);
-              newMap.delete(id);
-              return newMap;
-            });
-            setIsGenerating(false);
-            toast({
-              title: "Generation failed",
-              description: error.toString(),
-              variant: "destructive",
-            });
-          }}
-        />
-      ))}
-
-      {/* Main content */}
-      <main className="flex-1 relative flex items-center justify-center w-full">
-        <div className="relative w-full h-full">
-          {/* Gradient Overlays */}
-          <div
-            className="pointer-events-none absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-background to-transparent z-10"
-            aria-hidden="true"
-          />
-          <div
-            className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent z-10"
-            aria-hidden="true"
-          />
-          <div
-            className="pointer-events-none absolute top-0 bottom-0 left-0 w-24 bg-gradient-to-r from-background to-transparent z-10"
-            aria-hidden="true"
-          />
-          <div
-            className="pointer-events-none absolute top-0 bottom-0 right-0 w-24 bg-gradient-to-l from-background to-transparent z-10"
-            aria-hidden="true"
-          />
-          <ContextMenu
-            onOpenChange={(open) => {
-              if (!open) {
-                // Reset isolate state when context menu closes
-                setIsolateTarget(null);
-                setIsolateInputValue("");
-              }
-            }}
-          >
-            <ContextMenuTrigger asChild>
-              <div
-                className="relative bg-background overflow-hidden w-full h-full"
-                style={{
-                  // Use consistent style property names to avoid hydration errors
-                  height: `${canvasSize.height}px`,
-                  width: `${canvasSize.width}px`,
-                  minHeight: `${canvasSize.height}px`,
-                  minWidth: `${canvasSize.width}px`,
-                  cursor: isPanningCanvas ? "grabbing" : "default",
-                  WebkitTouchCallout: "none", // Add this for iOS
-                  touchAction: "none", // For touch devices
-                }}
-              >
-                {isCanvasReady && isStorageLoaded && (
-                  <Stage
-                    ref={stageRef}
-                    width={canvasSize.width}
-                    height={canvasSize.height}
-                    x={viewport.x}
-                    y={viewport.y}
-                    scaleX={viewport.scale}
-                    scaleY={viewport.scale}
-                    draggable={false}
-                    onDragStart={(e) => {
-                      e.evt?.preventDefault();
-                    }}
-                    onDragEnd={(e) => {
-                      e.evt?.preventDefault();
-                    }}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={() => {
-                      // Stop panning if mouse leaves the stage
-                      if (isPanningCanvas) {
-                        setIsPanningCanvas(false);
-                      }
-                    }}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
-                    onContextMenu={(e) => {
-                      // Check if this is a forwarded event from a video overlay
-                      const videoId =
-                        (e.evt as any)?.videoId || (e as any)?.videoId;
-                      if (videoId) {
-                        // This is a right-click on a video
-                        if (!selectedIds.includes(videoId)) {
-                          setSelectedIds([videoId]);
+      {/* Main Canvas Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Render streaming components for active generations */}
+        {Array.from(activeGenerations.entries()).map(
+          ([imageId, generation]) => (
+            <StreamingImage
+              key={imageId}
+              imageId={imageId}
+              generation={generation}
+              onStreamingUpdate={(id, url) => {
+                setImages((prev) =>
+                  prev.map((img) =>
+                    img.id === id ? { ...img, src: url } : img,
+                  ),
+                );
+              }}
+              onComplete={(id, finalUrl) => {
+                // Get the generation data to attach metadata
+                const generation = activeGenerations.get(id);
+                setImages((prev) =>
+                  prev.map((img) =>
+                    img.id === id
+                      ? {
+                          ...img,
+                          src: finalUrl,
+                          generationPrompt: generation?.prompt,
+                          // Credits info not available from API yet
+                          creditsConsumed: undefined,
                         }
-                        return;
-                      }
+                      : img,
+                  ),
+                );
+                setActiveGenerations((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.delete(id);
+                  return newMap;
+                });
+                setIsGenerating(false);
 
-                      // Get clicked position
-                      const stage = e.target.getStage();
-                      if (!stage) return;
+                // Immediately save after generation completes
+                setTimeout(() => {
+                  saveToStorage();
+                }, 100); // Small delay to ensure state updates are processed
+              }}
+              onError={(id, error) => {
+                console.error(`Generation error for ${id}:`, error);
+                // Remove the failed image
+                setImages((prev) => prev.filter((img) => img.id !== id));
+                setActiveGenerations((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.delete(id);
+                  return newMap;
+                });
+                setIsGenerating(false);
+                toast({
+                  title: "Generation failed",
+                  description: error.toString(),
+                  variant: "destructive",
+                });
+              }}
+            />
+          ),
+        )}
 
-                      const point = stage.getPointerPosition();
-                      if (!point) return;
-
-                      // Convert to canvas coordinates
-                      const canvasPoint = {
-                        x: (point.x - viewport.x) / viewport.scale,
-                        y: (point.y - viewport.y) / viewport.scale,
-                      };
-
-                      // Check if we clicked on a video first (check in reverse order for top-most)
-                      const clickedVideo = [...videos].reverse().find((vid) => {
-                        return (
-                          canvasPoint.x >= vid.x &&
-                          canvasPoint.x <= vid.x + vid.width &&
-                          canvasPoint.y >= vid.y &&
-                          canvasPoint.y <= vid.y + vid.height
-                        );
-                      });
-
-                      if (clickedVideo) {
-                        if (!selectedIds.includes(clickedVideo.id)) {
-                          setSelectedIds([clickedVideo.id]);
+        {/* Main content */}
+        <main className="flex-1 relative flex items-center justify-center w-full">
+          <div className="relative w-full h-full">
+            {/* Gradient Overlays */}
+            <div
+              className="pointer-events-none absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-background to-transparent z-10"
+              aria-hidden="true"
+            />
+            <div
+              className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent z-10"
+              aria-hidden="true"
+            />
+            <div
+              className="pointer-events-none absolute top-0 bottom-0 left-0 w-24 bg-gradient-to-r from-background to-transparent z-10"
+              aria-hidden="true"
+            />
+            <div
+              className="pointer-events-none absolute top-0 bottom-0 right-0 w-24 bg-gradient-to-l from-background to-transparent z-10"
+              aria-hidden="true"
+            />
+            <ContextMenu
+              onOpenChange={(open) => {
+                if (!open) {
+                  // Reset isolate state when context menu closes
+                  setIsolateTarget(null);
+                  setIsolateInputValue("");
+                }
+              }}
+            >
+              <ContextMenuTrigger asChild>
+                <div
+                  className="relative bg-background overflow-hidden w-full h-full"
+                  style={{
+                    // Use consistent style property names to avoid hydration errors
+                    height: `${canvasSize.height}px`,
+                    width: `${canvasSize.width}px`,
+                    minHeight: `${canvasSize.height}px`,
+                    minWidth: `${canvasSize.width}px`,
+                    cursor: isPanningCanvas ? "grabbing" : "default",
+                    WebkitTouchCallout: "none", // Add this for iOS
+                    touchAction: "none", // For touch devices
+                  }}
+                >
+                  {isCanvasReady && isStorageLoaded && (
+                    <Stage
+                      ref={stageRef}
+                      width={canvasSize.width}
+                      height={canvasSize.height}
+                      x={viewport.x}
+                      y={viewport.y}
+                      scaleX={viewport.scale}
+                      scaleY={viewport.scale}
+                      draggable={false}
+                      onDragStart={(e) => {
+                        e.evt?.preventDefault();
+                      }}
+                      onDragEnd={(e) => {
+                        e.evt?.preventDefault();
+                      }}
+                      onMouseDown={handleMouseDown}
+                      onMouseMove={handleMouseMove}
+                      onMouseUp={handleMouseUp}
+                      onMouseLeave={() => {
+                        // Stop panning if mouse leaves the stage
+                        if (isPanningCanvas) {
+                          setIsPanningCanvas(false);
                         }
-                        return;
-                      }
-
-                      // Check if we clicked on an image (check in reverse order for top-most image)
-                      const clickedImage = [...images].reverse().find((img) => {
-                        // Simple bounding box check
-                        // TODO: Could be improved to handle rotation
-                        return (
-                          canvasPoint.x >= img.x &&
-                          canvasPoint.x <= img.x + img.width &&
-                          canvasPoint.y >= img.y &&
-                          canvasPoint.y <= img.y + img.height
-                        );
-                      });
-
-                      if (clickedImage) {
-                        if (!selectedIds.includes(clickedImage.id)) {
-                          // If clicking on unselected image, select only that image
-                          setSelectedIds([clickedImage.id]);
+                      }}
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                      onContextMenu={(e) => {
+                        // Check if this is a forwarded event from a video overlay
+                        const videoId =
+                          (e.evt as any)?.videoId || (e as any)?.videoId;
+                        if (videoId) {
+                          // This is a right-click on a video
+                          if (!selectedIds.includes(videoId)) {
+                            setSelectedIds([videoId]);
+                          }
+                          return;
                         }
-                        // If already selected, keep current selection for multi-select context menu
-                      }
-                    }}
-                    onWheel={handleWheel}
-                  >
-                    <Layer>
-                      {/* Grid background */}
-                      {showGrid && (
-                        <CanvasGrid
-                          viewport={viewport}
-                          canvasSize={canvasSize}
-                        />
-                      )}
 
-                      {/* Selection box */}
-                      <SelectionBoxComponent selectionBox={selectionBox} />
+                        // Get clicked position
+                        const stage = e.target.getStage();
+                        if (!stage) return;
 
-                      {/* Render images */}
-                      {images
-                        .filter((image) => {
-                          // Performance optimization: only render visible images
-                          const buffer = 100; // pixels buffer
-                          const viewBounds = {
-                            left: -viewport.x / viewport.scale - buffer,
-                            top: -viewport.y / viewport.scale - buffer,
-                            right:
-                              (canvasSize.width - viewport.x) / viewport.scale +
-                              buffer,
-                            bottom:
-                              (canvasSize.height - viewport.y) /
-                                viewport.scale +
-                              buffer,
-                          };
+                        const point = stage.getPointerPosition();
+                        if (!point) return;
 
-                          return !(
-                            image.x + image.width < viewBounds.left ||
-                            image.x > viewBounds.right ||
-                            image.y + image.height < viewBounds.top ||
-                            image.y > viewBounds.bottom
-                          );
-                        })
-                        .map((image) => (
-                          <CanvasImage
-                            key={image.id}
-                            image={image}
-                            isSelected={selectedIds.includes(image.id)}
-                            onSelect={(e) => handleSelect(image.id, e)}
-                            onChange={(newAttrs) => {
-                              setImages((prev) =>
-                                prev.map((img) =>
-                                  img.id === image.id
-                                    ? { ...img, ...newAttrs }
-                                    : img,
-                                ),
-                              );
-                            }}
-                            onDoubleClick={() => {
-                              setCroppingImageId(image.id);
-                            }}
-                            onDragStart={() => {
-                              // If dragging a selected item in a multi-selection, keep the selection
-                              // If dragging an unselected item, select only that item
-                              let currentSelectedIds = selectedIds;
-                              if (!selectedIds.includes(image.id)) {
-                                currentSelectedIds = [image.id];
-                                setSelectedIds(currentSelectedIds);
-                              }
+                        // Convert to canvas coordinates
+                        const canvasPoint = {
+                          x: (point.x - viewport.x) / viewport.scale,
+                          y: (point.y - viewport.y) / viewport.scale,
+                        };
 
-                              setIsDraggingImage(true);
-                              // Save positions of all selected items
-                              const positions = new Map<
-                                string,
-                                { x: number; y: number }
-                              >();
-                              currentSelectedIds.forEach((id) => {
-                                const img = images.find((i) => i.id === id);
-                                if (img) {
-                                  positions.set(id, { x: img.x, y: img.y });
-                                }
-                              });
-                              setDragStartPositions(positions);
-                            }}
-                            onDragEnd={() => {
-                              setIsDraggingImage(false);
-                              saveToHistory();
-                              setDragStartPositions(new Map());
-                            }}
-                            selectedIds={selectedIds}
-                            images={images}
-                            setImages={setImages}
-                            isDraggingImage={isDraggingImage}
-                            isCroppingImage={croppingImageId === image.id}
-                            dragStartPositions={dragStartPositions}
+                        // Check if we clicked on a video first (check in reverse order for top-most)
+                        const clickedVideo = [...videos]
+                          .reverse()
+                          .find((vid) => {
+                            return (
+                              canvasPoint.x >= vid.x &&
+                              canvasPoint.x <= vid.x + vid.width &&
+                              canvasPoint.y >= vid.y &&
+                              canvasPoint.y <= vid.y + vid.height
+                            );
+                          });
+
+                        if (clickedVideo) {
+                          if (!selectedIds.includes(clickedVideo.id)) {
+                            setSelectedIds([clickedVideo.id]);
+                          }
+                          return;
+                        }
+
+                        // Check if we clicked on an image (check in reverse order for top-most image)
+                        const clickedImage = [...images]
+                          .reverse()
+                          .find((img) => {
+                            // Simple bounding box check
+                            // TODO: Could be improved to handle rotation
+                            return (
+                              canvasPoint.x >= img.x &&
+                              canvasPoint.x <= img.x + img.width &&
+                              canvasPoint.y >= img.y &&
+                              canvasPoint.y <= img.y + img.height
+                            );
+                          });
+
+                        if (clickedImage) {
+                          if (!selectedIds.includes(clickedImage.id)) {
+                            // If clicking on unselected image, select only that image
+                            setSelectedIds([clickedImage.id]);
+                          }
+                          // If already selected, keep current selection for multi-select context menu
+                        }
+                      }}
+                      onWheel={handleWheel}
+                    >
+                      <Layer>
+                        {/* Grid background */}
+                        {showGrid && (
+                          <CanvasGrid
+                            viewport={viewport}
+                            canvasSize={canvasSize}
                           />
-                        ))}
+                        )}
 
-                      {/* Render videos */}
-                      {videos
-                        .filter((video) => {
-                          // Performance optimization: only render visible videos
-                          const buffer = 100; // pixels buffer
-                          const viewBounds = {
-                            left: -viewport.x / viewport.scale - buffer,
-                            top: -viewport.y / viewport.scale - buffer,
-                            right:
-                              (canvasSize.width - viewport.x) / viewport.scale +
-                              buffer,
-                            bottom:
-                              (canvasSize.height - viewport.y) /
-                                viewport.scale +
-                              buffer,
-                          };
+                        {/* Selection box */}
+                        <SelectionBoxComponent selectionBox={selectionBox} />
 
-                          return !(
-                            video.x + video.width < viewBounds.left ||
-                            video.x > viewBounds.right ||
-                            video.y + video.height < viewBounds.top ||
-                            video.y > viewBounds.bottom
-                          );
-                        })
-                        .map((video) => (
-                          <CanvasVideo
-                            key={video.id}
-                            video={video}
-                            isSelected={selectedIds.includes(video.id)}
-                            onSelect={(e) => handleSelect(video.id, e)}
-                            onChange={(newAttrs) => {
-                              setVideos((prev) =>
-                                prev.map((vid) =>
-                                  vid.id === video.id
-                                    ? { ...vid, ...newAttrs }
-                                    : vid,
-                                ),
-                              );
-                            }}
-                            onDragStart={() => {
-                              // If dragging a selected item in a multi-selection, keep the selection
-                              // If dragging an unselected item, select only that item
-                              let currentSelectedIds = selectedIds;
-                              if (!selectedIds.includes(video.id)) {
-                                currentSelectedIds = [video.id];
-                                setSelectedIds(currentSelectedIds);
-                              }
+                        {/* Render images */}
+                        {images
+                          .filter((image) => {
+                            // Performance optimization: only render visible images
+                            const buffer = 100; // pixels buffer
+                            const viewBounds = {
+                              left: -viewport.x / viewport.scale - buffer,
+                              top: -viewport.y / viewport.scale - buffer,
+                              right:
+                                (canvasSize.width - viewport.x) /
+                                  viewport.scale +
+                                buffer,
+                              bottom:
+                                (canvasSize.height - viewport.y) /
+                                  viewport.scale +
+                                buffer,
+                            };
 
-                              setIsDraggingImage(true);
-                              // Hide video controls during drag
-                              setHiddenVideoControlsIds(
-                                (prev) => new Set([...prev, video.id]),
-                              );
-                              // Save positions of all selected items
-                              const positions = new Map<
-                                string,
-                                { x: number; y: number }
-                              >();
-                              currentSelectedIds.forEach((id) => {
-                                const vid = videos.find((v) => v.id === id);
-                                if (vid) {
-                                  positions.set(id, { x: vid.x, y: vid.y });
-                                }
-                              });
-                              setDragStartPositions(positions);
-                            }}
-                            onDragEnd={() => {
-                              setIsDraggingImage(false);
-                              // Show video controls after drag ends
-                              setHiddenVideoControlsIds((prev) => {
-                                const newSet = new Set(prev);
-                                newSet.delete(video.id);
-                                return newSet;
-                              });
-                              saveToHistory();
-                              setDragStartPositions(new Map());
-                            }}
-                            selectedIds={selectedIds}
-                            videos={videos}
-                            setVideos={setVideos}
-                            isDraggingVideo={isDraggingImage}
-                            isCroppingVideo={false}
-                            dragStartPositions={dragStartPositions}
-                            onResizeStart={() =>
-                              setHiddenVideoControlsIds(
-                                (prev) => new Set([...prev, video.id]),
-                              )
-                            }
-                            onResizeEnd={() =>
-                              setHiddenVideoControlsIds((prev) => {
-                                const newSet = new Set(prev);
-                                newSet.delete(video.id);
-                                return newSet;
-                              })
-                            }
-                          />
-                        ))}
-
-                      {/* Crop overlay */}
-                      {croppingImageId &&
-                        (() => {
-                          const croppingImage = images.find(
-                            (img) => img.id === croppingImageId,
-                          );
-                          if (!croppingImage) return null;
-
-                          return (
-                            <CropOverlayWrapper
-                              image={croppingImage}
-                              viewportScale={viewport.scale}
-                              onCropChange={(crop) => {
+                            return !(
+                              image.x + image.width < viewBounds.left ||
+                              image.x > viewBounds.right ||
+                              image.y + image.height < viewBounds.top ||
+                              image.y > viewBounds.bottom
+                            );
+                          })
+                          .map((image) => (
+                            <CanvasImage
+                              key={image.id}
+                              image={image}
+                              isSelected={selectedIds.includes(image.id)}
+                              onSelect={(e) => handleSelect(image.id, e)}
+                              onChange={(newAttrs) => {
                                 setImages((prev) =>
                                   prev.map((img) =>
-                                    img.id === croppingImageId
-                                      ? { ...img, ...crop }
+                                    img.id === image.id
+                                      ? { ...img, ...newAttrs }
                                       : img,
                                   ),
                                 );
                               }}
-                              onCropEnd={async () => {
-                                // Apply crop to image dimensions
-                                if (croppingImage) {
-                                  const cropWidth =
-                                    croppingImage.cropWidth || 1;
-                                  const cropHeight =
-                                    croppingImage.cropHeight || 1;
-                                  const cropX = croppingImage.cropX || 0;
-                                  const cropY = croppingImage.cropY || 0;
-
-                                  try {
-                                    // Create the cropped image at full resolution
-                                    const croppedImageSrc =
-                                      await createCroppedImage(
-                                        croppingImage.src,
-                                        cropX,
-                                        cropY,
-                                        cropWidth,
-                                        cropHeight,
-                                      );
-
-                                    setImages((prev) =>
-                                      prev.map((img) =>
-                                        img.id === croppingImageId
-                                          ? {
-                                              ...img,
-                                              // Replace with cropped image
-                                              src: croppedImageSrc,
-                                              // Update position to the crop area's top-left
-                                              x: img.x + cropX * img.width,
-                                              y: img.y + cropY * img.height,
-                                              // Update dimensions to match crop size
-                                              width: cropWidth * img.width,
-                                              height: cropHeight * img.height,
-                                              // Remove crop values completely
-                                              cropX: undefined,
-                                              cropY: undefined,
-                                              cropWidth: undefined,
-                                              cropHeight: undefined,
-                                            }
-                                          : img,
-                                      ),
-                                    );
-                                  } catch (error) {
-                                    console.error(
-                                      "Failed to create cropped image:",
-                                      error,
-                                    );
-                                  }
+                              onDoubleClick={() => {
+                                setCroppingImageId(image.id);
+                              }}
+                              onDragStart={() => {
+                                // If dragging a selected item in a multi-selection, keep the selection
+                                // If dragging an unselected item, select only that item
+                                let currentSelectedIds = selectedIds;
+                                if (!selectedIds.includes(image.id)) {
+                                  currentSelectedIds = [image.id];
+                                  setSelectedIds(currentSelectedIds);
                                 }
 
-                                setCroppingImageId(null);
-                                saveToHistory();
+                                setIsDraggingImage(true);
+                                // Save positions of all selected items
+                                const positions = new Map<
+                                  string,
+                                  { x: number; y: number }
+                                >();
+                                currentSelectedIds.forEach((id) => {
+                                  const img = images.find((i) => i.id === id);
+                                  if (img) {
+                                    positions.set(id, { x: img.x, y: img.y });
+                                  }
+                                });
+                                setDragStartPositions(positions);
                               }}
+                              onDragEnd={() => {
+                                setIsDraggingImage(false);
+                                saveToHistory();
+                                setDragStartPositions(new Map());
+                              }}
+                              selectedIds={selectedIds}
+                              images={images}
+                              setImages={setImages}
+                              isDraggingImage={isDraggingImage}
+                              isCroppingImage={croppingImageId === image.id}
+                              dragStartPositions={dragStartPositions}
                             />
-                          );
-                        })()}
-                    </Layer>
-                  </Stage>
-                )}
-              </div>
-            </ContextMenuTrigger>
-            <CanvasContextMenu
-              selectedIds={selectedIds}
-              images={images}
-              videos={videos}
-              isGenerating={isGenerating}
-              generationSettings={generationSettings}
-              isolateInputValue={isolateInputValue}
-              isIsolating={isIsolating}
-              handleRun={handleRun}
-              handleDuplicate={handleDuplicate}
-              handleRemoveBackground={handleRemoveBackground}
-              handleCombineImages={handleCombineImages}
-              handleDelete={handleDelete}
-              handleIsolate={handleIsolate}
-              handleConvertToVideo={handleConvertToVideo}
-              handleVideoToVideo={handleVideoToVideo}
-              handleExtendVideo={handleExtendVideo}
-              handleRemoveVideoBackground={handleRemoveVideoBackground}
-              setCroppingImageId={setCroppingImageId}
-              setIsolateInputValue={setIsolateInputValue}
-              setIsolateTarget={setIsolateTarget}
-              sendToFront={sendToFront}
-              sendToBack={sendToBack}
-              bringForward={bringForward}
-              sendBackward={sendBackward}
-            />
-          </ContextMenu>
+                          ))}
 
-          <div className="absolute top-4 left-4 z-20 flex flex-col items-start gap-2">
-            {/* Fal logo */}
-            <div className="md:hidden border bg-background/80 py-2 px-3 flex flex-row rounded-xl gap-2 items-center">
-              <Link
-                href="https://fal.ai"
-                target="_blank"
-                className="block transition-opacity"
-              >
-                <Logo className="h-8 w-16 text-foreground" />
-              </Link>
+                        {/* Render videos */}
+                        {videos
+                          .filter((video) => {
+                            // Performance optimization: only render visible videos
+                            const buffer = 100; // pixels buffer
+                            const viewBounds = {
+                              left: -viewport.x / viewport.scale - buffer,
+                              top: -viewport.y / viewport.scale - buffer,
+                              right:
+                                (canvasSize.width - viewport.x) /
+                                  viewport.scale +
+                                buffer,
+                              bottom:
+                                (canvasSize.height - viewport.y) /
+                                  viewport.scale +
+                                buffer,
+                            };
+
+                            return !(
+                              video.x + video.width < viewBounds.left ||
+                              video.x > viewBounds.right ||
+                              video.y + video.height < viewBounds.top ||
+                              video.y > viewBounds.bottom
+                            );
+                          })
+                          .map((video) => (
+                            <CanvasVideo
+                              key={video.id}
+                              video={video}
+                              isSelected={selectedIds.includes(video.id)}
+                              onSelect={(e) => handleSelect(video.id, e)}
+                              onChange={(newAttrs) => {
+                                setVideos((prev) =>
+                                  prev.map((vid) =>
+                                    vid.id === video.id
+                                      ? { ...vid, ...newAttrs }
+                                      : vid,
+                                  ),
+                                );
+                              }}
+                              onDragStart={() => {
+                                // If dragging a selected item in a multi-selection, keep the selection
+                                // If dragging an unselected item, select only that item
+                                let currentSelectedIds = selectedIds;
+                                if (!selectedIds.includes(video.id)) {
+                                  currentSelectedIds = [video.id];
+                                  setSelectedIds(currentSelectedIds);
+                                }
+
+                                setIsDraggingImage(true);
+                                // Hide video controls during drag
+                                setHiddenVideoControlsIds(
+                                  (prev) => new Set([...prev, video.id]),
+                                );
+                                // Save positions of all selected items
+                                const positions = new Map<
+                                  string,
+                                  { x: number; y: number }
+                                >();
+                                currentSelectedIds.forEach((id) => {
+                                  const vid = videos.find((v) => v.id === id);
+                                  if (vid) {
+                                    positions.set(id, { x: vid.x, y: vid.y });
+                                  }
+                                });
+                                setDragStartPositions(positions);
+                              }}
+                              onDragEnd={() => {
+                                setIsDraggingImage(false);
+                                // Show video controls after drag ends
+                                setHiddenVideoControlsIds((prev) => {
+                                  const newSet = new Set(prev);
+                                  newSet.delete(video.id);
+                                  return newSet;
+                                });
+                                saveToHistory();
+                                setDragStartPositions(new Map());
+                              }}
+                              selectedIds={selectedIds}
+                              videos={videos}
+                              setVideos={setVideos}
+                              isDraggingVideo={isDraggingImage}
+                              isCroppingVideo={false}
+                              dragStartPositions={dragStartPositions}
+                              onResizeStart={() =>
+                                setHiddenVideoControlsIds(
+                                  (prev) => new Set([...prev, video.id]),
+                                )
+                              }
+                              onResizeEnd={() =>
+                                setHiddenVideoControlsIds((prev) => {
+                                  const newSet = new Set(prev);
+                                  newSet.delete(video.id);
+                                  return newSet;
+                                })
+                              }
+                            />
+                          ))}
+
+                        {/* Crop overlay */}
+                        {croppingImageId &&
+                          (() => {
+                            const croppingImage = images.find(
+                              (img) => img.id === croppingImageId,
+                            );
+                            if (!croppingImage) return null;
+
+                            return (
+                              <CropOverlayWrapper
+                                image={croppingImage}
+                                viewportScale={viewport.scale}
+                                onCropChange={(crop) => {
+                                  setImages((prev) =>
+                                    prev.map((img) =>
+                                      img.id === croppingImageId
+                                        ? { ...img, ...crop }
+                                        : img,
+                                    ),
+                                  );
+                                }}
+                                onCropEnd={async () => {
+                                  // Apply crop to image dimensions
+                                  if (croppingImage) {
+                                    const cropWidth =
+                                      croppingImage.cropWidth || 1;
+                                    const cropHeight =
+                                      croppingImage.cropHeight || 1;
+                                    const cropX = croppingImage.cropX || 0;
+                                    const cropY = croppingImage.cropY || 0;
+
+                                    try {
+                                      // Create the cropped image at full resolution
+                                      const croppedImageSrc =
+                                        await createCroppedImage(
+                                          croppingImage.src,
+                                          cropX,
+                                          cropY,
+                                          cropWidth,
+                                          cropHeight,
+                                        );
+
+                                      setImages((prev) =>
+                                        prev.map((img) =>
+                                          img.id === croppingImageId
+                                            ? {
+                                                ...img,
+                                                // Replace with cropped image
+                                                src: croppedImageSrc,
+                                                // Update position to the crop area's top-left
+                                                x: img.x + cropX * img.width,
+                                                y: img.y + cropY * img.height,
+                                                // Update dimensions to match crop size
+                                                width: cropWidth * img.width,
+                                                height: cropHeight * img.height,
+                                                // Remove crop values completely
+                                                cropX: undefined,
+                                                cropY: undefined,
+                                                cropWidth: undefined,
+                                                cropHeight: undefined,
+                                              }
+                                            : img,
+                                        ),
+                                      );
+                                    } catch (error) {
+                                      console.error(
+                                        "Failed to create cropped image:",
+                                        error,
+                                      );
+                                    }
+                                  }
+
+                                  setCroppingImageId(null);
+                                  saveToHistory();
+                                }}
+                              />
+                            );
+                          })()}
+                      </Layer>
+                    </Stage>
+                  )}
+                </div>
+              </ContextMenuTrigger>
+              <CanvasContextMenu
+                selectedIds={selectedIds}
+                images={images}
+                videos={videos}
+                isGenerating={isGenerating}
+                generationSettings={generationSettings}
+                isolateInputValue={isolateInputValue}
+                isIsolating={isIsolating}
+                handleRun={handleRun}
+                handleDuplicate={handleDuplicate}
+                handleRemoveBackground={handleRemoveBackground}
+                handleCombineImages={handleCombineImages}
+                handleDelete={handleDelete}
+                handleIsolate={handleIsolate}
+                handleConvertToVideo={handleConvertToVideo}
+                handleVideoToVideo={handleVideoToVideo}
+                handleExtendVideo={handleExtendVideo}
+                handleRemoveVideoBackground={handleRemoveVideoBackground}
+                setCroppingImageId={setCroppingImageId}
+                setIsolateInputValue={setIsolateInputValue}
+                setIsolateTarget={setIsolateTarget}
+                sendToFront={sendToFront}
+                sendToBack={sendToBack}
+                bringForward={bringForward}
+                sendBackward={sendBackward}
+              />
+            </ContextMenu>
+
+            <div className="absolute top-4 left-4 z-20 flex flex-col items-start gap-2">
+              {/* Fal logo */}
+              <div className="md:hidden border bg-background/80 py-2 px-3 flex flex-row rounded-xl gap-2 items-center">
+                <Link
+                  href="https://fal.ai"
+                  target="_blank"
+                  className="block transition-opacity"
+                >
+                  <Logo className="h-8 w-16 text-foreground" />
+                </Link>
+              </div>
+
+              {/* Mobile tool icons - animated based on selection */}
+              <MobileToolbar
+                selectedIds={selectedIds}
+                images={images}
+                isGenerating={isGenerating}
+                generationSettings={generationSettings}
+                handleRun={handleRun}
+                handleDuplicate={handleDuplicate}
+                handleRemoveBackground={handleRemoveBackground}
+                handleCombineImages={handleCombineImages}
+                handleDelete={handleDelete}
+                setCroppingImageId={setCroppingImageId}
+                sendToFront={sendToFront}
+                sendToBack={sendToBack}
+                bringForward={bringForward}
+                sendBackward={sendBackward}
+              />
             </div>
 
-            {/* Mobile tool icons - animated based on selection */}
-            <MobileToolbar
-              selectedIds={selectedIds}
-              images={images}
-              isGenerating={isGenerating}
-              generationSettings={generationSettings}
-              handleRun={handleRun}
-              handleDuplicate={handleDuplicate}
-              handleRemoveBackground={handleRemoveBackground}
-              handleCombineImages={handleCombineImages}
-              handleDelete={handleDelete}
-              setCroppingImageId={setCroppingImageId}
-              sendToFront={sendToFront}
-              sendToBack={sendToBack}
-              bringForward={bringForward}
-              sendBackward={sendBackward}
-            />
-          </div>
-
-          <div className="fixed bottom-0 left-0 right-0 md:absolute md:bottom-4 md:left-1/2 md:transform md:-translate-x-1/2 z-20 p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:p-0 md:pb-0 md:max-w-[648px]">
-            <div
-              className={cn(
-                "bg-card/95 backdrop-blur-lg rounded-3xl",
-                "shadow-[0_0_0_1px_rgba(50,50,50,0.16),0_4px_8px_-0.5px_rgba(50,50,50,0.08),0_8px_16px_-2px_rgba(50,50,50,0.04)]",
-                "dark:shadow-none dark:outline dark:outline-1 dark:outline-border",
-              )}
-            >
-              <div className="flex flex-col gap-3 px-3 md:px-3 py-2 md:py-3 relative">
-                {/* Active generations indicator */}
-                <AnimatePresence mode="wait">
-                  {(activeGenerations.size > 0 ||
-                    activeVideoGenerations.size > 0 ||
-                    isGenerating ||
-                    isRemovingVideoBackground ||
-                    isIsolating ||
-                    isExtendingVideo ||
-                    isTransformingVideo ||
-                    showSuccess) && (
-                    <motion.div
-                      key={showSuccess ? "success" : "generating"}
-                      initial={{ opacity: 0, y: -10, scale: 0.9, x: "-50%" }}
-                      animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
-                      exit={{ opacity: 0, y: -10, scale: 0.9, x: "-50%" }}
-                      transition={{ duration: 0.2, ease: "easeInOut" }}
-                      className={cn(
-                        "absolute z-50 -top-16 left-1/2",
-                        "rounded-xl",
-                        showSuccess
-                          ? "shadow-[0_0_0_1px_rgba(34,197,94,0.2),0_4px_8px_-0.5px_rgba(34,197,94,0.08),0_8px_16px_-2px_rgba(34,197,94,0.04)] dark:shadow-none dark:border dark:border-green-500/30"
-                          : activeVideoGenerations.size > 0 ||
-                              isRemovingVideoBackground ||
-                              isExtendingVideo ||
-                              isTransformingVideo
-                            ? "shadow-[0_0_0_1px_rgba(168,85,247,0.2),0_4px_8px_-0.5px_rgba(168,85,247,0.08),0_8px_16px_-2px_rgba(168,85,247,0.04)] dark:shadow-none dark:border dark:border-purple-500/30"
-                            : "shadow-[0_0_0_1px_rgba(236,6,72,0.2),0_4px_8px_-0.5px_rgba(236,6,72,0.08),0_8px_16px_-2px_rgba(236,6,72,0.04)] dark:shadow-none dark:border dark:border-[#EC0648]/30",
-                      )}
-                    >
-                      <GenerationsIndicator
-                        isAnimating={!showSuccess}
-                        isSuccess={showSuccess}
-                        className="w-5 h-5"
-                        activeGenerationsSize={
-                          activeGenerations.size +
-                          activeVideoGenerations.size +
-                          (isGenerating ? 1 : 0) +
-                          (isRemovingVideoBackground ? 1 : 0) +
-                          (isIsolating ? 1 : 0) +
-                          (isExtendingVideo ? 1 : 0) +
-                          (isTransformingVideo ? 1 : 0)
-                        }
-                        outputType={
-                          activeVideoGenerations.size > 0 ||
-                          isRemovingVideoBackground ||
-                          isExtendingVideo ||
-                          isTransformingVideo
-                            ? "video"
-                            : "image"
-                        }
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Action buttons row */}
-                <div className="flex items-center gap-1">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={cn(
-                        "rounded-xl overflow-clip flex items-center border border-border",
-                        "shadow-[0_0_0_1px_rgba(50,50,50,0.12),0_4px_8px_-0.5px_rgba(50,50,50,0.04),0_8px_16px_-2px_rgba(50,50,50,0.02)]",
-                      )}
-                    >
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={undo}
-                        disabled={historyIndex <= 0}
-                        className="rounded-none"
-                        title="Undo"
+            <div className="fixed bottom-0 left-0 right-0 md:absolute md:bottom-4 md:left-1/2 md:transform md:-translate-x-1/2 z-20 p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:p-0 md:pb-0 md:max-w-[648px]">
+              <div
+                className={cn(
+                  "bg-card/95 backdrop-blur-lg rounded-3xl",
+                  "shadow-[0_0_0_1px_rgba(50,50,50,0.16),0_4px_8px_-0.5px_rgba(50,50,50,0.08),0_8px_16px_-2px_rgba(50,50,50,0.04)]",
+                  "dark:shadow-none dark:outline-1 dark:outline-border",
+                )}
+              >
+                <div className="flex flex-col gap-3 px-3 md:px-3 py-2 md:py-3 relative">
+                  {/* Active generations indicator */}
+                  <AnimatePresence mode="wait">
+                    {(activeGenerations.size > 0 ||
+                      activeVideoGenerations.size > 0 ||
+                      isGenerating ||
+                      isRemovingVideoBackground ||
+                      isIsolating ||
+                      isExtendingVideo ||
+                      isTransformingVideo ||
+                      showSuccess) && (
+                      <motion.div
+                        key={showSuccess ? "success" : "generating"}
+                        initial={{ opacity: 0, y: -10, scale: 0.9, x: "-50%" }}
+                        animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
+                        exit={{ opacity: 0, y: -10, scale: 0.9, x: "-50%" }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        className={cn(
+                          "absolute z-50 -top-16 left-1/2",
+                          "rounded-xl",
+                          showSuccess
+                            ? "shadow-[0_0_0_1px_rgba(34,197,94,0.2),0_4px_8px_-0.5px_rgba(34,197,94,0.08),0_8px_16px_-2px_rgba(34,197,94,0.04)] dark:shadow-none dark:border dark:border-green-500/30"
+                            : activeVideoGenerations.size > 0 ||
+                                isRemovingVideoBackground ||
+                                isExtendingVideo ||
+                                isTransformingVideo
+                              ? "shadow-[0_0_0_1px_rgba(168,85,247,0.2),0_4px_8px_-0.5px_rgba(168,85,247,0.08),0_8px_16px_-2px_rgba(168,85,247,0.04)] dark:shadow-none dark:border dark:border-purple-500/30"
+                              : "shadow-[0_0_0_1px_rgba(236,6,72,0.2),0_4px_8px_-0.5px_rgba(236,6,72,0.08),0_8px_16px_-2px_rgba(236,6,72,0.04)] dark:shadow-none dark:border dark:border-[#EC0648]/30",
+                        )}
                       >
-                        <Undo className="h-4 w-4" />
-                      </Button>
-                      <div className="h-6 w-px bg-border" />
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={redo}
-                        disabled={historyIndex >= history.length - 1}
-                        className="rounded-none"
-                        title="Redo"
-                      >
-                        <Redo className="h-4 w-4" strokeWidth={2} />
-                      </Button>
-                    </div>
-
-                    {/* Mode indicator badge */}
-                    <div
-                      className={cn(
-                        "h-9 rounded-xl overflow-clip flex items-center px-3",
-                        "pointer-events-none select-none",
-                        selectedIds.length > 0
-                          ? "bg-blue-500/10 dark:bg-blue-500/15 shadow-[0_0_0_1px_rgba(59,130,246,0.2),0_4px_8px_-0.5px_rgba(59,130,246,0.08),0_8px_16px_-2px_rgba(59,130,246,0.04)] dark:shadow-none dark:border dark:border-blue-500/30"
-                          : "bg-orange-500/10 dark:bg-orange-500/15 shadow-[0_0_0_1px_rgba(249,115,22,0.2),0_4px_8px_-0.5px_rgba(249,115,22,0.08),0_8px_16px_-2px_rgba(249,115,22,0.04)] dark:shadow-none dark:border dark:border-orange-500/30",
-                      )}
-                    >
-                      {selectedIds.length > 0 ? (
-                        <div className="flex items-center gap-2 text-xs font-medium">
-                          <ImageIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />
-                          <span className="text-blue-600 dark:text-blue-500">
-                            Image to Image
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 text-xs font-medium">
-                          <span className="text-orange-600 dark:text-orange-500 font-bold text-sm">
-                            T
-                          </span>
-                          <span className="text-orange-600 dark:text-orange-500">
-                            Text to Image
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex-1" />
-                  <div className="flex items-center gap-2">
-                    {/* Clear button */}
-                    <Tooltip>
-                      <Button
-                        variant="secondary"
-                        size="icon-sm"
-                        onClick={async () => {
-                          if (
-                            confirm(
-                              "Clear all saved data? This cannot be undone.",
-                            )
-                          ) {
-                            await canvasStorage.clearAll();
-                            setImages([]);
-                            setViewport({ x: 0, y: 0, scale: 1 });
-                            toast({
-                              title: "Storage cleared",
-                              description: "All saved data has been removed",
-                            });
+                        <GenerationsIndicator
+                          isAnimating={!showSuccess}
+                          isSuccess={showSuccess}
+                          className="w-5 h-5"
+                          activeGenerationsSize={
+                            activeGenerations.size +
+                            activeVideoGenerations.size +
+                            (isGenerating ? 1 : 0) +
+                            (isRemovingVideoBackground ? 1 : 0) +
+                            (isIsolating ? 1 : 0) +
+                            (isExtendingVideo ? 1 : 0) +
+                            (isTransformingVideo ? 1 : 0)
                           }
-                        }}
-                        className="bg-destructive/10 text-destructive hover:bg-destructive/20"
-                        title="Clear storage"
-                        render={<TooltipTrigger />}
+                          outputType={
+                            activeVideoGenerations.size > 0 ||
+                            isRemovingVideoBackground ||
+                            isExtendingVideo ||
+                            isTransformingVideo
+                              ? "video"
+                              : "image"
+                          }
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Action buttons row */}
+                  <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={cn(
+                          "rounded-xl overflow-clip flex items-center border border-border",
+                          "shadow-[0_0_0_1px_rgba(50,50,50,0.12),0_4px_8px_-0.5px_rgba(50,50,50,0.04),0_8px_16px_-2px_rgba(50,50,50,0.02)]",
+                        )}
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                      <TooltipContent className="text-destructive">
-                        <span>Clear</span>
-                      </TooltipContent>
-                    </Tooltip>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={undo}
+                          disabled={historyIndex <= 0}
+                          className="rounded-none"
+                          title="Undo"
+                        >
+                          <Undo className="h-4 w-4" />
+                        </Button>
+                        <div className="h-6 w-px bg-border" />
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={redo}
+                          disabled={historyIndex >= history.length - 1}
+                          className="rounded-none"
+                          title="Redo"
+                        >
+                          <Redo className="h-4 w-4" strokeWidth={2} />
+                        </Button>
+                      </div>
 
-                    {/* Settings dialog button */}
-                    <Tooltip>
-                      <Button
-                        variant="secondary"
-                        size="icon-sm"
-                        className="relative"
-                        onClick={() => setIsSettingsDialogOpen(true)}
-                        render={<TooltipTrigger />}
+                      {/* Mode indicator badge */}
+                      <div
+                        className={cn(
+                          "h-9 rounded-xl overflow-clip flex items-center px-3",
+                          "pointer-events-none select-none",
+                          selectedIds.length > 0
+                            ? "bg-blue-500/10 dark:bg-blue-500/15 shadow-[0_0_0_1px_rgba(59,130,246,0.2),0_4px_8px_-0.5px_rgba(59,130,246,0.08),0_8px_16px_-2px_rgba(59,130,246,0.04)] dark:shadow-none dark:border dark:border-blue-500/30"
+                            : "bg-orange-500/10 dark:bg-orange-500/15 shadow-[0_0_0_1px_rgba(249,115,22,0.2),0_4px_8px_-0.5px_rgba(249,115,22,0.08),0_8px_16px_-2px_rgba(249,115,22,0.04)] dark:shadow-none dark:border dark:border-orange-500/30",
+                        )}
                       >
-                        <SlidersHorizontal className="h-4 w-4" />
-                      </Button>
-                      <TooltipContent>
-                        <span>Settings</span>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <Textarea
-                    value={generationSettings.prompt}
-                    onChange={(e) =>
-                      setGenerationSettings({
-                        ...generationSettings,
-                        prompt: e.target.value,
-                      })
-                    }
-                    placeholder={`Enter a prompt... (${checkOS("Win") || checkOS("Linux") ? "Ctrl" : "⌘"}+Enter to run)`}
-                    className="w-full h-20 resize-none border-none p-2 pr-36"
-                    style={{ fontSize: "16px" }}
-                    onKeyDown={(e) => {
-                      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                        e.preventDefault();
-                        if (!isGenerating && generationSettings.prompt.trim()) {
-                          handleRun();
-                        }
-                      }
-                    }}
-                  />
-
-                  {selectedIds.length > 0 && (
-                    <div className="absolute top-1 right-2 flex items-center justify-end">
-                      <div className="relative h-12 w-20">
-                        {selectedIds.slice(0, 3).map((id, index) => {
-                          const image = images.find((img) => img.id === id);
-                          if (!image) return null;
-
-                          const isLast =
-                            index === Math.min(selectedIds.length - 1, 2);
-                          const offset = index * 8;
-                          // Make each card progressively smaller
-                          const size = 40 - index * 4;
-                          const topOffset = index * 2; // Offset from top to maintain visual alignment
-
-                          return (
-                            <div
-                              key={id}
-                              className="absolute rounded-lg border border-border/20 bg-background overflow-hidden"
-                              style={{
-                                right: `${offset}px`,
-                                top: `${topOffset}px`,
-                                zIndex: 3 - index,
-                                width: `${size}px`,
-                                height: `${size}px`,
-                              }}
-                            >
-                              <img
-                                src={image.src}
-                                alt=""
-                                className="w-full h-full object-cover"
-                              />
-                              {/* Show count on last visible card if more than 3 selected */}
-                              {isLast && selectedIds.length > 3 && (
-                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                  <span className="text-white text-xs font-medium">
-                                    +{selectedIds.length - 3}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                        {selectedIds.length > 0 ? (
+                          <div className="flex items-center gap-2 text-xs font-medium">
+                            <ImageIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />
+                            <span className="text-blue-600 dark:text-blue-500">
+                              Image to Image
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-xs font-medium">
+                            <span className="text-orange-600 dark:text-orange-500 font-bold text-sm">
+                              T
+                            </span>
+                            <span className="text-orange-600 dark:text-orange-500">
+                              Text to Image
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )}
-                </div>
+                    <div className="flex-1" />
+                    <div className="flex items-center gap-2">
+                      {/* Clear button */}
+                      <Tooltip>
+                        <Button
+                          variant="secondary"
+                          size="icon-sm"
+                          onClick={async () => {
+                            if (
+                              confirm(
+                                "Clear all saved data? This cannot be undone.",
+                              )
+                            ) {
+                              await canvasStorage.clearAll();
+                              setImages([]);
+                              setViewport({ x: 0, y: 0, scale: 1 });
+                              toast({
+                                title: "Storage cleared",
+                                description: "All saved data has been removed",
+                              });
+                            }
+                          }}
+                          className="bg-destructive/10 text-destructive hover:bg-destructive/20"
+                          title="Clear storage"
+                          render={<TooltipTrigger />}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                        <TooltipContent className="text-destructive">
+                          <span>Clear</span>
+                        </TooltipContent>
+                      </Tooltip>
 
-                {generationSettings.styleId === "custom" && (
-                  <div className="w-full flex items-center gap-2">
-                    <Input
-                      value={generationSettings.loraUrl}
+                      {/* Settings dialog button */}
+                      <Tooltip>
+                        <Button
+                          variant="secondary"
+                          size="icon-sm"
+                          className="relative"
+                          onClick={() => setIsSettingsDialogOpen(true)}
+                          render={<TooltipTrigger />}
+                        >
+                          <SlidersHorizontal className="h-4 w-4" />
+                        </Button>
+                        <TooltipContent>
+                          <span>Settings</span>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <Textarea
+                      value={generationSettings.prompt}
                       onChange={(e) =>
                         setGenerationSettings({
                           ...generationSettings,
-                          loraUrl: e.target.value,
+                          prompt: e.target.value,
                         })
                       }
-                      placeholder="Kontext LoRA URL (optional)"
+                      placeholder={`Enter a prompt... (${checkOS("Win") || checkOS("Linux") ? "Ctrl" : "⌘"}+Enter to run)`}
+                      className="w-full h-20 resize-none border-none p-2 pr-36"
                       style={{ fontSize: "16px" }}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="flex items-center gap-2"
-                      onClick={() => {
-                        window.open(
-                          "https://huggingface.co/collections/kontext-community/flux-kontext-loras-687e8779f8ed40a611a3925f",
-                          "_blank",
-                        );
+                      onKeyDown={(e) => {
+                        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                          e.preventDefault();
+                          if (
+                            !isGenerating &&
+                            generationSettings.prompt.trim()
+                          ) {
+                            handleRun();
+                          }
+                        }
                       }}
-                      title="Browse Kontext LoRAs"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                    {generationSettings.styleId === "custom" && (
+                    />
+
+                    {selectedIds.length > 0 && (
+                      <div className="absolute top-1 right-2 flex items-center justify-end">
+                        <div className="relative h-12 w-20">
+                          {selectedIds.slice(0, 3).map((id, index) => {
+                            const image = images.find((img) => img.id === id);
+                            if (!image) return null;
+
+                            const isLast =
+                              index === Math.min(selectedIds.length - 1, 2);
+                            const offset = index * 8;
+                            // Make each card progressively smaller
+                            const size = 40 - index * 4;
+                            const topOffset = index * 2; // Offset from top to maintain visual alignment
+
+                            return (
+                              <div
+                                key={id}
+                                className="absolute rounded-lg border border-border/20 bg-background overflow-hidden"
+                                style={{
+                                  right: `${offset}px`,
+                                  top: `${topOffset}px`,
+                                  zIndex: 3 - index,
+                                  width: `${size}px`,
+                                  height: `${size}px`,
+                                }}
+                              >
+                                <img
+                                  src={image.src}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
+                                {/* Show count on last visible card if more than 3 selected */}
+                                {isLast && selectedIds.length > 3 && (
+                                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                    <span className="text-white text-xs font-medium">
+                                      +{selectedIds.length - 3}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {generationSettings.styleId === "custom" && (
+                    <div className="w-full flex items-center gap-2">
+                      <Input
+                        value={generationSettings.loraUrl}
+                        onChange={(e) =>
+                          setGenerationSettings({
+                            ...generationSettings,
+                            loraUrl: e.target.value,
+                          })
+                        }
+                        placeholder="Kontext LoRA URL (optional)"
+                        style={{ fontSize: "16px" }}
+                      />
                       <Button
                         variant="ghost"
                         size="icon"
                         className="flex items-center gap-2"
                         onClick={() => {
-                          // Find the previous style to restore its settings
-                          const prevStyle = styleModels.find(
-                            (model) => model.id === previousStyleId,
+                          window.open(
+                            "https://huggingface.co/collections/kontext-community/flux-kontext-loras-687e8779f8ed40a611a3925f",
+                            "_blank",
                           );
-
-                          if (prevStyle) {
-                            setGenerationSettings({
-                              ...generationSettings,
-                              styleId: prevStyle.id,
-                              prompt: prevStyle.prompt,
-                              loraUrl: prevStyle.loraUrl || "",
-                            });
-                          }
                         }}
-                        title="Go back to previous style"
+                        title="Browse Kontext LoRAs"
                       >
-                        <X className="h-4 w-4" />
+                        <ExternalLink className="h-4 w-4" />
                       </Button>
-                    )}
-                  </div>
-                )}
+                      {generationSettings.styleId === "custom" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="flex items-center gap-2"
+                          onClick={() => {
+                            // Find the previous style to restore its settings
+                            const prevStyle = styleModels.find(
+                              (model) => model.id === previousStyleId,
+                            );
 
-                {/* Style dropdown and Run button */}
-                <div className="flex items-center justify-between">
-                  {/* Style selector button */}
-                  <Button
-                    variant="secondary"
-                    className="flex items-center gap-2"
-                    onClick={() => setIsStyleDialogOpen(true)}
-                  >
-                    {(() => {
-                      if (generationSettings.styleId === "custom") {
+                            if (prevStyle) {
+                              setGenerationSettings({
+                                ...generationSettings,
+                                styleId: prevStyle.id,
+                                prompt: prevStyle.prompt,
+                                loraUrl: prevStyle.loraUrl || "",
+                              });
+                            }
+                          }}
+                          title="Go back to previous style"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Style dropdown and Run button */}
+                  <div className="flex items-center justify-between">
+                    {/* Style selector button */}
+                    <Button
+                      variant="secondary"
+                      className="flex items-center gap-2"
+                      onClick={() => setIsStyleDialogOpen(true)}
+                    >
+                      {(() => {
+                        if (generationSettings.styleId === "custom") {
+                          return (
+                            <>
+                              <div className="w-5 h-5 flex items-center justify-center">
+                                <Plus className="w-4 h-4" />
+                              </div>
+                              <span className="text-sm">Custom</span>
+                            </>
+                          );
+                        }
+                        const selectedModel =
+                          styleModels.find(
+                            (m) => m.id === generationSettings.styleId,
+                          ) || styleModels.find((m) => m.id === "simpsons");
                         return (
                           <>
-                            <div className="w-5 h-5 flex items-center justify-center">
-                              <Plus className="w-4 h-4" />
-                            </div>
-                            <span className="text-sm">Custom</span>
+                            <img
+                              src={selectedModel?.imageSrc}
+                              alt={selectedModel?.name}
+                              className="w-5 h-5 rounded-xl object-cover"
+                            />
+                            <span className="text-sm">
+                              {selectedModel?.name || "Simpsons Style"}
+                            </span>
                           </>
                         );
-                      }
-                      const selectedModel =
-                        styleModels.find(
-                          (m) => m.id === generationSettings.styleId,
-                        ) || styleModels.find((m) => m.id === "simpsons");
-                      return (
-                        <>
-                          <img
-                            src={selectedModel?.imageSrc}
-                            alt={selectedModel?.name}
-                            className="w-5 h-5 rounded-xl object-cover"
-                          />
-                          <span className="text-sm">
-                            {selectedModel?.name || "Simpsons Style"}
-                          </span>
-                        </>
-                      );
-                    })()}
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                  <div className="flex items-center gap-2">
-                    {/* Attachment button */}
-                    <Tooltip>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="border-none"
-                        render={<TooltipTrigger />}
-                        onClick={() => {
-                          // Create file input with better mobile support
-                          const input = document.createElement("input");
-                          input.type = "file";
-                          input.accept = "image/*";
-                          input.multiple = true;
+                      })()}
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      {/* Attachment button */}
+                      <Tooltip>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="border-none"
+                          render={<TooltipTrigger />}
+                          onClick={() => {
+                            // Create file input with better mobile support
+                            const input = document.createElement("input");
+                            input.type = "file";
+                            input.accept = "image/*";
+                            input.multiple = true;
 
-                          // Add to DOM for mobile compatibility
-                          input.style.position = "fixed";
-                          input.style.top = "-1000px";
-                          input.style.left = "-1000px";
-                          input.style.opacity = "0";
-                          input.style.pointerEvents = "none";
-                          input.style.width = "1px";
-                          input.style.height = "1px";
+                            // Add to DOM for mobile compatibility
+                            input.style.position = "fixed";
+                            input.style.top = "-1000px";
+                            input.style.left = "-1000px";
+                            input.style.opacity = "0";
+                            input.style.pointerEvents = "none";
+                            input.style.width = "1px";
+                            input.style.height = "1px";
 
-                          // Add event handlers
-                          input.onchange = (e) => {
-                            try {
-                              handleFileUpload(
-                                (e.target as HTMLInputElement).files,
-                              );
-                            } catch (error) {
-                              console.error("File upload error:", error);
-                              toast({
-                                title: "Upload failed",
-                                description: "Failed to process selected files",
-                                variant: "destructive",
-                              });
-                            } finally {
-                              // Clean up
+                            // Add event handlers
+                            input.onchange = (e) => {
+                              try {
+                                handleFileUpload(
+                                  (e.target as HTMLInputElement).files,
+                                );
+                              } catch (error) {
+                                console.error("File upload error:", error);
+                                toast({
+                                  title: "Upload failed",
+                                  description:
+                                    "Failed to process selected files",
+                                  variant: "destructive",
+                                });
+                              } finally {
+                                // Clean up
+                                if (input.parentNode) {
+                                  document.body.removeChild(input);
+                                }
+                              }
+                            };
+
+                            input.onerror = () => {
+                              console.error("File input error");
                               if (input.parentNode) {
                                 document.body.removeChild(input);
                               }
-                            }
-                          };
+                            };
 
-                          input.onerror = () => {
-                            console.error("File input error");
-                            if (input.parentNode) {
-                              document.body.removeChild(input);
-                            }
-                          };
+                            // Add to DOM and trigger
+                            document.body.appendChild(input);
 
-                          // Add to DOM and trigger
-                          document.body.appendChild(input);
+                            // Use setTimeout to ensure the input is properly attached
+                            setTimeout(() => {
+                              try {
+                                input.click();
+                              } catch (error) {
+                                console.error(
+                                  "Failed to trigger file dialog:",
+                                  error,
+                                );
+                                toast({
+                                  title: "Upload unavailable",
+                                  description:
+                                    "File upload is not available. Try using drag & drop instead.",
+                                  variant: "destructive",
+                                });
+                                if (input.parentNode) {
+                                  document.body.removeChild(input);
+                                }
+                              }
+                            }, 10);
 
-                          // Use setTimeout to ensure the input is properly attached
-                          setTimeout(() => {
-                            try {
-                              input.click();
-                            } catch (error) {
-                              console.error(
-                                "Failed to trigger file dialog:",
-                                error,
-                              );
-                              toast({
-                                title: "Upload unavailable",
-                                description:
-                                  "File upload is not available. Try using drag & drop instead.",
-                                variant: "destructive",
-                              });
+                            // Cleanup after timeout in case dialog was cancelled
+                            setTimeout(() => {
                               if (input.parentNode) {
                                 document.body.removeChild(input);
                               }
-                            }
-                          }, 10);
+                            }, 30000); // 30 second cleanup
+                          }}
+                          title="Upload images"
+                        >
+                          <Paperclip className="h-4 w-4" />
+                        </Button>
+                        <TooltipContent>
+                          <span>Upload</span>
+                        </TooltipContent>
+                      </Tooltip>
 
-                          // Cleanup after timeout in case dialog was cancelled
-                          setTimeout(() => {
-                            if (input.parentNode) {
-                              document.body.removeChild(input);
-                            }
-                          }, 30000); // 30 second cleanup
-                        }}
-                        title="Upload images"
-                      >
-                        <Paperclip className="h-4 w-4" />
-                      </Button>
-                      <TooltipContent>
-                        <span>Upload</span>
-                      </TooltipContent>
-                    </Tooltip>
-
-                    {/* Run button */}
-                    <Tooltip>
-                      <Button
-                        onClick={handleRun}
-                        variant="default"
-                        size="icon"
-                        disabled={
-                          isGenerating || !generationSettings.prompt.trim()
-                        }
-                        className={cn(
-                          "gap-2 font-medium transition-all",
-                          isGenerating && "bg-secondary",
-                        )}
-                        render={<TooltipTrigger />}
-                      >
-                        {isGenerating ? (
-                          <SpinnerIcon className="h-4 w-4 animate-spin text-white" />
-                        ) : (
-                          <PlayIcon className="h-4 w-4 text-white fill-white" />
-                        )}
-                      </Button>
-                      <TooltipContent>
-                        <div className="flex items-center gap-2">
-                          <span>Run</span>
-                          <ShortcutBadge
-                            variant="default"
-                            size="xs"
-                            shortcut={
-                              checkOS("Win") || checkOS("Linux")
-                                ? "ctrl+enter"
-                                : "meta+enter"
-                            }
-                          />
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
+                      {/* Run button */}
+                      <Tooltip>
+                        <Button
+                          onClick={handleRun}
+                          variant="default"
+                          size="icon"
+                          disabled={
+                            isGenerating || !generationSettings.prompt.trim()
+                          }
+                          className={cn(
+                            "gap-2 font-medium transition-all",
+                            isGenerating && "bg-secondary",
+                          )}
+                          render={<TooltipTrigger />}
+                        >
+                          {isGenerating ? (
+                            <SpinnerIcon className="h-4 w-4 animate-spin text-white" />
+                          ) : (
+                            <PlayIcon className="h-4 w-4 text-white fill-white" />
+                          )}
+                        </Button>
+                        <TooltipContent>
+                          <div className="flex items-center gap-2">
+                            <span>Run</span>
+                            <ShortcutBadge
+                              variant="default"
+                              size="xs"
+                              shortcut={
+                                checkOS("Win") || checkOS("Linux")
+                                  ? "ctrl+enter"
+                                  : "meta+enter"
+                              }
+                            />
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Mini-map -- Disabled for now
+            {/* Mini-map -- Disabled for now
           {showMinimap && (
             <MiniMap
               images={images}
@@ -3573,188 +3418,188 @@ export default function OverlayPage() {
           )}
           */}
 
-          {/* Zoom controls */}
-          <ZoomControls
-            viewport={viewport}
-            setViewport={setViewport}
-            canvasSize={canvasSize}
-          />
-          {/* <GithubBadge /> */}
+            {/* Zoom controls */}
+            <ZoomControls
+              viewport={viewport}
+              setViewport={setViewport}
+              canvasSize={canvasSize}
+            />
+            {/* <GithubBadge /> */}
 
-          {/* Dimension display for selected images */}
-          <DimensionDisplay
-            selectedImages={images.filter((img) =>
-              selectedIds.includes(img.id),
-            )}
-            viewport={viewport}
-          />
-        </div>
-      </main>
+            {/* Dimension display for selected images */}
+            <DimensionDisplay
+              selectedImages={images.filter((img) =>
+                selectedIds.includes(img.id),
+              )}
+              viewport={viewport}
+            />
+          </div>
+        </main>
 
-      {/* Style Selection Dialog */}
-      <Dialog open={isStyleDialogOpen} onOpenChange={setIsStyleDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-4xl max-h-[80vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Choose a Style</DialogTitle>
-            <DialogDescription>
-              Select a style to apply to your images or choose Custom to use
-              your own LoRA
-            </DialogDescription>
-          </DialogHeader>
+        {/* Style Selection Dialog */}
+        <Dialog open={isStyleDialogOpen} onOpenChange={setIsStyleDialogOpen}>
+          <DialogContent className="w-[95vw] max-w-4xl max-h-[80vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Choose a Style</DialogTitle>
+              <DialogDescription>
+                Select a style to apply to your images or choose Custom to use
+                your own LoRA
+              </DialogDescription>
+            </DialogHeader>
 
-          <div className="relative">
-            {/* Fixed gradient overlays outside scrollable area */}
-            <div className="pointer-events-none absolute -top-[1px] left-0 right-0 z-30 h-4 md:h-12 bg-gradient-to-b from-background via-background/90 to-transparent" />
-            <div className="pointer-events-none absolute -bottom-[1px] left-0 right-0 z-30 h-4 md:h-12 bg-gradient-to-t from-background via-background/90 to-transparent" />
+            <div className="relative">
+              {/* Fixed gradient overlays outside scrollable area */}
+              <div className="pointer-events-none absolute -top-[1px] left-0 right-0 z-30 h-2 md:h-12 bg-gradient-to-b from-background via-background/90 to-transparent" />
+              <div className="pointer-events-none absolute -bottom-[1px] left-0 right-0 z-30 h-2 md:h-12 bg-gradient-to-t from-background via-background/90 to-transparent" />
 
-            {/* Scrollable content container */}
-            <div className="overflow-y-auto max-h-[60vh] px-1">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pt-4 pb-6 md:pt-8 md:pb-12">
-                {/* Custom option */}
-                <button
-                  onClick={() => {
-                    setGenerationSettings({
-                      ...generationSettings,
-                      loraUrl: "",
-                      prompt: "",
-                      styleId: "custom",
-                    });
-                    setIsStyleDialogOpen(false);
-                  }}
-                  className={cn(
-                    "group relative flex flex-col items-center gap-2 p-3 rounded-xl border",
-                    generationSettings.styleId === "custom"
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50",
-                  )}
-                >
-                  <div className="w-full aspect-square rounded-lg bg-muted flex items-center justify-center">
-                    <Plus className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <span className="text-sm font-medium">Custom</span>
-                </button>
-
-                {/* Predefined styles */}
-                {styleModels.map((model) => (
+              {/* Scrollable content container */}
+              <div className="overflow-y-auto max-h-[60vh] px-1">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pt-4 pb-6 md:pt-8 md:pb-12">
+                  {/* Custom option */}
                   <button
-                    key={model.id}
                     onClick={() => {
                       setGenerationSettings({
                         ...generationSettings,
-                        loraUrl: model.loraUrl || "",
-                        prompt: model.prompt,
-                        styleId: model.id,
+                        loraUrl: "",
+                        prompt: "",
+                        styleId: "custom",
                       });
                       setIsStyleDialogOpen(false);
                     }}
                     className={cn(
                       "group relative flex flex-col items-center gap-2 p-3 rounded-xl border",
-                      generationSettings.styleId === model.id
+                      generationSettings.styleId === "custom"
                         ? "border-primary bg-primary/10"
                         : "border-border hover:border-primary/50",
                     )}
                   >
-                    <div className="relative w-full aspect-square rounded-lg overflow-hidden">
-                      <Image
-                        src={model.imageSrc}
-                        alt={model.name}
-                        width={200}
-                        height={200}
-                        className="w-full h-full object-cover"
-                      />
-                      {generationSettings.styleId === model.id && (
-                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center"></div>
-                      )}
+                    <div className="w-full aspect-square rounded-lg bg-muted flex items-center justify-center">
+                      <Plus className="h-8 w-8 text-muted-foreground" />
                     </div>
-                    <span className="text-sm font-medium text-center">
-                      {model.name}
-                    </span>
+                    <span className="text-sm font-medium">Custom</span>
                   </button>
-                ))}
+
+                  {/* Predefined styles */}
+                  {styleModels.map((model) => (
+                    <button
+                      key={model.id}
+                      onClick={() => {
+                        setGenerationSettings({
+                          ...generationSettings,
+                          loraUrl: model.loraUrl || "",
+                          prompt: model.prompt,
+                          styleId: model.id,
+                        });
+                        setIsStyleDialogOpen(false);
+                      }}
+                      className={cn(
+                        "group relative flex flex-col items-center gap-2 p-3 rounded-xl border",
+                        generationSettings.styleId === model.id
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50",
+                      )}
+                    >
+                      <div className="relative w-full aspect-square rounded-lg overflow-hidden">
+                        <Image
+                          src={model.imageSrc}
+                          alt={model.name}
+                          width={200}
+                          height={200}
+                          className="w-full h-full object-cover"
+                        />
+                        {generationSettings.styleId === model.id && (
+                          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center"></div>
+                        )}
+                      </div>
+                      <span className="text-sm font-medium text-center">
+                        {model.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
 
-      {/* Settings dialog */}
-      <Dialog
-        open={isSettingsDialogOpen}
-        onOpenChange={setIsSettingsDialogOpen}
-      >
-        <DialogContent className="w-[95vw] max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Settings</DialogTitle>
-          </DialogHeader>
+        {/* Settings dialog */}
+        <Dialog
+          open={isSettingsDialogOpen}
+          onOpenChange={setIsSettingsDialogOpen}
+        >
+          <DialogContent className="w-[95vw] max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Settings</DialogTitle>
+            </DialogHeader>
 
-          <div className="space-y-6">
-            <div className="h-px bg-border/40" />
+            <div className="space-y-6">
+              <div className="h-px bg-border/40" />
 
-            {/* Appearance */}
-            <div className="flex justify-between">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="appearance">Appearance</Label>
-                <p className="text-sm text-muted-foreground">
-                  Customize how infinite-kanvas looks on your device.
-                </p>
+              {/* Appearance */}
+              <div className="flex justify-between">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="appearance">Appearance</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Customize how infinite-kanvas looks on your device.
+                  </p>
+                </div>
+                <Select
+                  value={theme || "system"}
+                  onValueChange={(value: "system" | "light" | "dark") =>
+                    setTheme(value)
+                  }
+                >
+                  <SelectTrigger className="max-w-[140px] rounded-xl">
+                    <div className="flex items-center gap-2">
+                      {theme === "light" ? (
+                        <SunIcon className="size-4" />
+                      ) : theme === "dark" ? (
+                        <MoonIcon className="size-4" />
+                      ) : (
+                        <MonitorIcon className="size-4" />
+                      )}
+                      <span className="capitalize">{theme || "system"}</span>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="system" className="rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <MonitorIcon className="size-4" />
+                        <span>System</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="light" className="rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <SunIcon className="size-4" />
+                        <span>Light</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="dark" className="rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <MoonIcon className="size-4" />
+                        <span>Dark</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Select
-                value={theme || "system"}
-                onValueChange={(value: "system" | "light" | "dark") =>
-                  setTheme(value)
-                }
-              >
-                <SelectTrigger className="max-w-[140px] rounded-xl">
-                  <div className="flex items-center gap-2">
-                    {theme === "light" ? (
-                      <SunIcon className="size-4" />
-                    ) : theme === "dark" ? (
-                      <MoonIcon className="size-4" />
-                    ) : (
-                      <MonitorIcon className="size-4" />
-                    )}
-                    <span className="capitalize">{theme || "system"}</span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="system" className="rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <MonitorIcon className="size-4" />
-                      <span>System</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="light" className="rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <SunIcon className="size-4" />
-                      <span>Light</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="dark" className="rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <MoonIcon className="size-4" />
-                      <span>Dark</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
-            {/* Grid */}
-            <div className="flex justify-between">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="grid">Show Grid</Label>
-                <p className="text-sm text-muted-foreground">
-                  Show a grid on the canvas to help you align your images.
-                </p>
+              {/* Grid */}
+              <div className="flex justify-between">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="grid">Show Grid</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Show a grid on the canvas to help you align your images.
+                  </p>
+                </div>
+                <Switch
+                  id="grid"
+                  checked={showGrid}
+                  onCheckedChange={setShowGrid}
+                />
               </div>
-              <Switch
-                id="grid"
-                checked={showGrid}
-                onCheckedChange={setShowGrid}
-              />
-            </div>
 
-            {/* Minimap -- Disabled for now
+              {/* Minimap -- Disabled for now
             <div className="flex justify-between">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="minimap">Show Minimap</Label>
@@ -3769,98 +3614,137 @@ export default function OverlayPage() {
               />
             </div>
             */}
-          </div>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </DialogContent>
+        </Dialog>
 
-      {/* Image to Video Dialog */}
-      <ImageToVideoDialog
-        isOpen={isImageToVideoDialogOpen}
-        onClose={() => {
-          setIsImageToVideoDialogOpen(false);
-          setSelectedImageForVideo(null);
-        }}
-        onConvert={handleImageToVideoConversion}
-        imageUrl={
-          selectedImageForVideo
-            ? images.find((img) => img.id === selectedImageForVideo)?.src || ""
-            : ""
-        }
-        isConverting={isConvertingToVideo}
-      />
-
-      <VideoToVideoDialog
-        isOpen={isVideoToVideoDialogOpen}
-        onClose={() => {
-          setIsVideoToVideoDialogOpen(false);
-          setSelectedVideoForVideo(null);
-        }}
-        onConvert={handleVideoToVideoTransformation}
-        videoUrl={
-          selectedVideoForVideo
-            ? videos.find((vid) => vid.id === selectedVideoForVideo)?.src || ""
-            : ""
-        }
-        isConverting={isTransformingVideo}
-      />
-
-      <ExtendVideoDialog
-        isOpen={isExtendVideoDialogOpen}
-        onClose={() => {
-          setIsExtendVideoDialogOpen(false);
-          setSelectedVideoForExtend(null);
-        }}
-        onExtend={handleVideoExtension}
-        videoUrl={
-          selectedVideoForExtend
-            ? videos.find((vid) => vid.id === selectedVideoForExtend)?.src || ""
-            : ""
-        }
-        isExtending={isExtendingVideo}
-      />
-
-      <RemoveVideoBackgroundDialog
-        isOpen={isRemoveVideoBackgroundDialogOpen}
-        onClose={() => {
-          setIsRemoveVideoBackgroundDialogOpen(false);
-          setSelectedVideoForBackgroundRemoval(null);
-        }}
-        onProcess={handleVideoBackgroundRemoval}
-        videoUrl={
-          selectedVideoForBackgroundRemoval
-            ? videos.find((vid) => vid.id === selectedVideoForBackgroundRemoval)
-                ?.src || ""
-            : ""
-        }
-        videoDuration={
-          selectedVideoForBackgroundRemoval
-            ? videos.find((vid) => vid.id === selectedVideoForBackgroundRemoval)
-                ?.duration || 0
-            : 0
-        }
-        isProcessing={isRemovingVideoBackground}
-      />
-
-      {/* Video Generation Streaming Components */}
-      {Array.from(activeVideoGenerations.entries()).map(([id, generation]) => (
-        <StreamingVideo
-          key={id}
-          videoId={id}
-          generation={generation}
-          onComplete={handleVideoGenerationComplete}
-          onError={handleVideoGenerationError}
-          onProgress={handleVideoGenerationProgress}
+        {/* Image to Video Dialog */}
+        <ImageToVideoDialog
+          isOpen={isImageToVideoDialogOpen}
+          onClose={() => {
+            setIsImageToVideoDialogOpen(false);
+            setSelectedImageForVideo(null);
+          }}
+          onConvert={handleImageToVideoConversion}
+          imageUrl={
+            selectedImageForVideo
+              ? images.find((img) => img.id === selectedImageForVideo)?.src ||
+                ""
+              : ""
+          }
+          isConverting={isConvertingToVideo}
         />
-      ))}
 
-      {/* Video Controls Overlays */}
-      <VideoOverlays
-        videos={videos}
-        selectedIds={selectedIds}
-        viewport={viewport}
-        hiddenVideoControlsIds={hiddenVideoControlsIds}
-        setVideos={setVideos}
-      />
+        <VideoToVideoDialog
+          isOpen={isVideoToVideoDialogOpen}
+          onClose={() => {
+            setIsVideoToVideoDialogOpen(false);
+            setSelectedVideoForVideo(null);
+          }}
+          onConvert={handleVideoToVideoTransformation}
+          videoUrl={
+            selectedVideoForVideo
+              ? videos.find((vid) => vid.id === selectedVideoForVideo)?.src ||
+                ""
+              : ""
+          }
+          isConverting={isTransformingVideo}
+        />
+
+        <ExtendVideoDialog
+          isOpen={isExtendVideoDialogOpen}
+          onClose={() => {
+            setIsExtendVideoDialogOpen(false);
+            setSelectedVideoForExtend(null);
+          }}
+          onExtend={handleVideoExtension}
+          videoUrl={
+            selectedVideoForExtend
+              ? videos.find((vid) => vid.id === selectedVideoForExtend)?.src ||
+                ""
+              : ""
+          }
+          isExtending={isExtendingVideo}
+        />
+
+        <RemoveVideoBackgroundDialog
+          isOpen={isRemoveVideoBackgroundDialogOpen}
+          onClose={() => {
+            setIsRemoveVideoBackgroundDialogOpen(false);
+            setSelectedVideoForBackgroundRemoval(null);
+          }}
+          onProcess={handleVideoBackgroundRemoval}
+          videoUrl={
+            selectedVideoForBackgroundRemoval
+              ? videos.find(
+                  (vid) => vid.id === selectedVideoForBackgroundRemoval,
+                )?.src || ""
+              : ""
+          }
+          videoDuration={
+            selectedVideoForBackgroundRemoval
+              ? videos.find(
+                  (vid) => vid.id === selectedVideoForBackgroundRemoval,
+                )?.duration || 0
+              : 0
+          }
+          isProcessing={isRemovingVideoBackground}
+        />
+
+        {/* Video Generation Streaming Components */}
+        {Array.from(activeVideoGenerations.entries()).map(
+          ([id, generation]) => (
+            <StreamingVideo
+              key={id}
+              videoId={id}
+              generation={generation}
+              onComplete={handleVideoGenerationComplete}
+              onError={handleVideoGenerationError}
+              onProgress={handleVideoGenerationProgress}
+            />
+          ),
+        )}
+
+        {/* Video Controls Overlays */}
+        <VideoOverlays
+          videos={videos}
+          selectedIds={selectedIds}
+          viewport={viewport}
+          hiddenVideoControlsIds={hiddenVideoControlsIds}
+          setVideos={setVideos}
+        />
+      </div>
+
+      {/* Right Sidebar - Hidden on mobile 
+      <div className="hidden lg:block">
+        <CanvasRightSidebar
+          selectedIds={selectedIds}
+          images={images}
+          videos={videos}
+          isGenerating={isGenerating}
+          generationSettings={generationSettings}
+          isolateInputValue={isolateInputValue}
+          isIsolating={isIsolating}
+          handleRun={handleRun}
+          handleDuplicate={handleDuplicate}
+          handleRemoveBackground={handleRemoveBackground}
+          handleCombineImages={handleCombineImages}
+          handleDelete={handleDelete}
+          handleIsolate={handleIsolate}
+          handleConvertToVideo={handleConvertToVideo}
+          handleVideoToVideo={handleVideoToVideo}
+          handleExtendVideo={handleExtendVideo}
+          handleRemoveVideoBackground={handleRemoveVideoBackground}
+          setCroppingImageId={setCroppingImageId}
+          setIsolateInputValue={setIsolateInputValue}
+          setIsolateTarget={setIsolateTarget}
+          sendToFront={sendToFront}
+          sendToBack={sendToBack}
+          bringForward={bringForward}
+          sendBackward={sendBackward}
+        />
+      </div>
+    */}
     </div>
   );
 }

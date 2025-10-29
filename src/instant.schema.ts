@@ -6,7 +6,7 @@ const _schema = i.schema({
   entities: {
     $files: i.entity({
       path: i.string().unique().indexed(),
-      url: i.any(),
+      url: i.string(),
     }),
     $users: i.entity({
       email: i.string().unique().indexed(),

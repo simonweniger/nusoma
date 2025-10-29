@@ -41,8 +41,21 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
   const trRef = useRef<Konva.Transformer>(null);
   // Use streaming image hook for generated images to prevent flicker
   const [streamingImg] = useStreamingImage(image.isGenerated ? image.src : "");
-  const [normalImg] = useImage(image.isGenerated ? "" : image.src, "anonymous");
-  const img = image.isGenerated ? streamingImg : normalImg;
+  // Try with CORS first; if it fails, fall back to no-CORS load so the image still renders
+  const [imgWithCORS, statusWithCORS] = useImage(
+    image.isGenerated ? "" : image.src,
+    "anonymous",
+  );
+  const [imgNoCORS, statusNoCORS] = useImage(
+    image.isGenerated ? "" : image.src,
+  );
+  const img = image.isGenerated
+    ? streamingImg
+    : statusWithCORS === "loaded"
+      ? imgWithCORS
+      : statusWithCORS === "failed"
+        ? imgNoCORS
+        : imgWithCORS;
   const [isHovered, setIsHovered] = useState(false);
   const [isDraggable, setIsDraggable] = useState(true);
 

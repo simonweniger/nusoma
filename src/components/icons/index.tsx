@@ -8,4 +8,4 @@ export {
   LightbulbIcon,
 } from "lucide-react";
 
-export { Logo } from "./logo";
+export { Logo, LogoIcon } from "./logo";

@@ -198,15 +198,13 @@ class InstantCanvasStorage {
       // Upload to InstantDB storage
       const path = `canvas-images/${this.userId || this.sessionId}/${assetId}`;
 
-      console.log(`Uploading image ${assetId} to path: ${path}`);
+      console.log(`[STORAGE] Uploading image ${assetId} to path: ${path}`);
 
       // Convert blob to File
       const file = new File([blob], `${assetId}.png`, { type: blob.type });
 
       // Upload returns { data: { id, path } }
       const { data: fileData } = await db.storage.uploadFile(path, file);
-
-      console.log("Upload successful! File ID:", fileData.id);
 
       // Create asset record and link to the file
       const txs = [
@@ -233,7 +231,7 @@ class InstantCanvasStorage {
 
       return assetId;
     } catch (error) {
-      console.error("Failed to save image:", error);
+      console.error(`[STORAGE] Failed to save image ${assetId}:`, error);
       // Keep in temporary storage if upload fails
       return assetId;
     }
@@ -269,18 +267,18 @@ class InstantCanvasStorage {
       const asset = result.data.canvasAssets[0];
       if (!asset) {
         console.warn(`Asset ${assetId} not found`);
-        return undefined;
+        throw new Error(`Asset ${assetId} not found`);
       }
 
-      console.log(`Asset ${assetId}:`, {
-        hasFile: !!asset.file,
-        fileUrl: asset.file?.url,
-      });
+      if (!asset.file) {
+        console.warn(`Asset ${assetId} is missing file`);
+        throw new Error(`Asset ${assetId} is missing file`);
+      }
 
       return {
         id: asset.id,
-        originalDataUrl: asset.file?.url || "",
-        uploadedUrl: asset.file?.url || "",
+        originalDataUrl: asset.file.url,
+        uploadedUrl: asset.file.url,
         createdAt: asset.createdAt
           ? new Date(asset.createdAt).getTime()
           : Date.now(),
@@ -404,11 +402,12 @@ class InstantCanvasStorage {
 
       const asset = result.data.canvasAssets[0];
       if (!asset) return undefined;
+      if (!asset.file) return undefined;
 
       return {
         id: asset.id,
-        originalDataUrl: asset.file?.url || "",
-        uploadedUrl: asset.file?.url || "",
+        originalDataUrl: asset.file.url,
+        uploadedUrl: asset.file.url,
         duration: asset.duration || 0,
         createdAt: asset.createdAt
           ? new Date(asset.createdAt).getTime()
