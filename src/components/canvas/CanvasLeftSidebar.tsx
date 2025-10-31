@@ -48,18 +48,18 @@ export function CanvasLeftSidebar({
         render={(triggerProps) => (
           <Button
             {...triggerProps}
-            className="hidden lg:flex items-center gap-2 fixed top-4 left-4 z-30 p-3 rounded-xl bg-background/95 border border-border shadow-sm hover:bg-muted"
+            className="flex items-center justify-center fixed top-4 left-4 z-30 gap-4 px-4 py-2 h-auto rounded-xl bg-background/95 border border-border shadow-sm hover:bg-muted"
           >
-            <LogoIcon className="h-5 w-5" />
-            <div className="flex flex-col items-start  min-w-0">
+            <LogoIcon style={{ width: "24px", height: "24px" }} />
+            <div className="flex flex-col items-start min-w-0">
               <div
-                className="text-sm font-semibold truncate"
+                className="text-xs font-semibold truncate"
                 title={projectName}
               >
                 {projectName || "Untitled"}
               </div>
               <div
-                className="text-[11px] text-muted-foreground truncate"
+                className="text-[10px] text-muted-foreground truncate"
                 title={folderName || "Drafts"}
               >
                 {folderName || "Drafts"}
@@ -137,7 +137,7 @@ export function CanvasLeftSidebar({
                 whileTap={{ scale: 0.98 }}
               >
                 {/* Thumbnail */}
-                <div className="relative w-12 h-12 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                <div className="relative w-12 h-12 rounded-md overflow-hidden bg-muted shrink-0">
                   {asset.type === "image" ? (
                     <img
                       src={asset.src}

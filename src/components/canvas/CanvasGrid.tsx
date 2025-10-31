@@ -26,7 +26,7 @@ export const CanvasGrid: React.FC<CanvasGridProps> = ({
 
   // Set grid color based on theme
   const effectiveGridColor =
-    gridColor || (resolvedTheme === "dark" ? "#2a2a2a" : "#f0f0f0");
+    gridColor || (resolvedTheme === "dark" ? "#222222" : "#F2F2F2");
   const lines = [];
 
   // Calculate visible area in canvas coordinates

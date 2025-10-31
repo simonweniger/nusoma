@@ -2901,17 +2901,6 @@ export default function OverlayPage() {
             </ContextMenu>
 
             <div className="absolute top-4 left-4 z-20 flex flex-col items-start gap-2">
-              {/* Fal logo */}
-              <div className="md:hidden border bg-background/80 py-2 px-3 flex flex-row rounded-xl gap-2 items-center">
-                <Link
-                  href="https://fal.ai"
-                  target="_blank"
-                  className="block transition-opacity"
-                >
-                  <Logo className="h-8 w-16 text-foreground" />
-                </Link>
-              </div>
-
               {/* Mobile tool icons - animated based on selection */}
               <MobileToolbar
                 selectedIds={selectedIds}
