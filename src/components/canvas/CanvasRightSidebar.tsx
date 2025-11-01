@@ -20,7 +20,6 @@ import {
   Eraser,
 } from "lucide-react";
 import { PlacedImage, PlacedVideo, GenerationSettings } from "@/types/canvas";
-import { cn } from "@/lib/utils";
 
 interface CanvasRightSidebarProps {
   selectedIds: string[];

@@ -233,7 +233,7 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
         }}
       >
         <div className="py-2 -translate-x-full -translate-y-full">
-          <Button variant="primary" onClick={onCropEnd} className="select-none">
+          <Button variant="default" onClick={onCropEnd} className="select-none">
             Done
           </Button>
         </div>

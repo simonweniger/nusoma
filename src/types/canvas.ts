@@ -57,9 +57,10 @@ export interface VideoGenerationSettings {
 }
 
 export interface ActiveGeneration {
-  imageUrl: string;
+  imageUrl?: string; // Optional - undefined for text-to-image, present for image-to-image
   prompt: string;
   loraUrl?: string;
+  state?: "submitting" | "running" | "success"; // Track generation state
 }
 
 export interface ActiveVideoGeneration {

@@ -894,7 +894,7 @@ export const appRouter = router({
   generateImageStream: publicProcedure
     .input(
       z.object({
-        imageUrl: z.string().url(),
+        imageUrl: z.string().url().optional(),
         prompt: z.string(),
         loraUrl: z.string().url().optional(),
         seed: z.number().optional(),
@@ -911,19 +911,33 @@ export const appRouter = router({
         // Create a unique ID for this generation
         const generationId = `gen_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
+        // Choose endpoint and params based on whether we have a source image
+        const isTextToImage = !input.imageUrl;
+        const endpoint = isTextToImage
+          ? "fal-ai/flux-lora"
+          : "fal-ai/flux-kontext-lora";
+
+        const streamInput: any = {
+          prompt: input.prompt,
+          num_inference_steps: 30,
+          guidance_scale: isTextToImage ? 3.5 : 2.5,
+          num_images: 1,
+          enable_safety_checker: true,
+          seed: input.seed,
+          loras,
+        };
+
+        // Add image-specific params only for image-to-image
+        if (!isTextToImage) {
+          streamInput.image_url = input.imageUrl;
+          streamInput.resolution_mode = "match_input";
+        } else {
+          streamInput.image_size = "square";
+        }
+
         // Start streaming from fal.ai
-        const stream = await falClient.stream("fal-ai/flux-kontext-lora", {
-          input: {
-            image_url: input.imageUrl,
-            prompt: input.prompt,
-            num_inference_steps: 30,
-            guidance_scale: 2.5,
-            num_images: 1,
-            enable_safety_checker: true,
-            resolution_mode: "match_input",
-            seed: input.seed,
-            loras,
-          },
+        const stream = await falClient.stream(endpoint, {
+          input: streamInput,
         });
 
         let eventIndex = 0;

@@ -101,6 +101,8 @@ import { CanvasRightSidebar } from "@/components/canvas/CanvasRightSidebar";
 import { useTheme } from "next-themes";
 import { VideoOverlays } from "@/components/canvas/VideoOverlays";
 import { DimensionDisplay } from "@/components/canvas/DimensionDisplay";
+import { CanvasPromptEditor } from "@/components/canvas/CanvasPromptEditor";
+import { GeneratingPlaceholder } from "@/components/canvas/GeneratingPlaceholder";
 import Image from "next/image";
 import { db } from "@/lib/db";
 
@@ -119,7 +121,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/Switch";
-import { GenerationsIndicator } from "@/components/generations-indicator";
 import { useParams } from "next/navigation";
 
 export default function OverlayPage() {
@@ -2411,6 +2412,16 @@ export default function OverlayPage() {
                   ),
                 );
               }}
+              onStateChange={(id, state) => {
+                setActiveGenerations((prev) => {
+                  const newMap = new Map(prev);
+                  const gen = newMap.get(id);
+                  if (gen) {
+                    newMap.set(id, { ...gen, state });
+                  }
+                  return newMap;
+                });
+              }}
               onComplete={(id, finalUrl) => {
                 // Get the generation data to attach metadata
                 const generation = activeGenerations.get(id);
@@ -2476,7 +2487,7 @@ export default function OverlayPage() {
               aria-hidden="true"
             />
             <div
-              className="pointer-events-none absolute top-0 bottom-0 right-0 w-24 bg-gradient-to-l from-background to-transparent z-10"
+              className="pointer-events-none absolute top-0 bottom-0 right-0 w-24 bg-linear-to-l from-background to-transparent z-10"
               aria-hidden="true"
             />
             <ContextMenu
@@ -2610,9 +2621,49 @@ export default function OverlayPage() {
                         {/* Selection box */}
                         <SelectionBoxComponent selectionBox={selectionBox} />
 
+                        {/* Render generating placeholders for images */}
+                        {images
+                          .filter((image) => activeGenerations.has(image.id))
+                          .map((image) => {
+                            const generation = activeGenerations.get(image.id);
+                            return (
+                              <GeneratingPlaceholder
+                                key={`placeholder-${image.id}`}
+                                image={image}
+                                outputType="image"
+                                state={generation?.state || "running"}
+                              />
+                            );
+                          })}
+                        {/* Render generating placeholders for videos */}
+                        {videos
+                          .filter((video) => {
+                            // Check if this video is being generated
+                            return Array.from(
+                              activeVideoGenerations.values(),
+                            ).some(
+                              (gen) =>
+                                gen.sourceVideoId === video.id ||
+                                gen.sourceImageId === video.id,
+                            );
+                          })
+                          .map((video) => (
+                            <GeneratingPlaceholder
+                              key={`placeholder-${video.id}`}
+                              image={video}
+                              outputType="video"
+                            />
+                          ))}
+
                         {/* Render images */}
                         {images
                           .filter((image) => {
+                            // Don't render images that are currently generating
+                            // (they'll be shown as placeholders instead)
+                            if (activeGenerations.has(image.id)) {
+                              return false;
+                            }
+
                             // Performance optimization: only render visible images
                             const buffer = 100; // pixels buffer
                             const viewBounds = {
@@ -2920,481 +2971,70 @@ export default function OverlayPage() {
               />
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 md:absolute md:bottom-4 md:left-1/2 md:transform md:-translate-x-1/2 z-20 p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:p-0 md:pb-0 md:max-w-[648px]">
+            {/* Undo/Redo and Settings - Top Right */}
+            <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
               <div
                 className={cn(
-                  "bg-card/95 backdrop-blur-lg rounded-3xl",
-                  "shadow-[0_0_0_1px_rgba(50,50,50,0.16),0_4px_8px_-0.5px_rgba(50,50,50,0.08),0_8px_16px_-2px_rgba(50,50,50,0.04)]",
-                  "dark:shadow-none dark:outline-1 dark:outline-border",
+                  "rounded-xl overflow-clip flex items-center border border-border",
+                  "shadow-[0_0_0_1px_rgba(50,50,50,0.12),0_4px_8px_-0.5px_rgba(50,50,50,0.04),0_8px_16px_-2px_rgba(50,50,50,0.02)]",
+                  "bg-card/95 backdrop-blur-lg",
                 )}
               >
-                <div className="flex flex-col gap-3 px-3 md:px-3 py-2 md:py-3 relative">
-                  {/* Active generations indicator */}
-                  <AnimatePresence mode="wait">
-                    {(activeGenerations.size > 0 ||
-                      activeVideoGenerations.size > 0 ||
-                      isGenerating ||
-                      isRemovingVideoBackground ||
-                      isIsolating ||
-                      isExtendingVideo ||
-                      isTransformingVideo ||
-                      showSuccess) && (
-                      <motion.div
-                        key={showSuccess ? "success" : "generating"}
-                        initial={{ opacity: 0, y: -10, scale: 0.9, x: "-50%" }}
-                        animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
-                        exit={{ opacity: 0, y: -10, scale: 0.9, x: "-50%" }}
-                        transition={{ duration: 0.2, ease: "easeInOut" }}
-                        className={cn(
-                          "absolute z-50 -top-16 left-1/2",
-                          "rounded-xl",
-                          showSuccess
-                            ? "shadow-[0_0_0_1px_rgba(34,197,94,0.2),0_4px_8px_-0.5px_rgba(34,197,94,0.08),0_8px_16px_-2px_rgba(34,197,94,0.04)] dark:shadow-none dark:border dark:border-green-500/30"
-                            : activeVideoGenerations.size > 0 ||
-                                isRemovingVideoBackground ||
-                                isExtendingVideo ||
-                                isTransformingVideo
-                              ? "shadow-[0_0_0_1px_rgba(168,85,247,0.2),0_4px_8px_-0.5px_rgba(168,85,247,0.08),0_8px_16px_-2px_rgba(168,85,247,0.04)] dark:shadow-none dark:border dark:border-purple-500/30"
-                              : "shadow-[0_0_0_1px_rgba(236,6,72,0.2),0_4px_8px_-0.5px_rgba(236,6,72,0.08),0_8px_16px_-2px_rgba(236,6,72,0.04)] dark:shadow-none dark:border dark:border-[#EC0648]/30",
-                        )}
-                      >
-                        <GenerationsIndicator
-                          isAnimating={!showSuccess}
-                          isSuccess={showSuccess}
-                          className="w-5 h-5"
-                          activeGenerationsSize={
-                            activeGenerations.size +
-                            activeVideoGenerations.size +
-                            (isGenerating ? 1 : 0) +
-                            (isRemovingVideoBackground ? 1 : 0) +
-                            (isIsolating ? 1 : 0) +
-                            (isExtendingVideo ? 1 : 0) +
-                            (isTransformingVideo ? 1 : 0)
-                          }
-                          outputType={
-                            activeVideoGenerations.size > 0 ||
-                            isRemovingVideoBackground ||
-                            isExtendingVideo ||
-                            isTransformingVideo
-                              ? "video"
-                              : "image"
-                          }
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Action buttons row */}
-                  <div className="flex items-center gap-1">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          "rounded-xl overflow-clip flex items-center border border-border",
-                          "shadow-[0_0_0_1px_rgba(50,50,50,0.12),0_4px_8px_-0.5px_rgba(50,50,50,0.04),0_8px_16px_-2px_rgba(50,50,50,0.02)]",
-                        )}
-                      >
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={undo}
-                          disabled={historyIndex <= 0}
-                          className="rounded-none"
-                          title="Undo"
-                        >
-                          <Undo className="h-4 w-4" />
-                        </Button>
-                        <div className="h-6 w-px bg-border" />
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={redo}
-                          disabled={historyIndex >= history.length - 1}
-                          className="rounded-none"
-                          title="Redo"
-                        >
-                          <Redo className="h-4 w-4" strokeWidth={2} />
-                        </Button>
-                      </div>
-
-                      {/* Mode indicator badge */}
-                      <div
-                        className={cn(
-                          "h-9 rounded-xl overflow-clip flex items-center px-3",
-                          "pointer-events-none select-none",
-                          selectedIds.length > 0
-                            ? "bg-blue-500/10 dark:bg-blue-500/15 shadow-[0_0_0_1px_rgba(59,130,246,0.2),0_4px_8px_-0.5px_rgba(59,130,246,0.08),0_8px_16px_-2px_rgba(59,130,246,0.04)] dark:shadow-none dark:border dark:border-blue-500/30"
-                            : "bg-orange-500/10 dark:bg-orange-500/15 shadow-[0_0_0_1px_rgba(249,115,22,0.2),0_4px_8px_-0.5px_rgba(249,115,22,0.08),0_8px_16px_-2px_rgba(249,115,22,0.04)] dark:shadow-none dark:border dark:border-orange-500/30",
-                        )}
-                      >
-                        {selectedIds.length > 0 ? (
-                          <div className="flex items-center gap-2 text-xs font-medium">
-                            <ImageIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />
-                            <span className="text-blue-600 dark:text-blue-500">
-                              Image to Image
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2 text-xs font-medium">
-                            <span className="text-orange-600 dark:text-orange-500 font-bold text-sm">
-                              T
-                            </span>
-                            <span className="text-orange-600 dark:text-orange-500">
-                              Text to Image
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex-1" />
-                    <div className="flex items-center gap-2">
-                      {/* Clear button */}
-                      <Tooltip>
-                        <Button
-                          variant="secondary"
-                          size="icon-sm"
-                          onClick={async () => {
-                            if (
-                              confirm(
-                                "Clear all saved data? This cannot be undone.",
-                              )
-                            ) {
-                              await canvasStorage.clearAll();
-                              setImages([]);
-                              setViewport({ x: 0, y: 0, scale: 1 });
-                              toast({
-                                title: "Storage cleared",
-                                description: "All saved data has been removed",
-                              });
-                            }
-                          }}
-                          className="bg-destructive/10 text-destructive hover:bg-destructive/20"
-                          title="Clear storage"
-                          render={<TooltipTrigger />}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                        <TooltipContent className="text-destructive">
-                          <span>Clear</span>
-                        </TooltipContent>
-                      </Tooltip>
-
-                      {/* Settings dialog button */}
-                      <Tooltip>
-                        <Button
-                          variant="secondary"
-                          size="icon-sm"
-                          className="relative"
-                          onClick={() => setIsSettingsDialogOpen(true)}
-                          render={<TooltipTrigger />}
-                        >
-                          <SlidersHorizontal className="h-4 w-4" />
-                        </Button>
-                        <TooltipContent>
-                          <span>Settings</span>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </div>
-
-                  <div className="relative">
-                    <Textarea
-                      value={generationSettings.prompt}
-                      onChange={(e) =>
-                        setGenerationSettings({
-                          ...generationSettings,
-                          prompt: e.target.value,
-                        })
-                      }
-                      placeholder={`Enter a prompt... (${checkOS("Win") || checkOS("Linux") ? "Ctrl" : "⌘"}+Enter to run)`}
-                      className="w-full h-20 resize-none border-none p-2 pr-36"
-                      style={{ fontSize: "16px" }}
-                      onKeyDown={(e) => {
-                        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                          e.preventDefault();
-                          if (
-                            !isGenerating &&
-                            generationSettings.prompt.trim()
-                          ) {
-                            handleRun();
-                          }
-                        }
-                      }}
-                    />
-
-                    {selectedIds.length > 0 && (
-                      <div className="absolute top-1 right-2 flex items-center justify-end">
-                        <div className="relative h-12 w-20">
-                          {selectedIds.slice(0, 3).map((id, index) => {
-                            const image = images.find((img) => img.id === id);
-                            if (!image) return null;
-
-                            const isLast =
-                              index === Math.min(selectedIds.length - 1, 2);
-                            const offset = index * 8;
-                            // Make each card progressively smaller
-                            const size = 40 - index * 4;
-                            const topOffset = index * 2; // Offset from top to maintain visual alignment
-
-                            return (
-                              <div
-                                key={id}
-                                className="absolute rounded-lg border border-border/20 bg-background overflow-hidden"
-                                style={{
-                                  right: `${offset}px`,
-                                  top: `${topOffset}px`,
-                                  zIndex: 3 - index,
-                                  width: `${size}px`,
-                                  height: `${size}px`,
-                                }}
-                              >
-                                <img
-                                  src={image.src}
-                                  alt=""
-                                  className="w-full h-full object-cover"
-                                />
-                                {/* Show count on last visible card if more than 3 selected */}
-                                {isLast && selectedIds.length > 3 && (
-                                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                    <span className="text-white text-xs font-medium">
-                                      +{selectedIds.length - 3}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {generationSettings.styleId === "custom" && (
-                    <div className="w-full flex items-center gap-2">
-                      <Input
-                        value={generationSettings.loraUrl}
-                        onChange={(e) =>
-                          setGenerationSettings({
-                            ...generationSettings,
-                            loraUrl: e.target.value,
-                          })
-                        }
-                        placeholder="Kontext LoRA URL (optional)"
-                        style={{ fontSize: "16px" }}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="flex items-center gap-2"
-                        onClick={() => {
-                          window.open(
-                            "https://huggingface.co/collections/kontext-community/flux-kontext-loras-687e8779f8ed40a611a3925f",
-                            "_blank",
-                          );
-                        }}
-                        title="Browse Kontext LoRAs"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                      {generationSettings.styleId === "custom" && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="flex items-center gap-2"
-                          onClick={() => {
-                            // Find the previous style to restore its settings
-                            const prevStyle = styleModels.find(
-                              (model) => model.id === previousStyleId,
-                            );
-
-                            if (prevStyle) {
-                              setGenerationSettings({
-                                ...generationSettings,
-                                styleId: prevStyle.id,
-                                prompt: prevStyle.prompt,
-                                loraUrl: prevStyle.loraUrl || "",
-                              });
-                            }
-                          }}
-                          title="Go back to previous style"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Style dropdown and Run button */}
-                  <div className="flex items-center justify-between">
-                    {/* Style selector button */}
-                    <Button
-                      variant="secondary"
-                      className="flex items-center gap-2"
-                      onClick={() => setIsStyleDialogOpen(true)}
-                    >
-                      {(() => {
-                        if (generationSettings.styleId === "custom") {
-                          return (
-                            <>
-                              <div className="w-5 h-5 flex items-center justify-center">
-                                <Plus className="w-4 h-4" />
-                              </div>
-                              <span className="text-sm">Custom</span>
-                            </>
-                          );
-                        }
-                        const selectedModel =
-                          styleModels.find(
-                            (m) => m.id === generationSettings.styleId,
-                          ) || styleModels.find((m) => m.id === "simpsons");
-                        return (
-                          <>
-                            <img
-                              src={selectedModel?.imageSrc}
-                              alt={selectedModel?.name}
-                              className="w-5 h-5 rounded-xl object-cover"
-                            />
-                            <span className="text-sm">
-                              {selectedModel?.name || "Simpsons Style"}
-                            </span>
-                          </>
-                        );
-                      })()}
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                    <div className="flex items-center gap-2">
-                      {/* Attachment button */}
-                      <Tooltip>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="border-none"
-                          render={<TooltipTrigger />}
-                          onClick={() => {
-                            // Create file input with better mobile support
-                            const input = document.createElement("input");
-                            input.type = "file";
-                            input.accept = "image/*";
-                            input.multiple = true;
-
-                            // Add to DOM for mobile compatibility
-                            input.style.position = "fixed";
-                            input.style.top = "-1000px";
-                            input.style.left = "-1000px";
-                            input.style.opacity = "0";
-                            input.style.pointerEvents = "none";
-                            input.style.width = "1px";
-                            input.style.height = "1px";
-
-                            // Add event handlers
-                            input.onchange = (e) => {
-                              try {
-                                handleFileUpload(
-                                  (e.target as HTMLInputElement).files,
-                                );
-                              } catch (error) {
-                                console.error("File upload error:", error);
-                                toast({
-                                  title: "Upload failed",
-                                  description:
-                                    "Failed to process selected files",
-                                  variant: "destructive",
-                                });
-                              } finally {
-                                // Clean up
-                                if (input.parentNode) {
-                                  document.body.removeChild(input);
-                                }
-                              }
-                            };
-
-                            input.onerror = () => {
-                              console.error("File input error");
-                              if (input.parentNode) {
-                                document.body.removeChild(input);
-                              }
-                            };
-
-                            // Add to DOM and trigger
-                            document.body.appendChild(input);
-
-                            // Use setTimeout to ensure the input is properly attached
-                            setTimeout(() => {
-                              try {
-                                input.click();
-                              } catch (error) {
-                                console.error(
-                                  "Failed to trigger file dialog:",
-                                  error,
-                                );
-                                toast({
-                                  title: "Upload unavailable",
-                                  description:
-                                    "File upload is not available. Try using drag & drop instead.",
-                                  variant: "destructive",
-                                });
-                                if (input.parentNode) {
-                                  document.body.removeChild(input);
-                                }
-                              }
-                            }, 10);
-
-                            // Cleanup after timeout in case dialog was cancelled
-                            setTimeout(() => {
-                              if (input.parentNode) {
-                                document.body.removeChild(input);
-                              }
-                            }, 30000); // 30 second cleanup
-                          }}
-                          title="Upload images"
-                        >
-                          <Paperclip className="h-4 w-4" />
-                        </Button>
-                        <TooltipContent>
-                          <span>Upload</span>
-                        </TooltipContent>
-                      </Tooltip>
-
-                      {/* Run button */}
-                      <Tooltip>
-                        <Button
-                          onClick={handleRun}
-                          variant="default"
-                          size="icon"
-                          disabled={
-                            isGenerating || !generationSettings.prompt.trim()
-                          }
-                          className={cn(
-                            "gap-2 font-medium transition-all",
-                            isGenerating && "bg-secondary",
-                          )}
-                          render={<TooltipTrigger />}
-                        >
-                          {isGenerating ? (
-                            <SpinnerIcon className="h-4 w-4 animate-spin text-white" />
-                          ) : (
-                            <PlayIcon className="h-4 w-4 text-white fill-white" />
-                          )}
-                        </Button>
-                        <TooltipContent>
-                          <div className="flex items-center gap-2">
-                            <span>Run</span>
-                            <ShortcutBadge
-                              variant="default"
-                              size="xs"
-                              shortcut={
-                                checkOS("Win") || checkOS("Linux")
-                                  ? "ctrl+enter"
-                                  : "meta+enter"
-                              }
-                            />
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </div>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={undo}
+                  disabled={historyIndex <= 0}
+                  className="rounded-none"
+                  title="Undo"
+                >
+                  <Undo className="h-4 w-4" />
+                </Button>
+                <div className="h-6 w-px bg-border" />
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={redo}
+                  disabled={historyIndex >= history.length - 1}
+                  className="rounded-none"
+                  title="Redo"
+                >
+                  <Redo className="h-4 w-4" strokeWidth={2} />
+                </Button>
               </div>
+
+              <Tooltip>
+                <Button
+                  variant="secondary"
+                  size="icon-sm"
+                  className="relative"
+                  onClick={() => setIsSettingsDialogOpen(true)}
+                  render={<TooltipTrigger />}
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                </Button>
+                <TooltipContent>
+                  <span>Settings</span>
+                </TooltipContent>
+              </Tooltip>
             </div>
+
+            {/* Prompt Editor */}
+            <CanvasPromptEditor
+              generationSettings={generationSettings}
+              setGenerationSettings={setGenerationSettings}
+              selectedIds={selectedIds}
+              images={images}
+              isGenerating={isGenerating}
+              previousStyleId={previousStyleId}
+              handleRun={handleRun}
+              handleFileUpload={handleFileUpload}
+              setIsStyleDialogOpen={setIsStyleDialogOpen}
+              canvasStorage={canvasStorage}
+              setImages={setImages}
+              setViewport={setViewport}
+              toast={toast}
+            />
 
             {/* Mini-map -- Disabled for now
           {showMinimap && (
@@ -3438,8 +3078,8 @@ export default function OverlayPage() {
 
             <div className="relative">
               {/* Fixed gradient overlays outside scrollable area */}
-              <div className="pointer-events-none absolute -top-[1px] left-0 right-0 z-30 h-2 md:h-12 bg-gradient-to-b from-background via-background/90 to-transparent" />
-              <div className="pointer-events-none absolute -bottom-[1px] left-0 right-0 z-30 h-2 md:h-12 bg-gradient-to-t from-background via-background/90 to-transparent" />
+              <div className="pointer-events-none absolute -top-px left-0 right-0 z-30 h-2 md:h-12 bg-linear-to-b from-background via-background/90 to-transparent" />
+              <div className="pointer-events-none absolute -bottom-px left-0 right-0 z-30 h-2 md:h-12 bg-linear-to-t from-background via-background/90 to-transparent" />
 
               {/* Scrollable content container */}
               <div className="overflow-y-auto max-h-[60vh] px-1">

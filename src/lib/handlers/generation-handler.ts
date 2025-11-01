@@ -113,6 +113,7 @@ export const generateImage = (
       imageUrl,
       prompt: generationSettings.prompt,
       loraUrl: generationSettings.loraUrl,
+      state: "submitting", // Initial state
     }),
   );
 };
@@ -147,57 +148,49 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
 
   // If no images are selected, do text-to-image generation
   if (selectedImages.length === 0) {
-    try {
-      const result = await generateTextToImage({
+    // Create placeholder image immediately
+    const imageId = id(); // Use UUID from InstantDB
+
+    // Place at center of viewport
+    const viewportCenterX =
+      (canvasSize.width / 2 - viewport.x) / viewport.scale;
+    const viewportCenterY =
+      (canvasSize.height / 2 - viewport.y) / viewport.scale;
+
+    const width = 512;
+    const height = 512;
+
+    // Add placeholder image
+    setImages((prev) => [
+      ...prev,
+      {
+        id: imageId,
+        src: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+        x: viewportCenterX - width / 2,
+        y: viewportCenterY - height / 2,
+        width,
+        height,
+        rotation: 0,
+        isGenerated: true,
+        generationPrompt: generationSettings.prompt,
+        creditsConsumed: undefined,
+      },
+    ]);
+
+    // Add to active generations - StreamingImage will handle the actual generation
+    setActiveGenerations((prev) =>
+      new Map(prev).set(imageId, {
+        imageUrl: undefined, // No source image for text-to-image
         prompt: generationSettings.prompt,
-        loraUrl: generationSettings.loraUrl || undefined,
-        imageSize: "square",
-      });
+        loraUrl: generationSettings.loraUrl,
+        state: "submitting", // Initial state
+      }),
+    );
 
-      // Add the generated image to the canvas
-      const imageId = id(); // Use UUID from InstantDB
+    // Select the new placeholder
+    setSelectedIds([imageId]);
 
-      // Place at center of viewport
-      const viewportCenterX =
-        (canvasSize.width / 2 - viewport.x) / viewport.scale;
-      const viewportCenterY =
-        (canvasSize.height / 2 - viewport.y) / viewport.scale;
-
-      // Use the actual dimensions from the result
-      const width = Math.min(result.width, 512); // Limit display size
-      const height = Math.min(result.height, 512);
-
-      setImages((prev) => [
-        ...prev,
-        {
-          id: imageId,
-          src: result.url,
-          x: viewportCenterX - width / 2,
-          y: viewportCenterY - height / 2,
-          width,
-          height,
-          rotation: 0,
-          isGenerated: true,
-          generationPrompt: generationSettings.prompt,
-          // For now, we don't have credit info from the API
-          // This can be set later when we track credits properly
-          creditsConsumed: undefined,
-        },
-      ]);
-
-      // Select the new image
-      setSelectedIds([imageId]);
-    } catch (error) {
-      console.error("Error generating image:", error);
-      toast({
-        title: "Generation failed",
-        description:
-          error instanceof Error ? error.message : "Failed to generate image",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGenerating(false);
-    }
+    // Note: setIsGenerating(false) will be called by StreamingImage onComplete/onError
     return;
   }
 

@@ -9,6 +9,10 @@ interface StreamingImageProps {
   onComplete: (imageId: string, finalUrl: string) => void;
   onError: (imageId: string, error: string) => void;
   onStreamingUpdate: (imageId: string, url: string) => void;
+  onStateChange: (
+    imageId: string,
+    state: "submitting" | "running" | "success",
+  ) => void;
   apiKey?: string;
 }
 
@@ -18,12 +22,15 @@ export const StreamingImage: React.FC<StreamingImageProps> = ({
   onComplete,
   onError,
   onStreamingUpdate,
+  onStateChange,
   apiKey,
 }) => {
+  const [hasStartedStreaming, setHasStartedStreaming] = React.useState(false);
+
   const subscription = useSubscription(
     useTRPC().generateImageStream.subscriptionOptions(
       {
-        imageUrl: generation.imageUrl,
+        ...(generation.imageUrl ? { imageUrl: generation.imageUrl } : {}),
         prompt: generation.prompt,
         ...(generation.loraUrl ? { loraUrl: generation.loraUrl } : {}),
         ...(apiKey ? { apiKey } : {}),
@@ -34,12 +41,24 @@ export const StreamingImage: React.FC<StreamingImageProps> = ({
           const eventData = data.data;
 
           if (eventData.type === "progress") {
+            // Change to "running" state on first progress update
+            if (!hasStartedStreaming) {
+              onStateChange(imageId, "running");
+              setHasStartedStreaming(true);
+            }
+
             const event = eventData.data;
             if (event.images && event.images.length > 0) {
               onStreamingUpdate(imageId, event.images[0].url);
             }
           } else if (eventData.type === "complete") {
-            onComplete(imageId, eventData.imageUrl);
+            // Change to "success" state briefly before completing
+            onStateChange(imageId, "success");
+
+            // Show success state for 500ms before completing
+            setTimeout(() => {
+              onComplete(imageId, eventData.imageUrl);
+            }, 500);
           } else if (eventData.type === "error") {
             onError(imageId, eventData.error);
           }
