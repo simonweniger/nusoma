@@ -1,6 +1,6 @@
 "use client";
 
-import Logo from "../Logo";
+//import Logo from "../Logo";
 import {
   PlusIcon,
   MoonStarsIcon,
@@ -38,6 +38,8 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "../ui/context-menu";
+import { ThemeToggle } from "../ThemeToggle";
+import { Logo, LogoIcon } from "@/components/icons";
 
 type Project = InstaQLEntity<AppSchema, "canvasProjects", { folder: {} }>;
 type Folder = InstaQLEntity<AppSchema, "folders", { projects: {} }>;
@@ -245,10 +247,6 @@ export default function AppLayout({
     db.auth.signOut();
   };
 
-  const setTheme = async (theme: string) => {
-    await db.transact(db.tx.userProfiles[profile?.id].update({ theme: theme }));
-  };
-
   // Get page title based on current route
   const getPageTitle = () => {
     if (pathname.startsWith("/canvas/")) {
@@ -279,60 +277,10 @@ export default function AppLayout({
     >
       {/* Sidebar */}
       <div className="flex-col p-2 items-start w-full max-w-64 overflow-hidden hidden md:flex border-r border-border">
-        <div className="flex flex-row gap-2 justify-between w-full items-center">
-          <Logo style="small" className="my-2 ml-1" />
-
-          <div className="flex flex-row gap-1">
-            {profile && (
-              <button
-                onClick={() =>
-                  setTheme(profile?.theme === "dark" ? "light" : "dark")
-                }
-                className="p-1 hover:bg-sage-3 dark:hover:bg-sage-4 rounded-md group transition-colors duration-300"
-                aria-label={`Switch to ${profile?.theme === "light" ? "dark" : "light"} theme`}
-              >
-                {profile?.theme === "light" ? (
-                  <MoonStarsIcon
-                    size={16}
-                    weight="bold"
-                    className="text-sage-10 group-hover:text-sage-12 dark:text-sage-9 dark:group-hover:text-sage-11 transition-colors duration-300"
-                  />
-                ) : (
-                  <SunIcon
-                    size={16}
-                    weight="bold"
-                    className="text-sage-10 group-hover:text-sage-12 dark:text-sage-9 dark:group-hover:text-sage-11 transition-colors duration-300"
-                  />
-                )}
-              </button>
-            )}
-
-            {user ? (
-              <button
-                onClick={() => signOut()}
-                className="p-1 hover:bg-sage-3 dark:hover:bg-sage-4 rounded-md group transition-colors duration-300"
-              >
-                <SignOutIcon
-                  size={16}
-                  weight="bold"
-                  className="text-sage-10 group-hover:text-sage-12 dark:text-sage-9 dark:group-hover:text-sage-11 transition-colors duration-300"
-                />
-              </button>
-            ) : (
-              <Link
-                href={url}
-                className="p-1 hover:bg-sage-3 dark:hover:bg-sage-4 rounded-md group transition-colors duration-300"
-              >
-                <SignInIcon
-                  size={16}
-                  weight="bold"
-                  className="text-sage-10 group-hover:text-sage-12 dark:text-sage-9 dark:group-hover:text-sage-11 transition-colors duration-300"
-                />
-              </Link>
-            )}
-          </div>
+        <div className="flex flex-row gap-2 justify-between w-full items-center pt-1 px-2">
+          <Logo className="h-5 w-auto shrink-0 text-foreground" />
+          <ThemeToggle />
         </div>
-        {/* <Button onClick={createConversationAndRedirect} size="small" className="mt-2 w-full bg-sage-3 text-sage-11 hover:bg-sage-4 dark:bg-sage-3 dark:text-sage-11 dark:hover:bg-sage-4 duration-300 border border-sage-6 dark:border-sage-6" icon={<Plus size={16} weight="bold" />}>New Conversation</Button> */}
 
         {/* Folder List */}
         <div className="w-full flex flex-col h-full relative pt-4 gap-4">
@@ -496,7 +444,8 @@ export default function AppLayout({
 
       <div className="flex flex-row items-center justify-center mt-2 overflow-hidden md:hidden">
         <div className="flex flex-row items-center gap-2">
-          <Logo style="small" className="my-2 ml-1" />
+          {/* <Logo style="small" className="my-2 ml-1" /> */}
+          <Logo className="h-4 w-auto shrink-0 text-foreground" />
         </div>
       </div>
 

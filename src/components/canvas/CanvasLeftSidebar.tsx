@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ImageIcon, VideoIcon, FileIcon, PanelLeftClose } from "lucide-react";
 import { PlacedImage, PlacedVideo } from "@/types/canvas";
 import { cn } from "@/lib/utils";

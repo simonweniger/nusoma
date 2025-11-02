@@ -13,7 +13,6 @@ const _schema = i.schema({
     }),
     userProfiles: i.entity({
       credits: i.number().optional(),
-      theme: i.string().optional(),
       hasPurchasedCredits: i.boolean().optional(),
       name: i.string().optional(),
       username: i.string().unique().indexed().optional(),
