@@ -1,4 +1,4 @@
-import AppLayout from "@/components/AppLayout";
+import AppLayout from "@/components/dashboard/AppLayout";
 import { ReactNode } from "react";
 
 export default function AuthenticatedLayout({

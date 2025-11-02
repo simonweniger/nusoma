@@ -1,15 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/card";
 import { db } from "@/lib/db";
 import { useRouter, useParams } from "next/navigation";
-import { Plus, Image, Settings, ChevronDown } from "lucide-react";
+import { Plus, Image, Settings } from "lucide-react";
 import { useState } from "react";
-import FolderDialog from "@/components/FolderDialog";
-import FolderSettingsDialog from "@/components/FolderSettingsDialog";
+import FolderDialog from "@/components/dashboard/FolderDialog";
+import FolderSettingsDialog from "@/components/dashboard/FolderSettingsDialog";
 import { useCanvasOperations } from "@/hooks/useCanvasOperations";
-import { CanvasCard } from "@/components/CanvasCard";
+import { CanvasCard } from "@/components/dashboard/CanvasCard";
+import { EmptyState } from "@/components/dashboard/EmptyState";
 
 export default function FolderPage() {
   const router = useRouter();
@@ -120,12 +120,11 @@ export default function FolderPage() {
             </div>
           </div>
 
-          {/* Figma-style Action Panel */}
+          {/* Action Panel */}
           <div className="flex items-center gap-2">
             <Button onClick={createCanvas} className="gap-2">
               <Plus className="h-4 w-4" />
               Create
-              <ChevronDown className="h-4 w-4" />
             </Button>
             <Button
               variant="secondary"
@@ -139,30 +138,14 @@ export default function FolderPage() {
 
         {/* Canvas Projects Section */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Canvases</h2>
-            <Button onClick={createCanvas}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Canvas
-            </Button>
-          </div>
-
           {canvasProjects.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Image className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">
-                  No canvases in this folder
-                </h3>
-                <p className="text-sm text-muted-foreground text-center mb-4">
-                  Create your first canvas in this folder
-                </p>
-                <Button onClick={createCanvas}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Canvas
-                </Button>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={Image}
+              title="No canvases in this folder"
+              description="Create your first canvas in this folder"
+              actionLabel="Create Canvas"
+              onAction={createCanvas}
+            />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {canvasProjects.map((canvas: any) => (

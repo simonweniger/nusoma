@@ -2,19 +2,12 @@
 
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/Button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { db } from "@/lib/db";
 import { useRouter } from "next/navigation";
-import { formatDistanceToNow } from "date-fns";
 import { Plus, Image } from "lucide-react";
 import { useCanvasOperations } from "@/hooks/useCanvasOperations";
-import { CanvasCard } from "@/components/CanvasCard";
+import { CanvasCard } from "@/components/dashboard/CanvasCard";
+import { EmptyState } from "@/components/dashboard/EmptyState";
 
 export default function DraftsPage() {
   const { user } = useAuth();
@@ -74,22 +67,13 @@ export default function DraftsPage() {
         {/* Canvas Projects Section */}
         <div className="mb-8">
           {canvasProjects.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Image className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">
-                  No draft canvases
-                </h3>
-                <p className="text-sm text-muted-foreground text-center mb-4">
-                  Create a new canvas or move canvases here by removing them
-                  from folders
-                </p>
-                <Button onClick={createCanvas}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Canvas
-                </Button>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={Image}
+              title="No draft canvases"
+              description="Create a new canvas or move canvases here by removing them from folders"
+              actionLabel="Create Canvas"
+              onAction={createCanvas}
+            />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {canvasProjects.map((canvas: any) => (

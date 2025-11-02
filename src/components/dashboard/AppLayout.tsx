@@ -1,6 +1,6 @@
 "use client";
 
-import Logo from "./Logo";
+import Logo from "../Logo";
 import {
   PlusIcon,
   MoonStarsIcon,
@@ -25,13 +25,20 @@ import hotkeys from "hotkeys-js";
 import { AppSchema } from "@/instant.schema";
 import { InstaQLEntity, id } from "@instantdb/react";
 import NumberFlow from "@number-flow/react";
-import { DateTime } from "luxon";
-import PlansDialog from "./PlansDialog";
+import PlansDialog from "../PlansDialog";
 import FolderDialog from "./FolderDialog";
-import UserProfileDialog from "./UserProfileDialog";
+import UserProfileDialog from "../UserProfileDialog";
 import { Reorder, useDragControls } from "framer-motion";
-import { Separator } from "./ui/separator";
-import { Button } from "./ui/Button";
+import { Separator } from "../ui/separator";
+import { Button } from "../ui/Button";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "../ui/context-menu";
+
 type Project = InstaQLEntity<AppSchema, "canvasProjects", { folder: {} }>;
 type Folder = InstaQLEntity<AppSchema, "folders", { projects: {} }>;
 
@@ -411,6 +418,12 @@ export default function AppLayout({
                           folder={folder}
                           isActive={folder.id === currentFolderId}
                           onDragEnd={handleReorderComplete}
+                          onRename={() => {
+                            setEditingFolder(folder);
+                            setFolderDialogMode("rename");
+                            setIsFolderDialogOpen(true);
+                          }}
+                          onDelete={() => deleteFolder(folder.id)}
                         />
                       </div>
                     ))}
@@ -527,7 +540,7 @@ export default function AppLayout({
                   className="flex items-center gap-2 px-2 py-1 hover:bg-muted/50 rounded-md transition-colors group"
                   aria-label="Open profile settings"
                 >
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                  <div className="w-7 h-7 rounded-full bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
                     {profile?.name?.[0]?.toUpperCase() ||
                       user?.email?.[0]?.toUpperCase() ||
                       "U"}
@@ -655,10 +668,14 @@ function FolderItem({
   folder,
   isActive,
   onDragEnd,
+  onRename,
+  onDelete,
 }: {
   folder: Folder;
   isActive: boolean;
   onDragEnd?: () => void;
+  onRename: () => void;
+  onDelete: () => void;
 }) {
   const dragControls = useDragControls();
   const folderProjects = folder.projects || [];
@@ -671,14 +688,25 @@ function FolderItem({
       className="relative"
       onDragEnd={onDragEnd}
     >
-      <NavItem
-        href={`/dashboard/folder/${folder.id}`}
-        icon={FolderIcon as any}
-        label={folder.name}
-        isActive={isActive}
-        badge={folderProjects.length}
-        onPointerDown={(e) => dragControls.start(e)}
-      />
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <NavItem
+            href={`/dashboard/folder/${folder.id}`}
+            icon={FolderIcon as any}
+            label={folder.name}
+            isActive={isActive}
+            badge={folderProjects.length}
+            onPointerDown={(e) => dragControls.start(e)}
+          />
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onClick={onRename}>Rename Folder</ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem onClick={onDelete} variant="destructive">
+            Delete Folder
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     </Reorder.Item>
   );
 }
