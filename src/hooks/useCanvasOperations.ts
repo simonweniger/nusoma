@@ -8,7 +8,7 @@ interface UseCanvasOperationsOptions {
 }
 
 export function useCanvasOperations(options: UseCanvasOperationsOptions = {}) {
-  const { user } = useAuth();
+  const { user, sessionId } = useAuth();
   const router = useRouter();
   const { folderId } = options;
 
@@ -84,7 +84,10 @@ export function useCanvasOperations(options: UseCanvasOperationsOptions = {}) {
     }
 
     try {
-      // Get all elements with their assets for this project
+      console.log(`[DELETE] Starting deletion of canvas ${projectId}...`);
+      const startTime = performance.now();
+
+      // Step 1: Get all elements and their assets for this project
       const result = await db.queryOnce({
         canvasElements: {
           $: {
@@ -96,41 +99,113 @@ export function useCanvasOperations(options: UseCanvasOperationsOptions = {}) {
         },
       });
 
-      // Collect all unique asset IDs and their file paths
-      const assetMap = new Map<string, string>();
+      const elementsCount = result.data.canvasElements.length;
+      const assetIds = new Set<string>();
+      const filePaths = new Set<string>();
+
       result.data.canvasElements.forEach((el: any) => {
-        if (el.asset?.file) {
-          assetMap.set(el.asset.id, el.asset.file.path);
+        if (el.asset) {
+          assetIds.add(el.asset.id);
+          if (el.asset.file?.path) {
+            filePaths.add(el.asset.file.path);
+          }
         }
       });
 
-      // Delete files from storage first
-      for (const [assetId, filePath] of assetMap.entries()) {
-        try {
-          if (filePath) {
-            await db.storage.delete(filePath);
-          }
-        } catch (error) {
-          console.error(`Failed to delete file ${filePath}:`, error);
+      console.log(
+        `[DELETE] Found ${elementsCount} elements using ${assetIds.size} assets with ${filePaths.size} storage files`,
+      );
+
+      // Step 2: Check which assets will be orphaned after deleting this project's elements
+      const assetsCheck = await db.queryOnce({
+        canvasAssets: {
+          $: {
+            where: { id: { $in: Array.from(assetIds) } },
+          },
+          elements: {}, // Get all linked elements (from all projects)
+          file: {}, // Get file info for storage cleanup
+        },
+      });
+
+      // Find assets that are ONLY used by this project (will be orphaned after deletion)
+      const orphanedAssets = assetsCheck.data.canvasAssets.filter(
+        (asset: any) => {
+          if (!asset.elements || asset.elements.length === 0) return true;
+          // Check if all elements belong to this project
+          return asset.elements.every((el: any) =>
+            result.data.canvasElements.some(
+              (projectEl: any) => projectEl.id === el.id,
+            ),
+          );
+        },
+      );
+
+      console.log(
+        `[DELETE] Found ${orphanedAssets.length}/${assetIds.size} assets that will be orphaned`,
+      );
+
+      // Step 3: Build single optimized transaction to delete everything
+      // CRITICAL: Delete orphaned assets BEFORE deleting elements
+      // This way the permission check can still verify via elements.project.user.id
+      const deleteTxs = [
+        // Delete orphaned assets first (while elements still exist for permission check)
+        ...orphanedAssets.map((asset: any) =>
+          db.tx.canvasAssets[asset.id].delete(),
+        ),
+        // Delete all elements
+        ...result.data.canvasElements.map((el: any) =>
+          db.tx.canvasElements[el.id].delete(),
+        ),
+        // Delete the project (history will cascade delete)
+        db.tx.canvasProjects[projectId].delete(),
+      ];
+
+      // Execute transaction - permission checks use auth.id from authenticated session
+      console.log(
+        `[DELETE] Executing transaction to delete database records...`,
+      );
+      await db.transact(deleteTxs);
+      console.log(
+        `[DELETE] Deleted ${orphanedAssets.length} assets, ${elementsCount} elements, and project`,
+      );
+
+      // Step 4: Delete physical storage files in parallel (AFTER successful DB transaction)
+      if (orphanedAssets.length > 0 && filePaths.size > 0) {
+        console.log(`[DELETE] Deleting ${filePaths.size} storage files...`);
+        const storageDeletePromises = Array.from(filePaths).map(
+          async (filePath: string) => {
+            try {
+              await db.storage.delete(filePath);
+              return { success: true, filePath };
+            } catch (error) {
+              console.error(`Failed to delete file ${filePath}:`, error);
+              return { success: false, filePath, error };
+            }
+          },
+        );
+
+        const results = await Promise.allSettled(storageDeletePromises);
+        const failed = results.filter(
+          (r) => r.status === "fulfilled" && !r.value.success,
+        ).length;
+
+        if (failed > 0) {
+          console.warn(
+            `[DELETE] Failed to delete ${failed}/${filePaths.size} storage files`,
+          );
+        } else {
+          console.log(`[DELETE] Successfully deleted all storage files`);
         }
       }
 
-      // Delete all elements and assets
-      const elementTxs = result.data.canvasElements.map((el: any) =>
-        db.tx.canvasElements[el.id].delete(),
+      const endTime = performance.now();
+      console.log(
+        `[DELETE] Successfully deleted canvas ${projectId} in ${Math.round(endTime - startTime)}ms`,
       );
-      const assetTxs = Array.from(assetMap.keys()).map((assetId) =>
-        db.tx.canvasAssets[assetId].delete(),
-      );
-
-      // Then delete the project
-      await db.transact([
-        ...elementTxs,
-        ...assetTxs,
-        db.tx.canvasProjects[projectId].delete(),
-      ]);
     } catch (error) {
-      console.error("Error deleting canvas:", error);
+      console.error("[DELETE] Error deleting canvas:", error);
+      alert("Failed to delete canvas. Please try again.");
+      throw error;
     }
   };
 

@@ -55,7 +55,18 @@ const rules = {
       view: "true", // Allow public viewing since asset IDs are UUIDs
       create: "true",
       update: "auth.id in data.ref('user.id')",
-      delete: "auth.id in data.ref('user.id')",
+      delete:
+        "auth.id in data.ref('user.id') || auth.id in data.ref('elements.project.user.id')",
+    },
+  },
+  canvasHistory: {
+    allow: {
+      view: "auth.id in data.ref('project.user.id') || ruleParams.sessionId in data.ref('project.sessionId')",
+      create: "true",
+      update:
+        "auth.id in data.ref('project.user.id') || ruleParams.sessionId in data.ref('project.sessionId')",
+      delete:
+        "auth.id in data.ref('project.user.id') || ruleParams.sessionId in data.ref('project.sessionId')",
     },
   },
 } satisfies InstantRules;

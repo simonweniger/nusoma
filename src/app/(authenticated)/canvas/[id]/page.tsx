@@ -6,34 +6,22 @@ import { Stage, Layer } from "react-konva";
 import Konva from "konva";
 import { canvasStorage, type CanvasState } from "@/lib/instant-storage";
 import { useAuth } from "@/providers/auth-provider";
-import { motion, AnimatePresence } from "framer-motion";
 import { id } from "@instantdb/react";
 
 import { Button } from "@/components/ui/Button";
 import {
-  X,
-  ChevronDown,
   Plus,
-  ImageIcon,
-  Trash2,
   Undo,
   Redo,
   SlidersHorizontal,
-  PlayIcon,
-  Paperclip,
   MonitorIcon,
   SunIcon,
   MoonIcon,
-  ExternalLink,
 } from "lucide-react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Logo, SpinnerIcon } from "@/components/icons";
 import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
 import { useRef, useEffect } from "react";
-import { Input } from "@/components/ui/Input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   TooltipTrigger,
@@ -50,7 +38,6 @@ import {
 } from "@/components/ui/Dialog";
 import { styleModels } from "@/lib/models";
 import { useToast } from "@/hooks/use-toast";
-import { createFalClient } from "@fal-ai/client";
 
 // Import extracted components
 import { ShortcutBadge } from "@/components/canvas/ShortcutBadge";
@@ -82,7 +69,6 @@ import {
   imageToCanvasElement,
   videoToCanvasElement,
 } from "@/utils/canvas-utils";
-import { checkOS } from "@/utils/os-utils";
 import { convertImageToVideo } from "@/utils/video-utils";
 
 // Import additional extracted components
@@ -98,7 +84,6 @@ import { MobileToolbar } from "@/components/canvas/MobileToolbar";
 import { CanvasContextMenu } from "@/components/canvas/CanvasContextMenu";
 import { CanvasLeftSidebar } from "@/components/canvas/CanvasLeftSidebar";
 import { CanvasRightSidebar } from "@/components/canvas/CanvasRightSidebar";
-import { useTheme } from "next-themes";
 import { VideoOverlays } from "@/components/canvas/VideoOverlays";
 import { DimensionDisplay } from "@/components/canvas/DimensionDisplay";
 import { CanvasPromptEditor } from "@/components/canvas/CanvasPromptEditor";
@@ -122,6 +107,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/Switch";
 import { useParams } from "next/navigation";
+import { useTheme } from "next-themes";
 
 export default function OverlayPage() {
   const { theme, setTheme } = useTheme();
@@ -891,6 +877,36 @@ export default function OverlayPage() {
     }
   }, [images, videos, viewport]);
 
+  // Load history from InstantDB
+  const loadHistoryFromInstantDB = useCallback(async () => {
+    if (!projectId) return;
+
+    try {
+      const historySnapshots = await db.queryOnce({
+        canvasHistory: {
+          $: {
+            where: { "project.id": projectId },
+            order: { order: "asc" },
+          },
+        },
+      });
+
+      if (historySnapshots.data.canvasHistory.length > 0) {
+        const loadedHistory = historySnapshots.data.canvasHistory.map(
+          (snapshot: any) => snapshot.snapshotData as HistoryState,
+        );
+
+        setHistory(loadedHistory);
+        setHistoryIndex(loadedHistory.length - 1);
+        console.log(
+          `[CANVAS] Loaded ${loadedHistory.length} history snapshots from InstantDB`,
+        );
+      }
+    } catch (error) {
+      console.error("Failed to load history from InstantDB:", error);
+    }
+  }, [projectId]);
+
   // Load state from storage
   const loadFromStorage = useCallback(async () => {
     try {
@@ -1036,11 +1052,19 @@ export default function OverlayPage() {
         console.log("[CANVAS] Loading from storage for project:", projectId);
         // Load from storage after project ID is set
         await loadFromStorage();
+        // Load history from InstantDB
+        await loadHistoryFromInstantDB();
       }
     };
 
     initializeStorage();
-  }, [user?.id, sessionId, projectId]);
+  }, [
+    user?.id,
+    sessionId,
+    projectId,
+    loadFromStorage,
+    loadHistoryFromInstantDB,
+  ]);
 
   // Load grid setting from localStorage on mount
   useEffect(() => {
@@ -1080,6 +1104,9 @@ export default function OverlayPage() {
     }
   }, [generationSettings.styleId, previousStyleId]);
 
+  // Ref to store the debounce timeout for history saves
+  const historySaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Save state to history
   const saveToHistory = useCallback(() => {
     const newState = {
@@ -1091,7 +1118,66 @@ export default function OverlayPage() {
     newHistory.push(newState);
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-  }, [images, videos, selectedIds, history, historyIndex]);
+
+    // Persist to InstantDB (debounced to avoid too many writes)
+    if (projectId) {
+      // Clear previous timeout
+      if (historySaveTimeoutRef.current) {
+        clearTimeout(historySaveTimeoutRef.current);
+      }
+
+      // Save history to InstantDB after a delay
+      historySaveTimeoutRef.current = setTimeout(() => {
+        saveHistoryToInstantDB(newHistory, newHistory.length - 1);
+      }, 1000); // 1 second debounce
+    }
+  }, [images, videos, selectedIds, history, historyIndex, projectId]);
+
+  // Function to save history to InstantDB (with limit to prevent too much data)
+  const saveHistoryToInstantDB = useCallback(
+    async (historyToSave: HistoryState[], currentIndex: number) => {
+      if (!projectId) return;
+
+      try {
+        // Limit history to last 50 snapshots to avoid excessive data
+        const MAX_HISTORY_SNAPSHOTS = 50;
+        const limitedHistory = historyToSave.slice(-MAX_HISTORY_SNAPSHOTS);
+        const adjustedIndex = Math.min(currentIndex, limitedHistory.length - 1);
+
+        // Delete existing history snapshots for this project
+        const existingSnapshots = await db.queryOnce({
+          canvasHistory: {
+            $: { where: { "project.id": projectId } },
+          },
+        });
+
+        if (existingSnapshots.data.canvasHistory.length > 0) {
+          const deleteTxs = existingSnapshots.data.canvasHistory.map(
+            (snapshot: any) => db.tx.canvasHistory[snapshot.id].delete(),
+          );
+          await db.transact(deleteTxs);
+        }
+
+        // Create new history snapshots
+        const createTxs = limitedHistory.map((snapshot, index) => {
+          const snapshotId = id();
+          return [
+            db.tx.canvasHistory[snapshotId].update({
+              snapshotData: snapshot,
+              timestamp: new Date(),
+              order: index,
+            }),
+            db.tx.canvasHistory[snapshotId].link({ project: projectId }),
+          ];
+        });
+
+        await db.transact(createTxs.flat());
+      } catch (error) {
+        console.error("Failed to save history to InstantDB:", error);
+      }
+    },
+    [projectId],
+  );
 
   // Undo
   const undo = useCallback(() => {
@@ -1188,13 +1274,24 @@ export default function OverlayPage() {
       if (document.visibilityState === "hidden" && isStorageLoaded) {
         console.log("[CANVAS] Page hidden, saving immediately...");
         saveToStorage();
+        // Also save history immediately (bypass debounce)
+        if (projectId && history.length > 0) {
+          saveHistoryToInstantDB(history, historyIndex);
+        }
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () =>
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [isStorageLoaded, saveToStorage]);
+  }, [
+    isStorageLoaded,
+    saveToStorage,
+    projectId,
+    history,
+    historyIndex,
+    saveHistoryToInstantDB,
+  ]);
 
   // Load default images only if no saved state
   useEffect(() => {
@@ -2444,6 +2541,9 @@ export default function OverlayPage() {
                   return newMap;
                 });
                 setIsGenerating(false);
+
+                // Save to history for undo/redo
+                saveToHistory();
 
                 // Immediately save after generation completes
                 setTimeout(() => {

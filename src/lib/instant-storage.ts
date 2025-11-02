@@ -207,6 +207,11 @@ class InstantCanvasStorage {
       const { data: fileData } = await db.storage.uploadFile(path, file);
 
       // Create asset record and link to the file
+      // CRITICAL: Always link asset to user for proper permission checks
+      if (!this.userId && !this.sessionId) {
+        throw new Error("Cannot save asset: no user or session ID");
+      }
+
       const txs = [
         db.tx.canvasAssets[assetId]
           .update({
@@ -220,6 +225,7 @@ class InstantCanvasStorage {
           .link({ file: fileData.id }),
       ];
 
+      // Always link to user if authenticated
       if (this.userId) {
         txs.push(db.tx.canvasAssets[assetId].link({ user: this.userId }));
       }
@@ -345,6 +351,11 @@ class InstantCanvasStorage {
       const { data: fileData } = await db.storage.uploadFile(path, file);
 
       // Create asset record and link to the file
+      // CRITICAL: Always link asset to user for proper permission checks
+      if (!this.userId && !this.sessionId) {
+        throw new Error("Cannot save asset: no user or session ID");
+      }
+
       const txs = [
         db.tx.canvasAssets[assetId]
           .update({
@@ -355,6 +366,7 @@ class InstantCanvasStorage {
           .link({ file: fileData.id }),
       ];
 
+      // Always link to user if authenticated
       if (this.userId) {
         txs.push(db.tx.canvasAssets[assetId].link({ user: this.userId }));
       }

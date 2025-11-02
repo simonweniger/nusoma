@@ -78,6 +78,8 @@ export function useCanvasActions({
     if (selectedIds.length === 0) return;
 
     saveToHistory();
+
+    // Handle images
     setImages((prev) => {
       const selectedImages = selectedIds
         .map((id) => prev.find((img) => img.id === id))
@@ -89,13 +91,28 @@ export function useCanvasActions({
 
       return [...remainingImages, ...selectedImages];
     });
-  }, [selectedIds, setImages, saveToHistory]);
+
+    // Handle videos
+    setVideos((prev) => {
+      const selectedVideos = selectedIds
+        .map((id) => prev.find((vid) => vid.id === id))
+        .filter(Boolean) as PlacedVideo[];
+
+      const remainingVideos = prev.filter(
+        (vid) => !selectedIds.includes(vid.id),
+      );
+
+      return [...remainingVideos, ...selectedVideos];
+    });
+  }, [selectedIds, setImages, setVideos, saveToHistory]);
 
   // Layer management - Send to back
   const sendToBack = useCallback(() => {
     if (selectedIds.length === 0) return;
 
     saveToHistory();
+
+    // Handle images
     setImages((prev) => {
       const selectedImages = selectedIds
         .map((id) => prev.find((img) => img.id === id))
@@ -107,13 +124,28 @@ export function useCanvasActions({
 
       return [...selectedImages, ...remainingImages];
     });
-  }, [selectedIds, setImages, saveToHistory]);
+
+    // Handle videos
+    setVideos((prev) => {
+      const selectedVideos = selectedIds
+        .map((id) => prev.find((vid) => vid.id === id))
+        .filter(Boolean) as PlacedVideo[];
+
+      const remainingVideos = prev.filter(
+        (vid) => !selectedIds.includes(vid.id),
+      );
+
+      return [...selectedVideos, ...remainingVideos];
+    });
+  }, [selectedIds, setImages, setVideos, saveToHistory]);
 
   // Layer management - Bring forward
   const bringForward = useCallback(() => {
     if (selectedIds.length === 0) return;
 
     saveToHistory();
+
+    // Handle images
     setImages((prev) => {
       const result = [...prev];
 
@@ -128,13 +160,31 @@ export function useCanvasActions({
 
       return result;
     });
-  }, [selectedIds, setImages, saveToHistory]);
+
+    // Handle videos
+    setVideos((prev) => {
+      const result = [...prev];
+
+      for (let i = result.length - 2; i >= 0; i--) {
+        if (
+          selectedIds.includes(result[i].id) &&
+          !selectedIds.includes(result[i + 1].id)
+        ) {
+          [result[i], result[i + 1]] = [result[i + 1], result[i]];
+        }
+      }
+
+      return result;
+    });
+  }, [selectedIds, setImages, setVideos, saveToHistory]);
 
   // Layer management - Send backward
   const sendBackward = useCallback(() => {
     if (selectedIds.length === 0) return;
 
     saveToHistory();
+
+    // Handle images
     setImages((prev) => {
       const result = [...prev];
 
@@ -149,7 +199,23 @@ export function useCanvasActions({
 
       return result;
     });
-  }, [selectedIds, setImages, saveToHistory]);
+
+    // Handle videos
+    setVideos((prev) => {
+      const result = [...prev];
+
+      for (let i = 1; i < result.length; i++) {
+        if (
+          selectedIds.includes(result[i].id) &&
+          !selectedIds.includes(result[i - 1].id)
+        ) {
+          [result[i], result[i - 1]] = [result[i - 1], result[i]];
+        }
+      }
+
+      return result;
+    });
+  }, [selectedIds, setImages, setVideos, saveToHistory]);
 
   return {
     handleDelete,

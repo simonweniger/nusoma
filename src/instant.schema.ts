@@ -62,6 +62,11 @@ const _schema = i.schema({
       order: i.number().indexed().optional(), // For sorting folders
       createdAt: i.date().indexed().optional(),
     }),
+    canvasHistory: i.entity({
+      snapshotData: i.json().optional(), // Store the full state as JSON
+      timestamp: i.date().indexed().optional(),
+      order: i.number().indexed().optional(), // To maintain history order
+    }),
   },
   links: {
     // User Profile link
@@ -75,11 +80,20 @@ const _schema = i.schema({
       reverse: { on: "$users", has: "many", label: "canvasProjects" },
     },
     canvasProjectElements: {
-      forward: { on: "canvasElements", has: "one", label: "project" },
+      forward: {
+        on: "canvasElements",
+        has: "one",
+        label: "project",
+        onDelete: "cascade",
+      },
       reverse: { on: "canvasProjects", has: "many", label: "elements" },
     },
     canvasElementAsset: {
-      forward: { on: "canvasElements", has: "one", label: "asset" },
+      forward: {
+        on: "canvasElements",
+        has: "one",
+        label: "asset",
+      },
       reverse: { on: "canvasAssets", has: "many", label: "elements" },
     },
     canvasAssetUser: {
@@ -87,7 +101,12 @@ const _schema = i.schema({
       reverse: { on: "$users", has: "many", label: "canvasAssets" },
     },
     canvasAssetFile: {
-      forward: { on: "canvasAssets", has: "one", label: "file" },
+      forward: {
+        on: "canvasAssets",
+        has: "one",
+        label: "file",
+        onDelete: "cascade",
+      },
       reverse: { on: "$files", has: "one", label: "canvasAsset" },
     },
     // Folder links
@@ -98,6 +117,15 @@ const _schema = i.schema({
     projectFolder: {
       forward: { on: "canvasProjects", has: "one", label: "folder" },
       reverse: { on: "folders", has: "many", label: "projects" },
+    },
+    projectHistory: {
+      forward: {
+        on: "canvasHistory",
+        has: "one",
+        label: "project",
+        onDelete: "cascade",
+      },
+      reverse: { on: "canvasProjects", has: "many", label: "historySnapshots" },
     },
   },
   rooms: {},

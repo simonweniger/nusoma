@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { PlacedImage, PlacedVideo } from "@/types/canvas";
 
 interface UseCanvasAssetsProps {
@@ -18,6 +18,9 @@ export function useCanvasAssets({
   setViewport,
   setSelectedIds,
 }: UseCanvasAssetsProps) {
+  // Memoize combined assets array to avoid recreating on every render
+  const allAssets = useMemo(() => [...images, ...videos], [images, videos]);
+
   // Function to navigate to an asset (focus viewport on it)
   const handleAssetNavigation = useCallback(
     (id: string, x: number, y: number) => {
@@ -26,7 +29,7 @@ export function useCanvasAssets({
       const centerY = canvasSize.height / 2;
 
       // Find the asset to get its dimensions
-      const asset = [...images, ...videos].find((item) => item.id === id);
+      const asset = allAssets.find((item) => item.id === id);
       if (!asset) return;
 
       // Calculate the new viewport position to center the asset
@@ -40,7 +43,7 @@ export function useCanvasAssets({
         scale: viewport.scale,
       });
     },
-    [images, videos, viewport.scale, canvasSize, setViewport],
+    [allAssets, viewport.scale, canvasSize, setViewport],
   );
 
   // Handle asset selection from sidebar

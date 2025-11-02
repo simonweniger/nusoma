@@ -61,11 +61,11 @@ export function CanvasCard({
       </CardHeader>
       <CardContent>
         <div className="flex items-start justify-between pt-6">
-          <div className="flex-1 min-w-0 space-y-1">
-            <CardTitle className="truncate">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-md font-medium truncate">
               {canvas.name || "Untitled Canvas"}
-            </CardTitle>
-            <CardDescription className="font-mono leading-tight text-xs flex items-center">
+            </h3>
+            <CardDescription className="font-mono leading-tight text-xs flex items-center text-muted-foreground">
               {showFolder && canvas.folder && (
                 <span className="flex items-center gap-1 text-sage-11">
                   <FolderIcon className="h-3 w-3" />
