@@ -1,98 +1,72 @@
-import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
+import { cva, VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
-import {
-  AlertCircleIcon,
-  AlertTriangleIcon,
-  CheckCircleIcon,
-  InfoIcon,
-  LightbulbIcon,
-} from "../icons";
-
-const ICON_TYPE = {
-  error: AlertCircleIcon,
-  info: InfoIcon,
-  success: CheckCircleIcon,
-  warning: AlertTriangleIcon,
-  hint: LightbulbIcon,
-} as const;
 
 const alertVariants = cva(
-  "relative w-full flex flex-row items-start justify-start",
+  "relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
   {
     variants: {
-      type: {
-        error: "[&>svg]:stroke-error [&_.alert-title]:text-error",
-        info: "[&>svg]:stroke-info-dark dark:[&>svg]:stroke-info [&_.alert-title]:text-info-dark dark:[&_.alert-title]:text-info",
-        success:
-          "[&>svg]:stroke-success-700 [&_.alert-title]:text-success-700 dark:[&_.alert-title]:text-success dark:[&>svg]:stroke-success",
+      variant: {
+        default:
+          "bg-card text-card-foreground [&_*[data-slot=alert-description]]:text-muted-foreground",
         warning:
-          "[&>svg]:stroke-warning [&_.alert-title]:text-amber-500 [&_.alert-title]:dark:text-warning",
-        hint: "[&>svg]:stroke-warning [&_.alert-title]:text-amber-500 [&_.alert-title]:dark:text-warning",
-      },
-      container: {
-        none: "",
-        bordered:
-          "rounded border border-stroke-light p-4 bg-black/[1%] dark:bg-black/5",
+          "bg-warning border-warning-border text-warning-foreground [&_*[data-slot=alert-description]]:text-warning-foreground/70",
+        danger:
+          "bg-danger border-danger-border text-danger-foreground [&_*[data-slot=alert-description]]:text-danger-foreground/70",
+        info: "bg-info border-info-border text-info-foreground [&_*[data-slot=alert-description]]:text-info-foreground/70",
+        success:
+          "bg-success border-success-border text-success-foreground [&_*[data-slot=alert-description]]:text-success-foreground/70",
       },
     },
     defaultVariants: {
-      type: "info",
-      container: "none",
+      variant: "default",
     },
   },
 );
 
-const Alert = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
->(({ className, type, container, children, ...props }, ref) => {
-  const Icon = type ? ICON_TYPE[type] : InfoIcon;
+function Alert({
+  className,
+  variant,
+  ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
   return (
     <div
-      ref={ref}
+      data-slot="alert"
       role="alert"
+      className={cn(alertVariants({ variant }), className)}
+      {...props}
+    />
+  );
+}
+
+function AlertTitle({ className, ...props }: React.ComponentProps<"h4">) {
+  return (
+    <h4
+      data-slot="alert-title"
       className={cn(
-        "space-x-2 text-content-base",
-        "[&>svg]:icon-lg [&>svg]:text-current",
-        alertVariants({ type, container }),
+        "col-start-2 min-h-4 font-medium tracking-tight",
         className,
       )}
       {...props}
-    >
-      <Icon className="icon-md min-w-fit flex-none" />
-      <div className="flex-1 overflow-hidden">{children}</div>
-    </div>
+    />
   );
-});
-Alert.displayName = "Alert";
+}
 
-const AlertTitle = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h5
-    ref={ref}
-    className={cn(
-      "alert-title mb-2 pt-1 font-heading text-lg font-medium leading-none tracking-tight",
-      className,
-    )}
-    {...props}
-  />
-));
-AlertTitle.displayName = "AlertTitle";
+function AlertDescription({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="alert-description"
+      className={cn(
+        "col-start-2 grid justify-items-start gap-1 text-sm [&_p]:leading-relaxed",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
 
-const AlertDescription = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("text-content-light [&_p]:leading-relaxed", className)}
-    {...props}
-  />
-));
-AlertDescription.displayName = "AlertDescription";
-
-export { Alert, AlertDescription, AlertTitle };
+export { Alert, AlertTitle, AlertDescription };

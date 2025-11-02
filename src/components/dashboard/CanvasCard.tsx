@@ -6,9 +6,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogClose,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/AlertDialog";
 import { formatDistanceToNow } from "date-fns";
 import { Image, Trash2, FolderIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useCanvasOperations } from "@/hooks/useCanvasOperations";
 
 interface CanvasCardProps {
   canvas: {
@@ -20,16 +31,12 @@ interface CanvasCardProps {
       name: string;
     };
   };
-  onDelete: (canvasId: string, event: React.MouseEvent) => void;
   showFolder?: boolean;
 }
 
-export function CanvasCard({
-  canvas,
-  onDelete,
-  showFolder = false,
-}: CanvasCardProps) {
+export function CanvasCard({ canvas, showFolder = false }: CanvasCardProps) {
   const router = useRouter();
+  const { deleteCanvas } = useCanvasOperations();
 
   return (
     <Card
@@ -77,14 +84,60 @@ export function CanvasCard({
               })}
             </CardDescription>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => onDelete(canvas.id, e)}
-          >
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={(props) => (
+                <Button
+                  {...props}
+                  variant="ghost"
+                  size="icon"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    props.onClick?.(e);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              )}
+            />
+            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Canvas</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete "
+                  {canvas.name || "Untitled Canvas"}"? This action cannot be
+                  undone. All images, videos, and history will be permanently
+                  removed.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogClose
+                  render={(props) => (
+                    <Button
+                      {...props}
+                      variant="secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        props.onClick?.(e);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                />
+                <Button
+                  variant="destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteCanvas(canvas.id);
+                  }}
+                >
+                  Delete
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </CardContent>
     </Card>

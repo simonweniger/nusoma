@@ -489,14 +489,17 @@ class InstantCanvasStorage {
       });
 
       const existingIds = new Set(
-        existingElements.data.canvasElements.map((el) => el.id),
+        //TODO: Add better typing for this
+        existingElements.data.canvasElements.map((element: any) => element.id),
       );
-      const newElementIds = new Set(state.elements.map((el) => el.id));
+      const newElementIds = new Set(
+        state.elements.map((element) => element.id),
+      );
 
       // Delete elements that are no longer in the state
       const deleteTxs = existingElements.data.canvasElements
-        .filter((el) => !newElementIds.has(el.id))
-        .map((el) => db.tx.canvasElements[el.id].delete());
+        .filter((element: any) => !newElementIds.has(element.id))
+        .map((element: any) => db.tx.canvasElements[element.id].delete());
 
       if (deleteTxs.length > 0) {
         await db.transact(deleteTxs);

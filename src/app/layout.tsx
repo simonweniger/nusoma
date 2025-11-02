@@ -32,9 +32,14 @@ export const metadata: Metadata = {
     "machine learning",
     "image generation",
   ],
-  authors: [{ name: "fal.ai" }],
-  creator: "fal.ai",
-  publisher: "fal.ai",
+  authors: [
+    {
+      name: "Simon Weniger - simon@nusoma.app",
+      url: "https://simonweniger.com",
+    },
+  ],
+  creator: "Simon Weniger - simon@nusoma.app",
+  publisher: "nusoma",
   formatDetection: {
     email: false,
     address: false,
@@ -65,14 +70,14 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Creative GenAI Canvas for Designers | nusoma",
     description: "Build your vision! With an GenAI canvas made for Designers.",
-    creator: "@fal_ai",
-    site: "@fal_ai",
+    creator: "@nusoma",
+    site: "@nusoma",
     images: [
       {
         url: "/og-img.png",
         width: 1200,
         height: 630,
-        alt: "Flux Kontext Dev - AI Style Transfer Demo",
+        alt: "Creative GenAI Canvas for Designers | nusoma",
         type: "image/png",
       },
     ],

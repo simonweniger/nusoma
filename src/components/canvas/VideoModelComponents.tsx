@@ -27,7 +27,7 @@ import {
   DialogFooter,
 } from "@/components/ui/Dialog";
 import { SpinnerIcon } from "@/components/icons";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/Alert";
 
 // RadioGroup components
 export const RadioGroup = React.forwardRef<
@@ -169,7 +169,7 @@ export const VideoModelOptions: React.FC<VideoModelOptionsProps> = ({
               {option.description && (
                 <TooltipProvider>
                   <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
+                    <TooltipTrigger>
                       <button
                         type="button"
                         className="rounded-full flex items-center justify-center cursor-pointer"
@@ -209,7 +209,7 @@ export const VideoModelOptions: React.FC<VideoModelOptionsProps> = ({
               {option.description && (
                 <TooltipProvider>
                   <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
+                    <TooltipTrigger>
                       <button
                         type="button"
                         className="rounded-full flex items-center justify-center cursor-pointer"
@@ -277,7 +277,7 @@ export const VideoModelOptions: React.FC<VideoModelOptionsProps> = ({
                 {option.description && (
                   <TooltipProvider>
                     <Tooltip delayDuration={0}>
-                      <TooltipTrigger asChild>
+                      <TooltipTrigger>
                         <button
                           type="button"
                           className="rounded-full flex items-center justify-center cursor-pointer"
@@ -319,7 +319,7 @@ export const VideoModelOptions: React.FC<VideoModelOptionsProps> = ({
               {option.description && (
                 <TooltipProvider>
                   <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
+                    <TooltipTrigger>
                       <button
                         type="button"
                         className="rounded-full flex items-center justify-center cursor-pointer"
@@ -604,7 +604,7 @@ export const RemoveVideoBackgroundDialog: React.FC<
             </Button>
             <Button
               type="submit"
-              variant="primary"
+              variant="default"
               disabled={isProcessing}
               className="bg-primary text-white hover:bg-[#5b21b6] flex items-center gap-2"
             >

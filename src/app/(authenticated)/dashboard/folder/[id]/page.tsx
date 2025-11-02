@@ -19,7 +19,7 @@ export default function FolderPage() {
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
 
-  const { createCanvas, deleteCanvas } = useCanvasOperations({ folderId });
+  const { createCanvas } = useCanvasOperations({ folderId });
 
   // Query the specific folder with its projects
   const { data, isLoading } = db.useQuery({
@@ -149,11 +149,7 @@ export default function FolderPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {canvasProjects.map((canvas: any) => (
-                <CanvasCard
-                  key={canvas.id}
-                  canvas={canvas}
-                  onDelete={deleteCanvas}
-                />
+                <CanvasCard key={canvas.id} canvas={canvas} />
               ))}
             </div>
           )}

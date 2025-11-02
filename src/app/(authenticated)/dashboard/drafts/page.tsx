@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/dashboard/EmptyState";
 export default function DraftsPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const { createCanvas, deleteCanvas } = useCanvasOperations();
+  const { createCanvas } = useCanvasOperations();
 
   // Query canvas projects without folders
   const { data, isLoading } = db.useQuery({
@@ -77,11 +77,7 @@ export default function DraftsPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {canvasProjects.map((canvas: any) => (
-                <CanvasCard
-                  key={canvas.id}
-                  canvas={canvas}
-                  onDelete={deleteCanvas}
-                />
+                <CanvasCard key={canvas.id} canvas={canvas} />
               ))}
             </div>
           )}

@@ -29,12 +29,6 @@ export interface PlacedVideo extends Omit<PlacedImage, "isGenerated"> {
   isLoaded?: boolean; // Whether the video has loaded its metadata
 }
 
-export interface HistoryState {
-  images: PlacedImage[];
-  videos?: PlacedVideo[]; // Optional for backward compatibility
-  selectedIds: string[];
-}
-
 export interface GenerationSettings {
   prompt: string;
   loraUrl: string;

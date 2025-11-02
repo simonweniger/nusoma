@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/dashboard/EmptyState";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { createCanvas, deleteCanvas } = useCanvasOperations();
+  const { createCanvas } = useCanvasOperations();
 
   // Query all canvas projects with their folders
   const { data, isLoading } = db.useQuery({
@@ -72,12 +72,7 @@ export default function Dashboard() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {canvasProjects.map((canvas: any) => (
-                <CanvasCard
-                  key={canvas.id}
-                  canvas={canvas}
-                  onDelete={deleteCanvas}
-                  showFolder={true}
-                />
+                <CanvasCard key={canvas.id} canvas={canvas} showFolder={true} />
               ))}
             </div>
           )}

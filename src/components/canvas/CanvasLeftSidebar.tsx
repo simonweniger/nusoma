@@ -118,7 +118,7 @@ export function CanvasLeftSidebar({
             allAssets.map((asset) => (
               <motion.button
                 key={asset.id}
-                onClick={(e) => {
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                   if (e.shiftKey || e.metaKey || e.ctrlKey) {
                     onAssetSelect(asset.id, true);
                   } else {

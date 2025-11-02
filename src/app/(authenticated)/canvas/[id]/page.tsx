@@ -57,7 +57,6 @@ import { getVideoModelById } from "@/lib/video-models";
 import type {
   PlacedImage,
   PlacedVideo,
-  HistoryState,
   GenerationSettings,
   VideoGenerationSettings,
   ActiveGeneration,
@@ -76,6 +75,7 @@ import { useFalClient } from "@/hooks/useFalClient";
 import { useCanvasAssets } from "@/hooks/useCanvasAssets";
 import { useCanvasActions } from "@/hooks/useCanvasActions";
 import { useImageOperations } from "@/hooks/useImageOperations";
+import { useCanvasHistory } from "@/hooks/useCanvasHistory";
 import { CanvasGrid } from "@/components/canvas/CanvasGrid";
 import { SelectionBoxComponent } from "@/components/canvas/SelectionBox";
 //import { MiniMap } from "@/components/canvas/MiniMap";
@@ -95,7 +95,6 @@ import { db } from "@/lib/db";
 import {
   handleRun as handleRunHandler,
   uploadImageDirect,
-  generateImage,
 } from "@/lib/handlers/generation-handler";
 import { handleRemoveBackground as handleRemoveBackgroundHandler } from "@/lib/handlers/background-handler";
 import {
@@ -148,8 +147,6 @@ export default function OverlayPage() {
     visible: false,
   });
   const [isSelecting, setIsSelecting] = useState(false);
-  const [history, setHistory] = useState<HistoryState[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
   const [dragStartPositions, setDragStartPositions] = useState<
     Map<string, { x: number; y: number }>
   >(new Map());
@@ -278,6 +275,20 @@ export default function OverlayPage() {
   const project = projectData?.canvasProjects?.[0];
   const projectName = (project?.name as string) || "Untitled";
   const folderName = (project?.folder?.name as string) || "Drafts";
+
+  // Use canvas history hook
+  const { history, historyIndex, saveToHistory, undo, redo, canUndo, canRedo } =
+    useCanvasHistory({
+      projectId,
+      images,
+      videos,
+      selectedIds,
+      onRestore: (state) => {
+        setImages(state.images);
+        setVideos(state.videos || []);
+        setSelectedIds(state.selectedIds);
+      },
+    });
 
   // Function to handle the "Convert to Video" option in the context menu
   const handleConvertToVideo = (imageId: string) => {
@@ -877,36 +888,6 @@ export default function OverlayPage() {
     }
   }, [images, videos, viewport]);
 
-  // Load history from InstantDB
-  const loadHistoryFromInstantDB = useCallback(async () => {
-    if (!projectId) return;
-
-    try {
-      const historySnapshots = await db.queryOnce({
-        canvasHistory: {
-          $: {
-            where: { "project.id": projectId },
-            order: { order: "asc" },
-          },
-        },
-      });
-
-      if (historySnapshots.data.canvasHistory.length > 0) {
-        const loadedHistory = historySnapshots.data.canvasHistory.map(
-          (snapshot: any) => snapshot.snapshotData as HistoryState,
-        );
-
-        setHistory(loadedHistory);
-        setHistoryIndex(loadedHistory.length - 1);
-        console.log(
-          `[CANVAS] Loaded ${loadedHistory.length} history snapshots from InstantDB`,
-        );
-      }
-    } catch (error) {
-      console.error("Failed to load history from InstantDB:", error);
-    }
-  }, [projectId]);
-
   // Load state from storage
   const loadFromStorage = useCallback(async () => {
     try {
@@ -1052,19 +1033,12 @@ export default function OverlayPage() {
         console.log("[CANVAS] Loading from storage for project:", projectId);
         // Load from storage after project ID is set
         await loadFromStorage();
-        // Load history from InstantDB
-        await loadHistoryFromInstantDB();
+        // History is now loaded automatically via db.useQuery
       }
     };
 
     initializeStorage();
-  }, [
-    user?.id,
-    sessionId,
-    projectId,
-    loadFromStorage,
-    loadHistoryFromInstantDB,
-  ]);
+  }, [user?.id, sessionId, projectId, loadFromStorage]);
 
   // Load grid setting from localStorage on mount
   useEffect(() => {
@@ -1103,110 +1077,6 @@ export default function OverlayPage() {
       setPreviousStyleId(currentStyleId);
     }
   }, [generationSettings.styleId, previousStyleId]);
-
-  // Ref to store the debounce timeout for history saves
-  const historySaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Save state to history
-  const saveToHistory = useCallback(() => {
-    const newState = {
-      images: [...images],
-      videos: [...videos],
-      selectedIds: [...selectedIds],
-    };
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(newState);
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
-
-    // Persist to InstantDB (debounced to avoid too many writes)
-    if (projectId) {
-      // Clear previous timeout
-      if (historySaveTimeoutRef.current) {
-        clearTimeout(historySaveTimeoutRef.current);
-      }
-
-      // Save history to InstantDB after a delay
-      historySaveTimeoutRef.current = setTimeout(() => {
-        saveHistoryToInstantDB(newHistory, newHistory.length - 1);
-      }, 1000); // 1 second debounce
-    }
-  }, [images, videos, selectedIds, history, historyIndex, projectId]);
-
-  // Function to save history to InstantDB (with limit to prevent too much data)
-  const saveHistoryToInstantDB = useCallback(
-    async (historyToSave: HistoryState[], currentIndex: number) => {
-      if (!projectId) return;
-
-      try {
-        // Limit history to last 50 snapshots to avoid excessive data
-        const MAX_HISTORY_SNAPSHOTS = 50;
-        const limitedHistory = historyToSave.slice(-MAX_HISTORY_SNAPSHOTS);
-        const adjustedIndex = Math.min(currentIndex, limitedHistory.length - 1);
-
-        // Delete existing history snapshots for this project
-        const existingSnapshots = await db.queryOnce({
-          canvasHistory: {
-            $: { where: { "project.id": projectId } },
-          },
-        });
-
-        if (existingSnapshots.data.canvasHistory.length > 0) {
-          const deleteTxs = existingSnapshots.data.canvasHistory.map(
-            (snapshot: any) => db.tx.canvasHistory[snapshot.id].delete(),
-          );
-          await db.transact(deleteTxs);
-        }
-
-        // Create new history snapshots
-        const createTxs = limitedHistory.map((snapshot, index) => {
-          const snapshotId = id();
-          return [
-            db.tx.canvasHistory[snapshotId].update({
-              snapshotData: snapshot,
-              timestamp: new Date(),
-              order: index,
-            }),
-            db.tx.canvasHistory[snapshotId].link({ project: projectId }),
-          ];
-        });
-
-        await db.transact(createTxs.flat());
-      } catch (error) {
-        console.error("Failed to save history to InstantDB:", error);
-      }
-    },
-    [projectId],
-  );
-
-  // Undo
-  const undo = useCallback(() => {
-    if (historyIndex > 0) {
-      const prevState = history[historyIndex - 1];
-      setImages(prevState.images);
-      setVideos(prevState.videos || []);
-      setSelectedIds(prevState.selectedIds);
-      setHistoryIndex(historyIndex - 1);
-    }
-  }, [history, historyIndex]);
-
-  // Redo
-  const redo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      const nextState = history[historyIndex + 1];
-      setImages(nextState.images);
-      setVideos(nextState.videos || []);
-      setSelectedIds(nextState.selectedIds);
-      setHistoryIndex(historyIndex + 1);
-    }
-  }, [history, historyIndex]);
-
-  // Save initial state
-  useEffect(() => {
-    if (history.length === 0) {
-      saveToHistory();
-    }
-  }, []);
 
   // Set canvas ready state after mount
   useEffect(() => {
@@ -1268,30 +1138,22 @@ export default function OverlayPage() {
     activeGenerations.size,
   ]);
 
-  // Save when page visibility changes (tab hidden, page closed, etc.)
+  // Save canvas assets when page visibility changes
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden" && isStorageLoaded) {
-        console.log("[CANVAS] Page hidden, saving immediately...");
+        console.log("[CANVAS] Page hidden, saving assets...");
         saveToStorage();
-        // Also save history immediately (bypass debounce)
-        if (projectId && history.length > 0) {
-          saveHistoryToInstantDB(history, historyIndex);
-        }
+        // History saves automatically via InstantDB transactions
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () =>
+
+    return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [
-    isStorageLoaded,
-    saveToStorage,
-    projectId,
-    history,
-    historyIndex,
-    saveHistoryToInstantDB,
-  ]);
+    };
+  }, [isStorageLoaded, saveToStorage]);
 
   // Load default images only if no saved state
   useEffect(() => {
@@ -3084,7 +2946,7 @@ export default function OverlayPage() {
                   variant="ghost"
                   size="icon-sm"
                   onClick={undo}
-                  disabled={historyIndex <= 0}
+                  disabled={!canUndo}
                   className="rounded-none"
                   title="Undo"
                 >
@@ -3095,7 +2957,7 @@ export default function OverlayPage() {
                   variant="ghost"
                   size="icon-sm"
                   onClick={redo}
-                  disabled={historyIndex >= history.length - 1}
+                  disabled={!canRedo}
                   className="rounded-none"
                   title="Redo"
                 >
