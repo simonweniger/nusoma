@@ -3,7 +3,6 @@
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/Button";
 import { db } from "@/lib/db";
-import { useRouter } from "next/navigation";
 import { Plus, Image } from "lucide-react";
 import { useCanvasOperations } from "@/hooks/useCanvasOperations";
 import { CanvasCard } from "@/components/dashboard/CanvasCard";
@@ -11,7 +10,6 @@ import { EmptyState } from "@/components/dashboard/EmptyState";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const router = useRouter();
   const { createCanvas, deleteCanvas } = useCanvasOperations();
 
   // Query all canvas projects with their folders

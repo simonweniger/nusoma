@@ -1,23 +1,31 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { CoreProviders } from "./core-providers";
 import { focal, hal, halMono, commitMono, inconsolata } from "@/lib/fonts";
 import { BotIdClient } from "botid/client";
 import { Analytics } from "@vercel/analytics/next";
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   title: {
-    default: "Flux Kontext Dev - AI Style Transfer | Powered by fal.ai",
-    template: "%s | Flux Kontext Dev",
+    default: "Creative Canvas for GenAI | nusoma",
+    template: "%s | nusoma",
   },
-  description:
-    "Transform your photos with AI-powered style transfer in seconds. Choose from LoRA models and prompt-based styles including anime, oil painting, cyberpunk, and more. Powered by fal.ai's fast AI infrastructure.",
+  description: "Create and share on your own creative canvas with GenAI.",
   keywords: [
     "AI style transfer",
     "image transformation",
     "flux model",
     "LoRA",
     "AI art",
+    "nusoma",
+    "creative canvas",
     "fal.ai",
     "photo styling",
     "artificial intelligence",
@@ -27,12 +35,6 @@ export const metadata: Metadata = {
   authors: [{ name: "fal.ai" }],
   creator: "fal.ai",
   publisher: "fal.ai",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    viewportFit: "cover",
-  },
   formatDetection: {
     email: false,
     address: false,
@@ -46,30 +48,28 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "/",
-    title: "Flux Kontext Dev - AI Style Transfer | Powered by fal.ai",
-    description:
-      "Transform your photos with AI-powered style transfer in seconds. Choose from LoRA models and prompt-based styles.",
-    siteName: "Flux Kontext Dev",
+    title: "Creative GenAI Canvas for Designers | nusoma",
+    description: "Build your vision! With an GenAI canvas made for Designers.",
+    siteName: "nusoma",
     images: [
       {
-        url: "/og-img-compress.png",
+        url: "/og-img.png",
         width: 1200,
         height: 630,
-        alt: "Flux Kontext Dev - AI Style Transfer Demo",
+        alt: "Creative GenAI Canvas for Designers | nusoma",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Flux Kontext Dev - AI Style Transfer | Powered by fal.ai",
-    description:
-      "Transform your photos with AI-powered style transfer in seconds. Choose from LoRA models and prompt-based styles.",
+    title: "Creative GenAI Canvas for Designers | nusoma",
+    description: "Build your vision! With an GenAI canvas made for Designers.",
     creator: "@fal_ai",
     site: "@fal_ai",
     images: [
       {
-        url: "/og-img-compress.png",
+        url: "/og-img.png",
         width: 1200,
         height: 630,
         alt: "Flux Kontext Dev - AI Style Transfer Demo",

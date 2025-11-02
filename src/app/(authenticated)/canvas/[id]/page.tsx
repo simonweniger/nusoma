@@ -1306,7 +1306,7 @@ export default function OverlayPage() {
       const defaultImagePaths = [
         "/hat.png",
         "/man.png",
-        "/og-img-compress.png",
+        "/og-img.png",
         "/chad.png",
         "/anime.png",
         "/cat.jpg",

@@ -1,6 +1,6 @@
 # Infinite Kanvas
 
-![Infinite Kanvas](./public/og-img-compress.png)
+![Infinite Kanvas](./public/og-img.png)
 
 An infinite canvas image editor with AI transformations using fal.ai. Built with Next.js, React Konva, and tRPC.
 
