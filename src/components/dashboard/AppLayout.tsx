@@ -273,7 +273,7 @@ export default function AppLayout({
 
   return (
     <div
-      className={`flex flex-col md:flex-row h-dvh w-full overflow-hidden bg-background`}
+      className={`flex flex-col md:flex-row h-dvh w-full overflow-hidden border-y border-border bg-background`}
     >
       {/* Sidebar */}
       <div className="flex-col p-2 items-start w-full max-w-64 overflow-hidden hidden md:flex border-r border-border">

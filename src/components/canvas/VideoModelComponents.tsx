@@ -168,7 +168,7 @@ export const VideoModelOptions: React.FC<VideoModelOptionsProps> = ({
               </Label>
               {option.description && (
                 <TooltipProvider>
-                  <Tooltip delayDuration={0}>
+                  <Tooltip>
                     <TooltipTrigger>
                       <button
                         type="button"
@@ -208,7 +208,7 @@ export const VideoModelOptions: React.FC<VideoModelOptionsProps> = ({
               </Label>
               {option.description && (
                 <TooltipProvider>
-                  <Tooltip delayDuration={0}>
+                  <Tooltip>
                     <TooltipTrigger>
                       <button
                         type="button"
@@ -276,7 +276,7 @@ export const VideoModelOptions: React.FC<VideoModelOptionsProps> = ({
                 </Label>
                 {option.description && (
                   <TooltipProvider>
-                    <Tooltip delayDuration={0}>
+                    <Tooltip>
                       <TooltipTrigger>
                         <button
                           type="button"
@@ -318,7 +318,7 @@ export const VideoModelOptions: React.FC<VideoModelOptionsProps> = ({
               </Label>
               {option.description && (
                 <TooltipProvider>
-                  <Tooltip delayDuration={0}>
+                  <Tooltip>
                     <TooltipTrigger>
                       <button
                         type="button"

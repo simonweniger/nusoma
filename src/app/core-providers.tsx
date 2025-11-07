@@ -17,6 +17,7 @@ import { ThemeProvider } from "next-themes";
 import { PostHogProvider } from "@/providers/posthog-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { DatabaseProvider } from "@/providers/database-provider";
+import { ToastProvider } from "@/components/ui/toast";
 
 let browserQueryClient: QueryClient | undefined = undefined;
 
@@ -67,8 +68,7 @@ export function CoreProviders({ children }: { children: ReactNode }) {
                 enableSystem
                 disableTransitionOnChange
               >
-                {children}
-                <Toaster />
+                <ToastProvider>{children}</ToastProvider>
               </ThemeProvider>
             </TRPCProvider>
           </QueryClientProvider>

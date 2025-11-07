@@ -73,7 +73,8 @@ export interface ActiveVideoGeneration {
   sourceVideoId?: string; // ID of the video used for vid2vid
   isVideoToVideo?: boolean; // Indicates if this is a video-to-video transformation
   isVideoExtension?: boolean; // Indicates if this is a video extension
-  toastId?: string; // ID of the toast notification
+  promiseResolve?: (value: string) => void; // For toast.promise success
+  promiseReject?: (error: Error) => void; // For toast.promise error
   [key: string]: any; // Allow additional model-specific fields
 }
 

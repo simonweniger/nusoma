@@ -10,7 +10,6 @@ import {
   Paperclip,
   PlayIcon,
   ExternalLink,
-  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SpinnerIcon } from "@/components/icons";
@@ -36,9 +35,6 @@ interface CanvasPromptEditorProps {
   handleRun: () => void;
   handleFileUpload: (files: FileList | null) => void;
   setIsStyleDialogOpen: (open: boolean) => void;
-  canvasStorage: any;
-  setImages: React.Dispatch<React.SetStateAction<PlacedImage[]>>;
-  setViewport: (viewport: { x: number; y: number; scale: number }) => void;
   toast: any;
 }
 
@@ -52,9 +48,6 @@ export function CanvasPromptEditor({
   handleRun,
   handleFileUpload,
   setIsStyleDialogOpen,
-  canvasStorage,
-  setImages,
-  setViewport,
   toast,
 }: CanvasPromptEditorProps) {
   return (
@@ -98,37 +91,6 @@ export function CanvasPromptEditor({
                   </div>
                 )}
               </div>
-            </div>
-            <div className="flex-1" />
-            <div className="flex items-center gap-2">
-              {/* Clear button */}
-              <Tooltip>
-                <Button
-                  variant="secondary"
-                  size="icon-sm"
-                  onClick={async () => {
-                    if (
-                      confirm("Clear all saved data? This cannot be undone.")
-                    ) {
-                      await canvasStorage.clearAll();
-                      setImages([]);
-                      setViewport({ x: 0, y: 0, scale: 1 });
-                      toast({
-                        title: "Storage cleared",
-                        description: "All saved data has been removed",
-                      });
-                    }
-                  }}
-                  className="bg-destructive/10 text-destructive hover:bg-destructive/20"
-                  title="Clear storage"
-                  render={<TooltipTrigger />}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-                <TooltipContent className="text-destructive">
-                  <span>Clear</span>
-                </TooltipContent>
-              </Tooltip>
             </div>
           </div>
 

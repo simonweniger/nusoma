@@ -9,20 +9,11 @@ import { useAuth } from "@/providers/auth-provider";
 import { id } from "@instantdb/react";
 
 import { Button } from "@/components/ui/Button";
-import {
-  Plus,
-  Undo,
-  Redo,
-  SlidersHorizontal,
-  MonitorIcon,
-  SunIcon,
-  MoonIcon,
-} from "lucide-react";
+import { Plus, Undo, Redo, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
 import { useRef, useEffect } from "react";
-import { Label } from "@/components/ui/label";
 import {
   TooltipTrigger,
   TooltipContent,
@@ -83,11 +74,12 @@ import { ZoomControls } from "@/components/canvas/ZoomControls";
 import { MobileToolbar } from "@/components/canvas/MobileToolbar";
 import { CanvasContextMenu } from "@/components/canvas/CanvasContextMenu";
 import { CanvasLeftSidebar } from "@/components/canvas/CanvasLeftSidebar";
-import { CanvasRightSidebar } from "@/components/canvas/CanvasRightSidebar";
+//import { CanvasRightSidebar } from "@/components/canvas/CanvasRightSidebar";
 import { VideoOverlays } from "@/components/canvas/VideoOverlays";
 import { DimensionDisplay } from "@/components/canvas/DimensionDisplay";
 import { CanvasPromptEditor } from "@/components/canvas/CanvasPromptEditor";
 import { GeneratingPlaceholder } from "@/components/canvas/GeneratingPlaceholder";
+import { SettingsDialog } from "@/components/canvas/SettingsDialog";
 import Image from "next/image";
 import { db } from "@/lib/db";
 
@@ -97,19 +89,9 @@ import {
   uploadImageDirect,
 } from "@/lib/handlers/generation-handler";
 import { handleRemoveBackground as handleRemoveBackgroundHandler } from "@/lib/handlers/background-handler";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/Switch";
 import { useParams } from "next/navigation";
-import { useTheme } from "next-themes";
 
 export default function OverlayPage() {
-  const { theme, setTheme } = useTheme();
   const { user, sessionId } = useAuth();
   const params = useParams();
   const projectId = params?.id as string;
@@ -121,7 +103,7 @@ export default function OverlayPage() {
   //   new Set(),
   // );
   const simpsonsStyle = styleModels.find((m) => m.id === "simpsons");
-  const { toast } = useToast();
+  const toast = useToast();
 
   const [generationSettings, setGenerationSettings] =
     useState<GenerationSettings>({
@@ -172,7 +154,6 @@ export default function OverlayPage() {
   const [isolateTarget, setIsolateTarget] = useState<string | null>(null);
   const [isolateInputValue, setIsolateInputValue] = useState("");
   const [isIsolating, setIsIsolating] = useState(false);
-  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
   //const [showMinimap, setShowMinimap] = useState(true);
   const [isStyleDialogOpen, setIsStyleDialogOpen] = useState(false);
@@ -323,53 +304,64 @@ export default function OverlayPage() {
       // Create a unique ID for this generation
       const generationId = `img2vid_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-      // Add to active generations
-      setActiveVideoGenerations((prev) => {
-        const newMap = new Map(prev);
-        newMap.set(generationId, {
-          imageUrl,
-          prompt: settings.prompt || "",
-          duration: settings.duration || 5,
-          modelId: settings.modelId, // Add video modelId
-          resolution: settings.resolution || "720p",
-          cameraFixed: settings.cameraFixed,
-          seed: settings.seed,
-          sourceImageId: selectedImageForVideo, // Store the source image ID
-        });
-        return newMap;
-      });
-
-      // Clear the converting flag since it's now tracked in activeVideoGenerations
-      setIsConvertingToVideo(false);
-
-      // Close the dialog
-      setIsImageToVideoDialogOpen(false);
-
       // Get video model name for toast display
       let modelName = "Video Model";
-      const modelId = settings.modelId || "ltx-video"; // Default to ltx-video
+      const modelId = settings.modelId || "ltx-video";
       const { getVideoModelById } = await import("@/lib/video-models");
       const model = getVideoModelById(modelId);
       if (model) {
         modelName = model.name;
       }
 
-      // Store the toast ID with the generation for later reference
-      setActiveVideoGenerations((prev) => {
-        const newMap = new Map(prev);
-        const generation = newMap.get(generationId);
-        if (generation) {
-          newMap.set(generationId, generation);
-        }
-        return newMap;
+      // Close the dialog
+      setIsImageToVideoDialogOpen(false);
+
+      // Clear the converting flag since it's now tracked in activeVideoGenerations
+      setIsConvertingToVideo(false);
+
+      // Create a promise that tracks the video generation
+      const generationPromise = new Promise<string>((resolve, reject) => {
+        // Add to active generations with promise handlers
+        setActiveVideoGenerations((prev) => {
+          const newMap = new Map(prev);
+          newMap.set(generationId, {
+            imageUrl,
+            prompt: settings.prompt || "",
+            duration: settings.duration || 5,
+            modelId: settings.modelId,
+            resolution: settings.resolution || "720p",
+            cameraFixed: settings.cameraFixed,
+            seed: settings.seed,
+            sourceImageId: selectedImageForVideo,
+            promiseResolve: resolve,
+            promiseReject: reject,
+          });
+          return newMap;
+        });
+      });
+
+      // Use Base UI's native toast.promise
+      toast.promise(generationPromise, {
+        loading: {
+          title: "Generating video",
+          description: `${modelName} - ${settings.duration || 5}s - ${settings.resolution || "720p"}`,
+        },
+        success: {
+          title: "Video generated",
+          description: "The video has been added to your canvas",
+        },
+        error: (err: Error) => ({
+          title: "Generation failed",
+          description: err.message,
+        }),
       });
     } catch (error) {
       console.error("Error starting image-to-video conversion:", error);
-      toast({
+      toast.add({
         title: "Conversion failed",
         description:
           error instanceof Error ? error.message : "Failed to start conversion",
-        variant: "destructive",
+        type: "error",
       });
       setIsConvertingToVideo(false);
     }
@@ -408,24 +400,6 @@ export default function OverlayPage() {
       // Create a unique ID for this generation
       const generationId = `vid2vid_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-      // Add to active generations
-      setActiveVideoGenerations((prev) => {
-        const newMap = new Map(prev);
-        newMap.set(generationId, {
-          ...settings, // Include all settings first
-          imageUrl: videoUrl, // Using imageUrl field for video URL
-          duration: video.duration || settings.duration || 5,
-          modelId: settings.modelId || "seedance-pro",
-          resolution: settings.resolution || "720p",
-          isVideoToVideo: true,
-          sourceVideoId: selectedVideoForVideo,
-        });
-        return newMap;
-      });
-
-      // Close the dialog
-      setIsVideoToVideoDialogOpen(false);
-
       // Get video model name for toast display
       let modelName = "Video Model";
       const modelId = settings.modelId || "seedance-pro";
@@ -435,34 +409,53 @@ export default function OverlayPage() {
         modelName = model.name;
       }
 
-      // Create a persistent toast
-      const toastId = toast({
-        title: `Transforming video (${modelName} - ${settings.resolution || "Default"})`,
-        description: "This may take a minute...",
-        duration: Infinity,
-      }).id;
+      // Close the dialog
+      setIsVideoToVideoDialogOpen(false);
 
-      // Store the toast ID with the generation
-      setActiveVideoGenerations((prev) => {
-        const newMap = new Map(prev);
-        const generation = newMap.get(generationId);
-        if (generation) {
+      // Create a promise that tracks the video generation
+      const generationPromise = new Promise<string>((resolve, reject) => {
+        // Add to active generations with promise handlers
+        setActiveVideoGenerations((prev) => {
+          const newMap = new Map(prev);
           newMap.set(generationId, {
-            ...generation,
-            toastId,
+            ...settings,
+            imageUrl: videoUrl,
+            duration: video.duration || settings.duration || 5,
+            modelId: settings.modelId || "seedance-pro",
+            resolution: settings.resolution || "720p",
+            isVideoToVideo: true,
+            sourceVideoId: selectedVideoForVideo,
+            promiseResolve: resolve,
+            promiseReject: reject,
           });
-        }
-        return newMap;
+          return newMap;
+        });
+      });
+
+      // Use Base UI's native toast.promise
+      toast.promise(generationPromise, {
+        loading: {
+          title: "Transforming video",
+          description: `${modelName} - ${settings.resolution || "Default"}`,
+        },
+        success: {
+          title: "Video transformed",
+          description: "The transformed video has been added to your canvas",
+        },
+        error: (err: Error) => ({
+          title: "Transformation failed",
+          description: err.message,
+        }),
       });
     } catch (error) {
       console.error("Error starting video-to-video transformation:", error);
-      toast({
+      toast.add({
         title: "Transformation failed",
         description:
           error instanceof Error
             ? error.message
             : "Failed to start transformation",
-        variant: "destructive",
+        type: "error",
       });
       setIsTransformingVideo(false);
     }
@@ -499,25 +492,6 @@ export default function OverlayPage() {
       // Create a unique ID for this generation
       const generationId = `vid_ext_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-      // Add to active generations
-      setActiveVideoGenerations((prev) => {
-        const newMap = new Map(prev);
-        newMap.set(generationId, {
-          ...settings, // Include all settings first
-          imageUrl: videoUrl, // Using imageUrl field for video URL
-          duration: video.duration || settings.duration || 5,
-          modelId: settings.modelId || "seedance-pro",
-          resolution: settings.resolution || "720p",
-          isVideoToVideo: true,
-          isVideoExtension: true,
-          sourceVideoId: selectedVideoForExtend,
-        });
-        return newMap;
-      });
-
-      // Close the dialog
-      setIsExtendVideoDialogOpen(false);
-
       // Get video model name for toast display
       let modelName = "Video Model";
       const modelId = settings.modelId || "seedance-pro";
@@ -527,34 +501,54 @@ export default function OverlayPage() {
         modelName = model.name;
       }
 
-      // Create a persistent toast
-      const toastId = toast({
-        title: `Extending video (${modelName} - ${settings.resolution || "Default"})`,
-        description: "This may take a minute...",
-        duration: Infinity,
-      }).id;
+      // Close the dialog
+      setIsExtendVideoDialogOpen(false);
 
-      // Store the toast ID with the generation
-      setActiveVideoGenerations((prev) => {
-        const newMap = new Map(prev);
-        const generation = newMap.get(generationId);
-        if (generation) {
+      // Create a promise that tracks the video extension
+      const generationPromise = new Promise<string>((resolve, reject) => {
+        // Add to active generations with promise handlers
+        setActiveVideoGenerations((prev) => {
+          const newMap = new Map(prev);
           newMap.set(generationId, {
-            ...generation,
-            toastId,
+            ...settings,
+            imageUrl: videoUrl,
+            duration: video.duration || settings.duration || 5,
+            modelId: settings.modelId || "seedance-pro",
+            resolution: settings.resolution || "720p",
+            isVideoToVideo: true,
+            isVideoExtension: true,
+            sourceVideoId: selectedVideoForExtend,
+            promiseResolve: resolve,
+            promiseReject: reject,
           });
-        }
-        return newMap;
+          return newMap;
+        });
+      });
+
+      // Use Base UI's native toast.promise
+      toast.promise(generationPromise, {
+        loading: {
+          title: "Extending video",
+          description: `${modelName} - ${settings.resolution || "Default"}`,
+        },
+        success: {
+          title: "Video extended",
+          description: "The extended video has been added to your canvas",
+        },
+        error: (err: Error) => ({
+          title: "Extension failed",
+          description: err.message,
+        }),
       });
     } catch (error) {
       console.error("Error starting video extension:", error);
-      toast({
+      toast.add({
         title: "Extension failed",
         description:
           error instanceof Error
             ? error.message
             : "Failed to start video extension",
-        variant: "destructive",
+        type: "error",
       });
       setIsExtendingVideo(false);
     }
@@ -578,22 +572,6 @@ export default function OverlayPage() {
       const sourceImageId = generation?.sourceImageId || selectedImageForVideo;
       const isBackgroundRemoval =
         generation?.modelId === "bria-video-background-removal";
-
-      // Dismiss progress toast if it exists
-      if (generation?.toastId) {
-        const toastElement = document.querySelector(
-          `[data-toast-id="${generation.toastId}"]`,
-        );
-        if (toastElement) {
-          // Trigger dismiss by clicking the close button
-          const closeButton = toastElement.querySelector(
-            "[data-radix-toast-close]",
-          );
-          if (closeButton instanceof HTMLElement) {
-            closeButton.click();
-          }
-        }
-      }
 
       // Find the original image if this was an image-to-video conversion
       if (sourceImageId) {
@@ -619,17 +597,17 @@ export default function OverlayPage() {
           saveToHistory();
 
           // Show success toast
-          toast({
+          toast.add({
             title: "Video created successfully",
             description:
               "The video has been added to the right of the source image.",
           });
         } else {
           console.error("Source image not found:", sourceImageId);
-          toast({
+          toast.add({
             title: "Error creating video",
             description: "The source image could not be found.",
-            variant: "destructive",
+            type: "error",
           });
         }
       } else if (generation?.sourceVideoId || generation?.isVideoToVideo) {
@@ -667,34 +645,37 @@ export default function OverlayPage() {
             // Save to history
             saveToHistory();
 
-            if (isExtension) {
-              toast({
-                title: "Video extended successfully",
-                description:
+            // Resolve the promise for toast.promise
+            if (generation?.promiseResolve) {
+              if (isExtension) {
+                generation.promiseResolve(
                   "The extended video has been added to the right of the source video.",
-              });
-            } else if (
-              generation?.modelId === "bria-video-background-removal"
-            ) {
-              toast({
-                title: "Background removed successfully",
-                description:
+                );
+              } else if (
+                generation?.modelId === "bria-video-background-removal"
+              ) {
+                generation.promiseResolve(
                   "The video with removed background has been added to the right of the source video.",
-              });
-            } else {
-              toast({
-                title: "Video transformed successfully",
-                description:
+                );
+              } else {
+                generation.promiseResolve(
                   "The transformed video has been added to the right of the source video.",
-              });
+                );
+              }
             }
           } else {
             console.error("Source video not found:", sourceVideoId);
-            toast({
-              title: "Error creating video",
-              description: "The source video could not be found.",
-              variant: "destructive",
-            });
+            if (generation?.promiseReject) {
+              generation.promiseReject(
+                new Error("The source video could not be found."),
+              );
+            } else {
+              toast.add({
+                title: "Error creating video",
+                description: "The source video could not be found.",
+                type: "error",
+              });
+            }
           }
         }
 
@@ -707,7 +688,7 @@ export default function OverlayPage() {
         // This was a text-to-video generation
         // For now, just log it as the placement function is missing
         console.log("Generated video URL:", videoUrl);
-        toast({
+        toast.add({
           title: "Video generated",
           description: "Video is ready but cannot be placed on canvas yet.",
         });
@@ -730,12 +711,21 @@ export default function OverlayPage() {
     } catch (error) {
       console.error("Error completing video generation:", error);
 
-      toast({
-        title: "Error creating video",
-        description:
-          error instanceof Error ? error.message : "Failed to create video",
-        variant: "destructive",
-      });
+      // Reject the promise for toast.promise
+      const generation = activeVideoGenerations.get(videoId);
+      if (generation?.promiseReject) {
+        generation.promiseReject(
+          error instanceof Error ? error : new Error("Failed to create video"),
+        );
+      } else {
+        // Fallback for generations without promises
+        toast.add({
+          title: "Error creating video",
+          description:
+            error instanceof Error ? error.message : "Failed to create video",
+          type: "error",
+        });
+      }
 
       // Remove from active generations even on error
       setActiveVideoGenerations((prev) => {
@@ -758,13 +748,19 @@ export default function OverlayPage() {
     const isBackgroundRemoval =
       generation?.modelId === "bria-video-background-removal";
 
-    toast({
-      title: isBackgroundRemoval
-        ? "Background removal failed"
-        : "Video generation failed",
-      description: error,
-      variant: "destructive",
-    });
+    // Reject the promise for toast.promise
+    if (generation?.promiseReject) {
+      generation.promiseReject(new Error(error));
+    } else {
+      // Fallback for generations without promises
+      toast.add({
+        title: isBackgroundRemoval
+          ? "Background removal failed"
+          : "Video generation failed",
+        description: error,
+        type: "error",
+      });
+    }
 
     // Remove from active generations
     setActiveVideoGenerations((prev) => {
@@ -1007,10 +1003,10 @@ export default function OverlayPage() {
       }
     } catch (error) {
       console.error("Failed to load from storage:", error);
-      toast({
+      toast.add({
         title: "Failed to restore canvas",
         description: "Starting with a fresh canvas",
-        variant: "destructive",
+        type: "error",
       });
     } finally {
       setIsStorageLoaded(true);
@@ -1800,7 +1796,7 @@ export default function OverlayPage() {
       setSelectedIds,
       setActiveGenerations,
       setIsGenerating,
-      toast,
+      toast: toast.add,
       generateTextToImage,
     });
   };
@@ -1810,7 +1806,7 @@ export default function OverlayPage() {
       images,
       selectedIds,
       setImages,
-      toast,
+      toast: toast.add,
       saveToHistory,
       removeBackground,
       falClient,
@@ -1889,11 +1885,10 @@ export default function OverlayPage() {
       });
 
       // Create a persistent toast that will stay visible until the conversion completes
-      const toastId = toast({
+      const toastId = toast.add({
         title: "Removing background from video",
         description: "This may take several minutes...",
-        duration: Infinity, // Make the toast stay until manually dismissed
-      }).id;
+      });
 
       // Store the toast ID with the generation for later reference
       setActiveVideoGenerations((prev) => {
@@ -1912,11 +1907,11 @@ export default function OverlayPage() {
       // The StreamingVideo component will handle the actual API call and progress updates
     } catch (error) {
       console.error("Error removing video background:", error);
-      toast({
+      toast.add({
         title: "Error processing video",
         description:
           error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
+        type: "error",
       });
 
       // Remove from active generations
@@ -1952,7 +1947,7 @@ export default function OverlayPage() {
       }
 
       // Show loading state
-      toast({
+      toast.add({
         title: "Processing...",
         description: `Isolating "${isolateInputValue}" from image`,
       });
@@ -2005,7 +2000,11 @@ export default function OverlayPage() {
       });
 
       // Upload the processed image
-      const uploadResult = await uploadImageDirect(dataUrl, falClient, toast);
+      const uploadResult = await uploadImageDirect(
+        dataUrl,
+        falClient,
+        toast.add,
+      );
 
       // Isolate object using EVF-SAM2
       console.log("Calling isolateObject with:", {
@@ -2113,7 +2112,7 @@ export default function OverlayPage() {
           // Update selection
           setSelectedIds([newImage.id]);
 
-          toast({
+          toast.add({
             title: "Success",
             description: `Isolated "${isolateInputValue}" successfully`,
           });
@@ -2121,19 +2120,19 @@ export default function OverlayPage() {
 
         testImg.onerror = (e) => {
           console.error("Failed to load new image:", e);
-          toast({
+          toast.add({
             title: "Failed to load isolated image",
             description: "The isolated image could not be loaded",
-            variant: "destructive",
+            type: "error",
           });
         };
 
         testImg.src = result.url;
       } else {
-        toast({
+        toast.add({
           title: "No object found",
           description: `Could not find "${isolateInputValue}" in the image`,
-          variant: "destructive",
+          type: "error",
         });
       }
 
@@ -2143,10 +2142,10 @@ export default function OverlayPage() {
       setIsIsolating(false);
     } catch (error) {
       console.error("Error isolating object:", error);
-      toast({
+      toast.add({
         title: "Failed to isolate object",
         description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
+        type: "error",
       });
       setIsolateTarget(null);
       setIsolateInputValue("");
@@ -2422,10 +2421,10 @@ export default function OverlayPage() {
                   return newMap;
                 });
                 setIsGenerating(false);
-                toast({
+                toast.add({
                   title: "Generation failed",
                   description: error.toString(),
-                  variant: "destructive",
+                  type: "error",
                 });
               }}
             />
@@ -2965,20 +2964,14 @@ export default function OverlayPage() {
                 </Button>
               </div>
 
-              <Tooltip>
-                <Button
-                  variant="secondary"
-                  size="icon-sm"
-                  className="relative"
-                  onClick={() => setIsSettingsDialogOpen(true)}
-                  render={<TooltipTrigger />}
-                >
-                  <SlidersHorizontal className="h-4 w-4" />
-                </Button>
-                <TooltipContent>
-                  <span>Settings</span>
-                </TooltipContent>
-              </Tooltip>
+              <SettingsDialog
+                showGrid={showGrid}
+                setShowGrid={setShowGrid}
+                canvasStorage={canvasStorage}
+                setImages={setImages}
+                setViewport={setViewport}
+                toast={toast}
+              />
             </div>
 
             {/* Prompt Editor */}
@@ -2992,9 +2985,6 @@ export default function OverlayPage() {
               handleRun={handleRun}
               handleFileUpload={handleFileUpload}
               setIsStyleDialogOpen={setIsStyleDialogOpen}
-              canvasStorage={canvasStorage}
-              setImages={setImages}
-              setViewport={setViewport}
               toast={toast}
             />
 
@@ -3109,102 +3099,6 @@ export default function OverlayPage() {
                   ))}
                 </div>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Settings dialog */}
-        <Dialog
-          open={isSettingsDialogOpen}
-          onOpenChange={setIsSettingsDialogOpen}
-        >
-          <DialogContent className="w-[95vw] max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Settings</DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-6">
-              <div className="h-px bg-border/40" />
-
-              {/* Appearance */}
-              <div className="flex justify-between">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="appearance">Appearance</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Customize how infinite-kanvas looks on your device.
-                  </p>
-                </div>
-                <Select
-                  value={theme || "system"}
-                  onValueChange={(value: "system" | "light" | "dark") =>
-                    setTheme(value)
-                  }
-                >
-                  <SelectTrigger className="max-w-[140px] rounded-xl">
-                    <div className="flex items-center gap-2">
-                      {theme === "light" ? (
-                        <SunIcon className="size-4" />
-                      ) : theme === "dark" ? (
-                        <MoonIcon className="size-4" />
-                      ) : (
-                        <MonitorIcon className="size-4" />
-                      )}
-                      <span className="capitalize">{theme || "system"}</span>
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="system" className="rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <MonitorIcon className="size-4" />
-                        <span>System</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="light" className="rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <SunIcon className="size-4" />
-                        <span>Light</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="dark" className="rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <MoonIcon className="size-4" />
-                        <span>Dark</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Grid */}
-              <div className="flex justify-between">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="grid">Show Grid</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Show a grid on the canvas to help you align your images.
-                  </p>
-                </div>
-                <Switch
-                  id="grid"
-                  checked={showGrid}
-                  onCheckedChange={setShowGrid}
-                />
-              </div>
-
-              {/* Minimap -- Disabled for now
-            <div className="flex justify-between">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="minimap">Show Minimap</Label>
-                <p className="text-sm text-muted-foreground">
-                  Show a minimap in the corner to navigate the canvas.
-                </p>
-              </div>
-              <Switch
-                id="minimap"
-                checked={showMinimap}
-                onCheckedChange={setShowMinimap}
-              />
-            </div>
-            */}
             </div>
           </DialogContent>
         </Dialog>
