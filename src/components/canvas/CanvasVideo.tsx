@@ -50,7 +50,7 @@ export const CanvasVideo: React.FC<CanvasVideoProps> = ({
   selectedIds,
   // videos is used in the type definition but not in the component
   setVideos,
-  // isDraggingVideo is not used but kept for API compatibility
+  isDraggingVideo,
   isCroppingVideo,
   dragStartPositions,
   onResizeStart,
@@ -187,14 +187,16 @@ export const CanvasVideo: React.FC<CanvasVideoProps> = ({
 
   // Handle transformer
   useEffect(() => {
-    if (isSelected && trRef.current && shapeRef.current) {
-      // Only show transformer if this is the only selected item or if clicking on it
-      if (selectedIds.length === 1) {
-        trRef.current.nodes([shapeRef.current]);
-        trRef.current.getLayer()?.batchDraw();
-      } else {
-        trRef.current.nodes([]);
-      }
+    if (
+      isSelected &&
+      selectedIds.length === 1 &&
+      trRef.current &&
+      shapeRef.current
+    ) {
+      trRef.current.nodes([shapeRef.current]);
+      trRef.current.getLayer()?.batchDraw();
+    } else if (trRef.current) {
+      trRef.current.nodes([]);
     }
   }, [isSelected, selectedIds.length]);
 
@@ -410,6 +412,10 @@ export const CanvasVideo: React.FC<CanvasVideoProps> = ({
         onDragStart={(e) => {
           // Stop propagation to prevent stage from being dragged
           e.cancelBubble = true;
+          // Immediately detach transformer to allow dragging
+          if (trRef.current) {
+            trRef.current.nodes([]);
+          }
           // Auto-select on drag if not already selected
           if (!isSelected) {
             onSelect(e);
@@ -422,6 +428,20 @@ export const CanvasVideo: React.FC<CanvasVideoProps> = ({
         }}
         onDragMove={handleDragMove}
         onDragEnd={() => {
+          // Reattach transformer after drag ends
+          if (
+            isSelected &&
+            selectedIds.length === 1 &&
+            trRef.current &&
+            shapeRef.current
+          ) {
+            trRef.current.nodes([shapeRef.current]);
+          }
+          // Ensure the layer redraws to update visual state
+          const node = shapeRef.current;
+          if (node) {
+            node.getLayer()?.batchDraw();
+          }
           onDragEnd();
         }}
         onTransformStart={() => {
@@ -454,13 +474,23 @@ export const CanvasVideo: React.FC<CanvasVideoProps> = ({
           onDragEnd();
         }}
         opacity={video.isGenerating ? 0.9 : 1}
-        stroke={isSelected ? "#3b82f6" : isHovered ? "#3b82f6" : "transparent"}
-        strokeWidth={isSelected || isHovered ? 2 : 0}
+        stroke={
+          isDraggingVideo
+            ? "transparent"
+            : isSelected
+              ? "#3b82f6"
+              : isHovered
+                ? "#3b82f6"
+                : "transparent"
+        }
+        strokeWidth={isDraggingVideo ? 0 : isSelected || isHovered ? 2 : 0}
       />
 
       {isSelected && selectedIds.length === 1 && (
         <Transformer
           ref={trRef}
+          ignoreStroke={true}
+          visible={!isDraggingVideo}
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 5 || newBox.height < 5) {
               return oldBox;

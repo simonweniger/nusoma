@@ -3172,6 +3172,7 @@ export default function OverlayPage() {
                 selectedIds.includes(img.id),
               )}
               viewport={viewport}
+              isDragging={isDraggingImage}
             />
           </div>
         </main>

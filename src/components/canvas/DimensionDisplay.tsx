@@ -9,11 +9,13 @@ import {
 interface DimensionDisplayProps {
   selectedImages: PlacedImage[];
   viewport: Viewport;
+  isDragging?: boolean;
 }
 
 export const DimensionDisplay: React.FC<DimensionDisplayProps> = ({
   selectedImages,
   viewport,
+  isDragging = false,
 }) => {
   // Move hooks to the top before any conditional returns
   const [apiDimensions, setApiDimensions] = React.useState<{
@@ -82,7 +84,7 @@ export const DimensionDisplay: React.FC<DimensionDisplayProps> = ({
   ]);
 
   // Now do conditional rendering after all hooks
-  if (!shouldShow || !image || !apiDimensions) return null;
+  if (!shouldShow || !image || !apiDimensions || isDragging) return null;
 
   // Get rotation-aware bottom center position using bounding box
   const boundingBox = calculateBoundingBox(image);

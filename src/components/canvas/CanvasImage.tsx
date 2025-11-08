@@ -65,14 +65,16 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
   const [isDraggable, setIsDraggable] = useState(true);
 
   useEffect(() => {
-    if (isSelected && trRef.current && shapeRef.current) {
-      // Only show transformer if this is the only selected item or if clicking on it
-      if (selectedIds.length === 1) {
-        trRef.current.nodes([shapeRef.current]);
-        trRef.current.getLayer()?.batchDraw();
-      } else {
-        trRef.current.nodes([]);
-      }
+    if (
+      isSelected &&
+      selectedIds.length === 1 &&
+      trRef.current &&
+      shapeRef.current
+    ) {
+      trRef.current.nodes([shapeRef.current]);
+      trRef.current.getLayer()?.batchDraw();
+    } else if (trRef.current) {
+      trRef.current.nodes([]);
     }
   }, [isSelected, selectedIds.length]);
 
@@ -123,6 +125,10 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
         onDragStart={(e) => {
           // Stop propagation to prevent stage from being dragged
           e.cancelBubble = true;
+          // Immediately detach transformer to allow dragging
+          if (trRef.current) {
+            trRef.current.nodes([]);
+          }
           // Auto-select on drag if not already selected
           if (!isSelected) {
             onSelect(e);
@@ -191,6 +197,20 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
           ],
         )}
         onDragEnd={(e) => {
+          // Reattach transformer after drag ends
+          if (
+            isSelected &&
+            selectedIds.length === 1 &&
+            trRef.current &&
+            shapeRef.current
+          ) {
+            trRef.current.nodes([shapeRef.current]);
+          }
+          // Ensure the layer redraws to update visual state
+          const node = shapeRef.current;
+          if (node) {
+            node.getLayer()?.batchDraw();
+          }
           onDragEnd();
         }}
         onTransformEnd={(e) => {
@@ -213,12 +233,22 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
           onDragEnd();
         }}
         opacity={image.isGenerated ? 0.9 : 1}
-        stroke={isSelected ? "#3b82f6" : isHovered ? "#3b82f6" : "transparent"}
-        strokeWidth={isSelected || isHovered ? 2 : 0}
+        stroke={
+          isDraggingImage
+            ? "transparent"
+            : isSelected
+              ? "#3b82f6"
+              : isHovered
+                ? "#3b82f6"
+                : "transparent"
+        }
+        strokeWidth={isDraggingImage ? 0 : isSelected || isHovered ? 2 : 0}
       />
       {isSelected && selectedIds.length === 1 && (
         <Transformer
           ref={trRef}
+          ignoreStroke={true}
+          visible={!isDraggingImage}
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 5 || newBox.height < 5) {
               return oldBox;
