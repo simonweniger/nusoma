@@ -242,7 +242,7 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
                 ? "#3b82f6"
                 : "transparent"
         }
-        strokeWidth={isDraggingImage ? 0 : isSelected || isHovered ? 2 : 0}
+        strokeWidth={isDraggingImage ? 0 : isSelected || isHovered ? 1 : 0}
       />
       {isSelected && selectedIds.length === 1 && (
         <Transformer
@@ -250,7 +250,7 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
           ignoreStroke={true}
           visible={!isDraggingImage}
           boundBoxFunc={(oldBox, newBox) => {
-            if (newBox.width < 5 || newBox.height < 5) {
+            if (newBox.width < 2 || newBox.height < 2) {
               return oldBox;
             }
             return newBox;

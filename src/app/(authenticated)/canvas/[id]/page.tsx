@@ -2588,9 +2588,6 @@ export default function OverlayPage() {
                         {/* Selection box */}
                         <SelectionBoxComponent selectionBox={selectionBox} />
 
-                        {/* Snap guide lines */}
-                        <SnapGuideLines guides={guideLines} />
-
                         {/* Render generating placeholders for images */}
                         {images
                           .filter((image) => activeGenerations.has(image.id))
@@ -2959,6 +2956,9 @@ export default function OverlayPage() {
                               }
                             />
                           ))}
+
+                        {/* Snap guide lines - rendered after images/videos to appear on top */}
+                        <SnapGuideLines guides={guideLines} />
 
                         {/* Crop overlay */}
                         {croppingImageId &&

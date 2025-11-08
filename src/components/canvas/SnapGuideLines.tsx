@@ -15,7 +15,7 @@ interface SnapGuideLinesProps {
 }
 
 export const SnapGuideLines: React.FC<SnapGuideLinesProps> = ({ guides }) => {
-  const xSize = 2; // Size of the X marker
+  const xSize = 1; // Size of the X marker
 
   return (
     <>
