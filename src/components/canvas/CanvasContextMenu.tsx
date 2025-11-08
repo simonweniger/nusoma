@@ -220,11 +220,7 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
           <Filter className="h-4 w-4" />
           Isolate Object
         </ContextMenuSubTrigger>
-        <ContextMenuSubContent
-          className="w-72 p-3"
-          sideOffset={10}
-          onPointerDownOutside={(e) => e.preventDefault()}
-        >
+        <ContextMenuSubContent className="w-72 p-3" sideOffset={10}>
           <div
             className="flex flex-col gap-2"
             onMouseDown={(e) => e.stopPropagation()}

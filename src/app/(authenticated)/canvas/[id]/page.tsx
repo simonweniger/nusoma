@@ -67,8 +67,10 @@ import { useCanvasAssets } from "@/hooks/useCanvasAssets";
 import { useCanvasActions } from "@/hooks/useCanvasActions";
 import { useImageOperations } from "@/hooks/useImageOperations";
 import { useCanvasHistory } from "@/hooks/useCanvasHistory";
+import { useCanvasSnapping } from "@/hooks/useCanvasSnapping";
 import { CanvasGrid } from "@/components/canvas/CanvasGrid";
 import { SelectionBoxComponent } from "@/components/canvas/SelectionBox";
+import { SnapGuideLines } from "@/components/canvas/SnapGuideLines";
 //import { MiniMap } from "@/components/canvas/MiniMap";
 import { ZoomControls } from "@/components/canvas/ZoomControls";
 import { MobileToolbar } from "@/components/canvas/MobileToolbar";
@@ -2188,6 +2190,10 @@ export default function OverlayPage() {
     saveToHistory,
   });
 
+  // Use snapping hook
+  const { guideLines, getSnapping, updateGuideLines, clearGuideLines } =
+    useCanvasSnapping(images, videos, canvasSize, viewport);
+
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -2582,6 +2588,9 @@ export default function OverlayPage() {
                         {/* Selection box */}
                         <SelectionBoxComponent selectionBox={selectionBox} />
 
+                        {/* Snap guide lines */}
+                        <SnapGuideLines guides={guideLines} />
+
                         {/* Render generating placeholders for images */}
                         {images
                           .filter((image) => activeGenerations.has(image.id))
@@ -2662,6 +2671,80 @@ export default function OverlayPage() {
                                   ),
                                 );
                               }}
+                              onDragMove={(e, newAttrs) => {
+                                // Apply snapping during drag
+                                const updatedImage = { ...image, ...newAttrs };
+                                const snapping = getSnapping(updatedImage);
+
+                                if (snapping.guides.length > 0) {
+                                  updateGuideLines(snapping.guides);
+
+                                  // Apply snapping to the dragged image
+                                  const snappedAttrs = {
+                                    ...newAttrs,
+                                    ...(snapping.snappedX !== undefined && {
+                                      x: snapping.snappedX,
+                                    }),
+                                    ...(snapping.snappedY !== undefined && {
+                                      y: snapping.snappedY,
+                                    }),
+                                  };
+
+                                  setImages((prev) =>
+                                    prev.map((img) =>
+                                      img.id === image.id
+                                        ? { ...img, ...snappedAttrs }
+                                        : img,
+                                    ),
+                                  );
+
+                                  // Update other selected items with the same delta
+                                  if (selectedIds.length > 1) {
+                                    const deltaX =
+                                      (snappedAttrs.x ??
+                                        newAttrs.x ??
+                                        image.x) - image.x;
+                                    const deltaY =
+                                      (snappedAttrs.y ??
+                                        newAttrs.y ??
+                                        image.y) - image.y;
+
+                                    setImages((prev) =>
+                                      prev.map((img) => {
+                                        if (
+                                          selectedIds.includes(img.id) &&
+                                          img.id !== image.id
+                                        ) {
+                                          const startPos =
+                                            dragStartPositions.get(img.id);
+                                          if (startPos) {
+                                            return {
+                                              ...img,
+                                              x: startPos.x + deltaX,
+                                              y: startPos.y + deltaY,
+                                            };
+                                          }
+                                        }
+                                        return img;
+                                      }),
+                                    );
+                                  }
+
+                                  // Return the snapped coordinates to update the Konva node
+                                  return snappedAttrs;
+                                } else {
+                                  clearGuideLines();
+                                  setImages((prev) =>
+                                    prev.map((img) =>
+                                      img.id === image.id
+                                        ? { ...img, ...newAttrs }
+                                        : img,
+                                    ),
+                                  );
+                                  // Return the new attributes to update the Konva node
+                                  return newAttrs;
+                                }
+                              }}
                               onDoubleClick={() => {
                                 setCroppingImageId(image.id);
                               }}
@@ -2690,6 +2773,7 @@ export default function OverlayPage() {
                               }}
                               onDragEnd={() => {
                                 setIsDraggingImage(false);
+                                clearGuideLines();
                                 saveToHistory();
                                 setDragStartPositions(new Map());
                               }}
@@ -2742,6 +2826,80 @@ export default function OverlayPage() {
                                   ),
                                 );
                               }}
+                              onDragMove={(e, newAttrs) => {
+                                // Apply snapping during drag
+                                const updatedVideo = { ...video, ...newAttrs };
+                                const snapping = getSnapping(updatedVideo);
+
+                                if (snapping.guides.length > 0) {
+                                  updateGuideLines(snapping.guides);
+
+                                  // Apply snapping to the dragged video
+                                  const snappedAttrs = {
+                                    ...newAttrs,
+                                    ...(snapping.snappedX !== undefined && {
+                                      x: snapping.snappedX,
+                                    }),
+                                    ...(snapping.snappedY !== undefined && {
+                                      y: snapping.snappedY,
+                                    }),
+                                  };
+
+                                  setVideos((prev) =>
+                                    prev.map((vid) =>
+                                      vid.id === video.id
+                                        ? { ...vid, ...snappedAttrs }
+                                        : vid,
+                                    ),
+                                  );
+
+                                  // Update other selected items with the same delta
+                                  if (selectedIds.length > 1) {
+                                    const deltaX =
+                                      (snappedAttrs.x ??
+                                        newAttrs.x ??
+                                        video.x) - video.x;
+                                    const deltaY =
+                                      (snappedAttrs.y ??
+                                        newAttrs.y ??
+                                        video.y) - video.y;
+
+                                    setVideos((prev) =>
+                                      prev.map((vid) => {
+                                        if (
+                                          selectedIds.includes(vid.id) &&
+                                          vid.id !== video.id
+                                        ) {
+                                          const startPos =
+                                            dragStartPositions.get(vid.id);
+                                          if (startPos) {
+                                            return {
+                                              ...vid,
+                                              x: startPos.x + deltaX,
+                                              y: startPos.y + deltaY,
+                                            };
+                                          }
+                                        }
+                                        return vid;
+                                      }),
+                                    );
+                                  }
+
+                                  // Return the snapped coordinates to update the Konva node
+                                  return snappedAttrs;
+                                } else {
+                                  clearGuideLines();
+                                  setVideos((prev) =>
+                                    prev.map((vid) =>
+                                      vid.id === video.id
+                                        ? { ...vid, ...newAttrs }
+                                        : vid,
+                                    ),
+                                  );
+                                  // Return the new attributes to update the Konva node
+                                  return newAttrs;
+                                }
+                              }}
                               onDragStart={() => {
                                 // If dragging a selected item in a multi-selection, keep the selection
                                 // If dragging an unselected item, select only that item
@@ -2771,6 +2929,7 @@ export default function OverlayPage() {
                               }}
                               onDragEnd={() => {
                                 setIsDraggingImage(false);
+                                clearGuideLines();
                                 // Show video controls after drag ends
                                 setHiddenVideoControlsIds((prev) => {
                                   const newSet = new Set(prev);

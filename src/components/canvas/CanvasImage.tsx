@@ -12,6 +12,10 @@ interface CanvasImageProps {
   onSelect: (e: Konva.KonvaEventObject<MouseEvent>) => void;
   onChange: (newAttrs: Partial<PlacedImage>) => void;
   onDragStart: () => void;
+  onDragMove?: (
+    e: any,
+    newAttrs: Partial<PlacedImage>,
+  ) => Partial<PlacedImage> | void;
   onDragEnd: () => void;
   onDoubleClick?: () => void;
   selectedIds: string[];
@@ -28,6 +32,7 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
   onSelect,
   onChange,
   onDragStart,
+  onDragMove,
   onDragEnd,
   onDoubleClick,
   selectedIds,
@@ -129,7 +134,21 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
             throttle((e: any) => {
               const node = e.target;
 
-              if (selectedIds.includes(image.id) && selectedIds.length > 1) {
+              // Use custom onDragMove if provided (for snapping), otherwise use default behavior
+              if (onDragMove) {
+                const result = onDragMove(e, {
+                  x: node.x(),
+                  y: node.y(),
+                });
+                // If snapping returns adjusted coordinates, apply them to the node
+                if (result) {
+                  if (result.x !== undefined) node.x(result.x);
+                  if (result.y !== undefined) node.y(result.y);
+                }
+              } else if (
+                selectedIds.includes(image.id) &&
+                selectedIds.length > 1
+              ) {
                 // Calculate delta from drag start position
                 const startPos = dragStartPositions.get(image.id);
                 if (startPos) {
@@ -162,7 +181,14 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
                 });
               }
             }, 16), // ~60fps throttle, prevents Safari console errors
-          [selectedIds, image.id, dragStartPositions, setImages, onChange],
+          [
+            selectedIds,
+            image.id,
+            dragStartPositions,
+            setImages,
+            onChange,
+            onDragMove,
+          ],
         )}
         onDragEnd={(e) => {
           onDragEnd();

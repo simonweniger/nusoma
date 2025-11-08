@@ -22,6 +22,10 @@ interface CanvasVideoProps {
   onSelect: (e: any) => void;
   onChange: (newAttrs: Partial<PlacedVideo>) => void;
   onDragStart: () => void;
+  onDragMove?: (
+    e: any,
+    newAttrs: Partial<PlacedVideo>,
+  ) => Partial<PlacedVideo> | void;
   onDragEnd: () => void;
   onDoubleClick?: () => void;
   selectedIds: string[];
@@ -40,6 +44,7 @@ export const CanvasVideo: React.FC<CanvasVideoProps> = ({
   onSelect,
   onChange,
   onDragStart,
+  onDragMove,
   onDragEnd,
   onDoubleClick,
   selectedIds,
@@ -287,7 +292,18 @@ export const CanvasVideo: React.FC<CanvasVideoProps> = ({
       throttle((e: any) => {
         const node = e.target;
 
-        if (selectedIds.includes(video.id) && selectedIds.length > 1) {
+        // Use custom onDragMove if provided (for snapping), otherwise use default behavior
+        if (onDragMove) {
+          const result = onDragMove(e, {
+            x: node.x(),
+            y: node.y(),
+          });
+          // If snapping returns adjusted coordinates, apply them to the node
+          if (result) {
+            if (result.x !== undefined) node.x(result.x);
+            if (result.y !== undefined) node.y(result.y);
+          }
+        } else if (selectedIds.includes(video.id) && selectedIds.length > 1) {
           // Calculate delta from drag start position
           const startPos = dragStartPositions.get(video.id);
           if (startPos) {
@@ -327,7 +343,14 @@ export const CanvasVideo: React.FC<CanvasVideoProps> = ({
           });
         }
       }, 16), // ~60fps throttle
-    [selectedIds, video.id, dragStartPositions, setVideos, onChange],
+    [
+      selectedIds,
+      video.id,
+      dragStartPositions,
+      setVideos,
+      onChange,
+      onDragMove,
+    ],
   );
 
   return (
