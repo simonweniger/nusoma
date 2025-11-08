@@ -6,6 +6,8 @@ interface SnapGuide {
   offset: number;
   orientation: "V" | "H";
   snap: "start" | "center" | "end";
+  snapTo?: { x: number; y: number; width: number; height: number }; // The object we're snapping to
+  snapFrom?: { x: number; y: number; width: number; height: number }; // The object being dragged
 }
 
 interface SnappingEdge {
@@ -32,10 +34,29 @@ export function useCanvasSnapping(
 
   // Get all possible snap points (stage edges, centers, and object edges/centers)
   const getLineGuideStops = useCallback(
-    (skipId: string): { vertical: number[]; horizontal: number[] } => {
+    (
+      skipId: string,
+    ): {
+      vertical: Array<{ guide: number; obj?: PlacedImage | PlacedVideo }>;
+      horizontal: Array<{ guide: number; obj?: PlacedImage | PlacedVideo }>;
+    } => {
       // Start with stage borders and center (in world coordinates)
-      const vertical = [0, canvasSize.width / 2, canvasSize.width];
-      const horizontal = [0, canvasSize.height / 2, canvasSize.height];
+      const vertical: Array<{
+        guide: number;
+        obj?: PlacedImage | PlacedVideo;
+      }> = [
+        { guide: 0, obj: undefined },
+        { guide: canvasSize.width / 2, obj: undefined },
+        { guide: canvasSize.width, obj: undefined },
+      ];
+      const horizontal: Array<{
+        guide: number;
+        obj?: PlacedImage | PlacedVideo;
+      }> = [
+        { guide: 0, obj: undefined },
+        { guide: canvasSize.height / 2, obj: undefined },
+        { guide: canvasSize.height, obj: undefined },
+      ];
 
       // Add edges and centers of all objects except the one being dragged
       const allObjects = [...images, ...videos].filter(
@@ -44,14 +65,22 @@ export function useCanvasSnapping(
 
       allObjects.forEach((obj) => {
         // Left edge, center, right edge
-        vertical.push(obj.x, obj.x + obj.width / 2, obj.x + obj.width);
+        vertical.push(
+          { guide: obj.x, obj: obj },
+          { guide: obj.x + obj.width / 2, obj: obj },
+          { guide: obj.x + obj.width, obj: obj },
+        );
         // Top edge, center, bottom edge
-        horizontal.push(obj.y, obj.y + obj.height / 2, obj.y + obj.height);
+        horizontal.push(
+          { guide: obj.y, obj: obj },
+          { guide: obj.y + obj.height / 2, obj: obj },
+          { guide: obj.y + obj.height, obj: obj },
+        );
       });
 
       return {
-        vertical: vertical.flat(),
-        horizontal: horizontal.flat(),
+        vertical,
+        horizontal,
       };
     },
     [images, videos, canvasSize, viewport],
@@ -105,42 +134,58 @@ export function useCanvasSnapping(
   // Find the closest snapping guides
   const getGuides = useCallback(
     (
-      lineGuideStops: { vertical: number[]; horizontal: number[] },
+      lineGuideStops: {
+        vertical: Array<{ guide: number; obj?: PlacedImage | PlacedVideo }>;
+        horizontal: Array<{ guide: number; obj?: PlacedImage | PlacedVideo }>;
+      },
       itemBounds: { vertical: SnappingEdge[]; horizontal: SnappingEdge[] },
+      draggedObj: PlacedImage | PlacedVideo,
     ): SnapGuide[] => {
-      const resultV: Array<SnapGuide & { diff: number }> = [];
-      const resultH: Array<SnapGuide & { diff: number }> = [];
+      const resultV: Array<
+        SnapGuide & {
+          diff: number;
+          snapTo?: PlacedImage | PlacedVideo;
+        }
+      > = [];
+      const resultH: Array<
+        SnapGuide & {
+          diff: number;
+          snapTo?: PlacedImage | PlacedVideo;
+        }
+      > = [];
 
       // Scale the guideline offset based on viewport scale
       // When zoomed out (scale < 1), increase threshold in world coordinates
       // When zoomed in (scale > 1), decrease threshold
       const scaledOffset = GUIDELINE_OFFSET / viewport.scale;
 
-      lineGuideStops.vertical.forEach((lineGuide) => {
+      lineGuideStops.vertical.forEach((lineGuideStop) => {
         itemBounds.vertical.forEach((itemBound) => {
-          const diff = Math.abs(lineGuide - itemBound.guide);
+          const diff = Math.abs(lineGuideStop.guide - itemBound.guide);
           if (diff < scaledOffset) {
             resultV.push({
-              lineGuide: lineGuide,
+              lineGuide: lineGuideStop.guide,
               diff: diff,
               snap: itemBound.snap,
               offset: itemBound.offset,
               orientation: "V",
+              snapTo: lineGuideStop.obj,
             });
           }
         });
       });
 
-      lineGuideStops.horizontal.forEach((lineGuide) => {
+      lineGuideStops.horizontal.forEach((lineGuideStop) => {
         itemBounds.horizontal.forEach((itemBound) => {
-          const diff = Math.abs(lineGuide - itemBound.guide);
+          const diff = Math.abs(lineGuideStop.guide - itemBound.guide);
           if (diff < scaledOffset) {
             resultH.push({
-              lineGuide: lineGuide,
+              lineGuide: lineGuideStop.guide,
               diff: diff,
               snap: itemBound.snap,
               offset: itemBound.offset,
               orientation: "H",
+              snapTo: lineGuideStop.obj,
             });
           }
         });
@@ -156,6 +201,20 @@ export function useCanvasSnapping(
           offset: minV.offset,
           orientation: "V",
           snap: minV.snap,
+          snapTo: minV.snapTo
+            ? {
+                x: minV.snapTo.x,
+                y: minV.snapTo.y,
+                width: minV.snapTo.width,
+                height: minV.snapTo.height,
+              }
+            : undefined,
+          snapFrom: {
+            x: draggedObj.x,
+            y: draggedObj.y,
+            width: draggedObj.width,
+            height: draggedObj.height,
+          },
         });
       }
 
@@ -167,6 +226,20 @@ export function useCanvasSnapping(
           offset: minH.offset,
           orientation: "H",
           snap: minH.snap,
+          snapTo: minH.snapTo
+            ? {
+                x: minH.snapTo.x,
+                y: minH.snapTo.y,
+                width: minH.snapTo.width,
+                height: minH.snapTo.height,
+              }
+            : undefined,
+          snapFrom: {
+            x: draggedObj.x,
+            y: draggedObj.y,
+            width: draggedObj.width,
+            height: draggedObj.height,
+          },
         });
       }
 
@@ -180,7 +253,7 @@ export function useCanvasSnapping(
     (obj: PlacedImage | PlacedVideo): SnappingResult => {
       const lineGuideStops = getLineGuideStops(obj.id);
       const itemBounds = getObjectSnappingEdges(obj);
-      const guides = getGuides(lineGuideStops, itemBounds);
+      const guides = getGuides(lineGuideStops, itemBounds, obj);
 
       if (!guides.length) {
         return { guides: [] };
