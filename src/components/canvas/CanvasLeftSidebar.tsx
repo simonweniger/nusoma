@@ -48,7 +48,10 @@ export function CanvasLeftSidebar({
         render={(triggerProps) => (
           <Button
             {...triggerProps}
-            className="flex items-center justify-center fixed top-4 left-4 z-30 gap-4 px-4 py-2 h-auto rounded-xl bg-muted/80 backdrop-blur-md border border-border shadow-sm hover:bg-muted"
+            className={cn(
+              "flex items-center justify-center fixed top-4 left-4 z-30 gap-4 px-4 py-2 h-auto rounded-xl bg-card backdrop-blur-lg border border-border",
+              "shadow-[0_0_0_1px_rgba(50,50,50,0.12),0_4px_8px_-0.5px_rgba(50,50,50,0.04),0_8px_16px_-2px_rgba(50,50,50,0.02)] hover:bg-muted",
+            )}
           >
             <LogoIcon style={{ width: "24px", height: "24px" }} />
             <div className="flex flex-col items-start min-w-0">
