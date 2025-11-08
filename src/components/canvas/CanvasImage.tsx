@@ -249,6 +249,27 @@ export const CanvasImage: React.FC<CanvasImageProps> = ({
           ref={trRef}
           ignoreStroke={true}
           visible={!isDraggingImage}
+          rotateEnabled={true}
+          rotateAnchorOffset={20}
+          rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+          rotationSnapTolerance={5}
+          enabledAnchors={[
+            "top-left",
+            "top-right",
+            "bottom-left",
+            "bottom-right",
+            "middle-left",
+            "middle-right",
+            "top-center",
+            "bottom-center",
+          ]}
+          anchorCornerRadius={2}
+          anchorSize={8}
+          anchorStrokeWidth={1}
+          borderStroke="#3b82f6"
+          borderStrokeWidth={1}
+          anchorStroke="#3b82f6"
+          anchorFill="#ffffff"
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 2 || newBox.height < 2) {
               return oldBox;
