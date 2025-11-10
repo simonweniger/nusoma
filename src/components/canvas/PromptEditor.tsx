@@ -1,6 +1,11 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useEffect, useState } from "react";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
+import { Node, mergeAttributes } from "@tiptap/core";
+import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import { Button } from "@/components/ui/Button";
 import {
   PlayIcon,
@@ -16,7 +21,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SpinnerIcon } from "@/components/icons";
-import { Textarea } from "@/components/ui/textarea";
 import { styleModels } from "@/lib/models";
 import { promptTemplates, PromptTemplate } from "@/lib/prompt-templates";
 import { checkOS } from "@/utils/os-utils";
@@ -29,7 +33,7 @@ import {
 } from "@/components/ui/Tooltip";
 import { Dialog, DialogContent } from "@/components/ui/Dialog";
 
-interface SlashCommandPromptEditorProps {
+interface PromptEditorProps {
   generationSettings: GenerationSettings;
   setGenerationSettings: (settings: GenerationSettings) => void;
   selectedIds: string[];
@@ -39,15 +43,6 @@ interface SlashCommandPromptEditorProps {
   handleRun: () => void;
   handleFileUpload: (files: FileList | null) => void;
   toast: any;
-}
-
-interface MenuItem {
-  id: string;
-  title: string;
-  subtitle: string;
-  category: string;
-  icon: React.ReactNode;
-  action: () => void;
 }
 
 const getCategoryIcon = (category: PromptTemplate["category"]) => {
@@ -65,15 +60,96 @@ const getCategoryIcon = (category: PromptTemplate["category"]) => {
   }
 };
 
-interface InsertedItem {
-  id: string;
-  title: string;
-  type: "style" | "template";
-  icon: React.ReactNode;
-  value: string; // The actual prompt value
-}
+// Custom chip node component
+const ChipNodeView = ({ node, deleteNode }: any) => {
+  const { chipType, title, icon } = node.attrs;
 
-export function SlashCommandPromptEditor({
+  return (
+    <NodeViewWrapper className="inline-block">
+      <span
+        className={cn(
+          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium transition-all cursor-default mx-1",
+          chipType === "style"
+            ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30"
+            : "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30",
+        )}
+        contentEditable={false}
+      >
+        <span className="shrink-0 opacity-70 inline-flex">
+          {chipType === "style" ? (
+            <Wand2 className="h-4 w-4" />
+          ) : icon === "camera" ? (
+            <Camera className="h-4 w-4" />
+          ) : icon === "lighting" ? (
+            <Lightbulb className="h-4 w-4" />
+          ) : icon === "composition" ? (
+            <Grid3x3 className="h-4 w-4" />
+          ) : icon === "mood" ? (
+            <Palette className="h-4 w-4" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
+        </span>
+        <span className="font-medium">{title}</span>
+        <button
+          onClick={deleteNode}
+          className="shrink-0 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5 transition-colors"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      </span>
+    </NodeViewWrapper>
+  );
+};
+
+// Define the Chip custom node
+const ChipNode = Node.create({
+  name: "chip",
+  group: "inline",
+  inline: true,
+  atom: true,
+
+  addAttributes() {
+    return {
+      chipType: {
+        default: "template",
+      },
+      title: {
+        default: "",
+      },
+      value: {
+        default: "",
+      },
+      styleId: {
+        default: null,
+      },
+      loraUrl: {
+        default: null,
+      },
+      icon: {
+        default: "camera",
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: "span[data-chip]",
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return ["span", mergeAttributes(HTMLAttributes, { "data-chip": "" })];
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(ChipNodeView);
+  },
+});
+
+export function PromptEditor({
   generationSettings,
   setGenerationSettings,
   selectedIds,
@@ -83,18 +159,181 @@ export function SlashCommandPromptEditor({
   handleRun,
   handleFileUpload,
   toast,
-}: SlashCommandPromptEditorProps) {
+}: PromptEditorProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
-  const [insertedItems, setInsertedItems] = useState<InsertedItem[]>([]);
-  const [userPrompt, setUserPrompt] = useState("");
-  const textareaRef = useRef<HTMLDivElement>(null);
-  const isComposingRef = useRef(false);
+  const slashPositionRef = React.useRef<number | null>(null);
 
-  // Build menu items
-  const menuItems: MenuItem[] = [
-    // Styles
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions: [
+      StarterKit.configure({
+        heading: false,
+        blockquote: false,
+        codeBlock: false,
+        horizontalRule: false,
+        bulletList: false,
+        orderedList: false,
+        listItem: false,
+      }),
+      ChipNode,
+      Placeholder.configure({
+        placeholder: `Type / for commands... (${checkOS("Win") || checkOS("Linux") ? "Ctrl" : "⌘"}+Enter to run)`,
+      }),
+    ],
+    editorProps: {
+      attributes: {
+        class: "outline-none min-h-20 p-2 pr-36",
+        style: "font-size: 16px",
+      },
+    },
+    onUpdate: ({ editor }) => {
+      handleEditorUpdate(editor);
+    },
+  });
+
+  const handleEditorUpdate = (editor: any) => {
+    // Extract text and chip values
+    const json = editor.getJSON();
+    const parts: string[] = [];
+
+    const extractContent = (node: any) => {
+      if (node.type === "chip") {
+        parts.push(node.attrs.value);
+      } else if (node.type === "text") {
+        // Add text content (trim to avoid extra spaces)
+        const text = node.text?.trim();
+        if (text) parts.push(text);
+      } else if (node.content) {
+        node.content.forEach(extractContent);
+      }
+    };
+
+    json.content?.forEach(extractContent);
+
+    const combinedPrompt = parts.filter(Boolean).join(", ");
+
+    setGenerationSettings({
+      ...generationSettings,
+      prompt: combinedPrompt,
+    });
+
+    // Detect slash command at cursor position
+    const { from } = editor.state.selection;
+    const textBeforeCursor = editor.state.doc.textBetween(0, from, "\n");
+
+    // If menu is already open, update search query based on saved slash position
+    if (showMenu && slashPositionRef.current !== null) {
+      const textAfterSlash = textBeforeCursor.substring(
+        slashPositionRef.current + 1,
+      );
+
+      // Close menu if user typed space or moved cursor away from slash
+      if (textAfterSlash.includes(" ") || from < slashPositionRef.current) {
+        setShowMenu(false);
+        slashPositionRef.current = null;
+        setSearchQuery("");
+      } else {
+        setSearchQuery(textAfterSlash);
+      }
+      return;
+    }
+
+    // Look for new slash command
+    const lastSlashIndex = textBeforeCursor.lastIndexOf("/");
+
+    if (lastSlashIndex !== -1) {
+      const textAfterSlash = textBeforeCursor.substring(lastSlashIndex + 1);
+      const charBeforeSlash = textBeforeCursor[lastSlashIndex - 1];
+
+      // Only show if slash is at word boundary and we haven't typed a space yet
+      const shouldShow =
+        (!charBeforeSlash ||
+          charBeforeSlash === " " ||
+          charBeforeSlash === "," ||
+          charBeforeSlash === "\n") &&
+        !textAfterSlash.includes(" ") &&
+        from > lastSlashIndex;
+
+      if (shouldShow) {
+        slashPositionRef.current = lastSlashIndex;
+        setSearchQuery(textAfterSlash);
+        setShowMenu(true);
+        setSelectedIndex(0);
+      }
+    }
+  };
+
+  const insertStyleChip = (style: any) => {
+    if (!editor || slashPositionRef.current === null) return;
+
+    // Remove any existing style chips
+    editor.state.doc.descendants((node: any, pos: number) => {
+      if (node.type.name === "chip" && node.attrs.chipType === "style") {
+        editor.commands.deleteRange({ from: pos, to: pos + node.nodeSize });
+      }
+    });
+
+    // Delete the slash and search query
+    const { from } = editor.state.selection;
+    editor
+      .chain()
+      .deleteRange({ from: slashPositionRef.current, to: from })
+      .insertContent({
+        type: "chip",
+        attrs: {
+          chipType: "style",
+          title: style.name,
+          value: style.prompt,
+          styleId: style.id,
+          loraUrl: style.loraUrl || "",
+        },
+      })
+      .insertContent(" ") // Add space after chip
+      .focus()
+      .run();
+
+    setGenerationSettings({
+      ...generationSettings,
+      styleId: style.id,
+      loraUrl: style.loraUrl || "",
+    });
+
+    // Reset menu state
+    slashPositionRef.current = null;
+    setShowMenu(false);
+    setSearchQuery("");
+  };
+
+  const insertTemplateChip = (template: any) => {
+    if (!editor || slashPositionRef.current === null) return;
+
+    // Delete the slash and search query
+    const { from } = editor.state.selection;
+    editor
+      .chain()
+      .deleteRange({ from: slashPositionRef.current, to: from })
+      .insertContent({
+        type: "chip",
+        attrs: {
+          chipType: "template",
+          title: template.name,
+          value: template.content,
+          icon: template.category,
+        },
+      })
+      .insertContent(" ") // Add space after chip
+      .focus()
+      .run();
+
+    // Reset menu state
+    slashPositionRef.current = null;
+    setShowMenu(false);
+    setSearchQuery("");
+  };
+
+  const menuItems = [
     ...styleModels.map((style) => ({
       id: `style-${style.id}`,
       title: style.name,
@@ -102,32 +341,10 @@ export function SlashCommandPromptEditor({
       category: "🎨 Styles",
       icon: <Wand2 className="h-4 w-4" />,
       action: () => {
-        // Remove any existing style
-        setInsertedItems((prev) =>
-          prev.filter((item) => item.type !== "style"),
-        );
-
-        // Add new style as a chip
-        setInsertedItems((prev) => [
-          ...prev,
-          {
-            id: `style-${style.id}`,
-            title: style.name,
-            type: "style",
-            icon: <Wand2 className="h-4 w-4" />,
-            value: style.prompt,
-          },
-        ]);
-
-        setGenerationSettings({
-          ...generationSettings,
-          styleId: style.id,
-          loraUrl: style.loraUrl || "",
-        });
-        closeMenu();
+        insertStyleChip(style);
+        setShowMenu(false);
       },
     })),
-    // Templates
     ...promptTemplates.map((template) => ({
       id: `template-${template.id}`,
       title: template.name,
@@ -135,18 +352,8 @@ export function SlashCommandPromptEditor({
       category: `✨ Templates: ${template.category.charAt(0).toUpperCase() + template.category.slice(1)}`,
       icon: getCategoryIcon(template.category),
       action: () => {
-        // Add template as a chip (allow multiple templates)
-        setInsertedItems((prev) => [
-          ...prev,
-          {
-            id: `template-${template.id}-${Date.now()}`,
-            title: template.name,
-            type: "template",
-            icon: getCategoryIcon(template.category),
-            value: template.content,
-          },
-        ]);
-        closeMenu();
+        insertTemplateChip(template);
+        setShowMenu(false);
       },
     })),
   ];
@@ -161,122 +368,64 @@ export function SlashCommandPromptEditor({
     );
   });
 
-  const closeMenu = () => {
-    setShowMenu(false);
-    setSearchQuery("");
-    setSelectedIndex(0);
-  };
-
-  // Compute combined prompt from inserted items and user prompt
-  const combinedPrompt = useMemo(() => {
-    const stylePrompts = insertedItems
-      .filter((item) => item.type === "style")
-      .map((item) => item.value);
-    const templatePrompts = insertedItems
-      .filter((item) => item.type === "template")
-      .map((item) => item.value);
-
-    const parts = [...stylePrompts, ...templatePrompts, userPrompt].filter(
-      Boolean,
-    );
-    return parts.join(", ");
-  }, [insertedItems, userPrompt]);
-
-  // Update generationSettings.prompt when combinedPrompt changes
   useEffect(() => {
-    if (combinedPrompt !== generationSettings.prompt) {
-      setGenerationSettings({
-        ...generationSettings,
-        prompt: combinedPrompt,
-      });
-    }
-  }, [combinedPrompt]);
+    if (!editor) return;
 
-  const handleInput = (text: string) => {
-    setUserPrompt(text);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (showMenu) {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setSelectedIndex((prev) =>
+            prev < filteredItems.length - 1 ? prev + 1 : prev,
+          );
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          if (filteredItems[selectedIndex]) {
+            filteredItems[selectedIndex].action();
+          }
+        } else if (e.key === "Escape") {
+          e.preventDefault();
 
-    // Detect slash command
-    const lastSlashIndex = text.lastIndexOf("/");
+          // Delete the slash and search query
+          if (editor && slashPositionRef.current !== null) {
+            const { from } = editor.state.selection;
+            editor
+              .chain()
+              .deleteRange({ from: slashPositionRef.current, to: from })
+              .focus()
+              .run();
+          }
 
-    if (lastSlashIndex !== -1) {
-      const textAfterSlash = text.substring(lastSlashIndex + 1);
-      // Only show menu if slash is at start of line or after a space/comma
-      const charBeforeSlash = text[lastSlashIndex - 1];
-      const shouldShow =
-        !charBeforeSlash ||
-        charBeforeSlash === " " ||
-        charBeforeSlash === "," ||
-        charBeforeSlash === "\n";
-
-      if (shouldShow) {
-        setSearchQuery(textAfterSlash);
-        setShowMenu(true);
-        setSelectedIndex(0);
-      }
-    } else {
-      closeMenu();
-    }
-  };
-
-  const removeItem = (id: string) => {
-    setInsertedItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  // Sync textContent when userPrompt is programmatically changed (e.g., cleared)
-  useEffect(() => {
-    if (textareaRef.current && textareaRef.current.textContent !== userPrompt) {
-      textareaRef.current.textContent = userPrompt;
-    }
-  }, [userPrompt]);
-
-  // Focus the editable div after inserting a chip
-  useEffect(() => {
-    if (textareaRef.current && insertedItems.length > 0) {
-      textareaRef.current.focus();
-      // Move cursor to end
-      const range = document.createRange();
-      const sel = window.getSelection();
-      if (textareaRef.current.childNodes.length > 0) {
-        range.selectNodeContents(textareaRef.current);
-        range.collapse(false);
-        sel?.removeAllRanges();
-        sel?.addRange(range);
-      }
-    }
-  }, [insertedItems.length]);
-
-  const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLDivElement | HTMLTextAreaElement>,
-  ) => {
-    if (showMenu) {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex((prev) =>
-          prev < filteredItems.length - 1 ? prev + 1 : prev,
-        );
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        if (filteredItems[selectedIndex]) {
-          filteredItems[selectedIndex].action();
+          setShowMenu(false);
+          slashPositionRef.current = null;
+          setSearchQuery("");
         }
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        closeMenu();
-      }
-    } else {
-      // Handle Cmd/Ctrl+Enter to run
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        e.preventDefault();
-        // Check if we have either user prompt or inserted items
-        if (!isGenerating && (userPrompt.trim() || insertedItems.length > 0)) {
-          handleRun();
+      } else {
+        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+          e.preventDefault();
+          if (!isGenerating && generationSettings.prompt.trim()) {
+            handleRun();
+          }
         }
       }
-    }
-  };
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [
+    showMenu,
+    filteredItems,
+    selectedIndex,
+    isGenerating,
+    generationSettings,
+  ]);
+
+  if (!editor) {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-0 left-0 right-0 md:absolute md:bottom-4 md:left-1/2 md:transform md:-translate-x-1/2 z-20 p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:p-0 md:pb-0 md:max-w-[648px]">
@@ -297,78 +446,7 @@ export function SlashCommandPromptEditor({
         >
           <div className="flex flex-col gap-3 px-3 md:px-3 py-2 md:py-3 relative">
             <div className="relative">
-              {/* Inline chips and textarea */}
-              <div className="relative w-full min-h-20 border-none p-2 pr-36 flex flex-wrap items-center gap-2">
-                {/* Render chips inline */}
-                {insertedItems.map((item) => (
-                  <span
-                    key={item.id}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium transition-all cursor-default",
-                      item.type === "style"
-                        ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30"
-                        : "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30",
-                    )}
-                  >
-                    <span className="shrink-0 opacity-70 inline-flex">
-                      {item.icon}
-                    </span>
-                    <span className="font-medium">{item.title}</span>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        removeItem(item.id);
-                      }}
-                      className="shrink-0 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5 transition-colors"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
-
-                {/* Editable input area */}
-                <div
-                  ref={textareaRef}
-                  contentEditable
-                  suppressContentEditableWarning
-                  onInput={(e) => {
-                    if (!isComposingRef.current) {
-                      const text = e.currentTarget.textContent || "";
-                      handleInput(text);
-                    }
-                  }}
-                  onCompositionStart={() => {
-                    isComposingRef.current = true;
-                  }}
-                  onCompositionEnd={(e) => {
-                    isComposingRef.current = false;
-                    const text = e.currentTarget.textContent || "";
-                    handleInput(text);
-                  }}
-                  onKeyDown={handleKeyDown}
-                  className="outline-none flex-1 min-w-[200px]"
-                  style={{ fontSize: "16px", minHeight: "24px" }}
-                  data-placeholder={
-                    insertedItems.length === 0 && !userPrompt
-                      ? `Type / for commands... (${checkOS("Win") || checkOS("Linux") ? "Ctrl" : "⌘"}+Enter to run)`
-                      : ""
-                  }
-                />
-
-                {/* Inline style for placeholder */}
-                <style
-                  dangerouslySetInnerHTML={{
-                    __html: `
-                    [contenteditable][data-placeholder]:empty:before {
-                      content: attr(data-placeholder);
-                      color: hsl(var(--muted-foreground));
-                      opacity: 0.5;
-                      pointer-events: none;
-                    }
-                  `,
-                  }}
-                />
-              </div>
+              <EditorContent editor={editor} />
 
               {/* Selected images preview */}
               {selectedIds.length > 0 && (
@@ -538,10 +616,7 @@ export function SlashCommandPromptEditor({
                     onClick={handleRun}
                     variant="default"
                     size="icon"
-                    disabled={
-                      isGenerating ||
-                      (!userPrompt.trim() && insertedItems.length === 0)
-                    }
+                    disabled={isGenerating || !generationSettings.prompt.trim()}
                     className={cn(
                       "gap-2 font-medium transition-all",
                       isGenerating && "bg-secondary",
@@ -576,7 +651,24 @@ export function SlashCommandPromptEditor({
       </div>
 
       {/* Slash Command Dialog */}
-      <Dialog open={showMenu} onOpenChange={setShowMenu}>
+      <Dialog
+        open={showMenu}
+        onOpenChange={(open) => {
+          if (!open && editor && slashPositionRef.current !== null) {
+            // Delete the slash and search query when dialog is closed
+            const { from } = editor.state.selection;
+            editor
+              .chain()
+              .deleteRange({ from: slashPositionRef.current, to: from })
+              .focus()
+              .run();
+
+            slashPositionRef.current = null;
+            setSearchQuery("");
+          }
+          setShowMenu(open);
+        }}
+      >
         <DialogContent
           className="overflow-hidden p-0 w-full max-w-[95vw] sm:max-w-[90vw] lg:max-w-4xl"
           showCloseButton={false}
@@ -589,7 +681,7 @@ export function SlashCommandPromptEditor({
                   acc[item.category].push(item);
                   return acc;
                 },
-                {} as Record<string, MenuItem[]>,
+                {} as Record<string, any[]>,
               ),
             ).map(([category, items]) => (
               <div key={category}>
@@ -604,7 +696,6 @@ export function SlashCommandPromptEditor({
                         key={item.id}
                         onClick={() => {
                           item.action();
-                          closeMenu();
                         }}
                         className={cn(
                           "text-left p-4 rounded-lg border hover:bg-accent transition-colors flex items-start gap-3",
@@ -632,6 +723,21 @@ export function SlashCommandPromptEditor({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Tiptap Styles */}
+      <style jsx global>{`
+        .ProseMirror {
+          outline: none;
+        }
+        .ProseMirror p.is-editor-empty:first-child::before {
+          content: attr(data-placeholder);
+          float: left;
+          color: hsl(var(--muted-foreground));
+          opacity: 0.5;
+          pointer-events: none;
+          height: 0;
+        }
+      `}</style>
     </div>
   );
 }
