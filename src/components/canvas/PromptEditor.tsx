@@ -428,222 +428,225 @@ export function PromptEditor({
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 md:absolute md:bottom-4 md:left-1/2 md:transform md:-translate-x-1/2 z-20 p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:p-0 md:pb-0 md:max-w-[648px]">
-      <div
-        className={cn(
-          "backdrop-blur-2xl rounded-[26px] p-1.5 transition-all",
-          selectedIds.length > 0
-            ? "bg-blue-500/10 shadow-[0_0_0_1px_rgba(59,130,246,0.2),0_4px_8px_-0.5px_rgba(59,130,246,0.08),0_8px_16px_-2px_rgba(59,130,246,0.04)] dark:shadow-none"
-            : "bg-orange-500/10 shadow-[0_0_0_1px_rgba(249,115,22,0.2),0_4px_8px_-0.5px_rgba(249,115,22,0.08),0_8px_16px_-2px_rgba(249,115,22,0.04)] dark:shadow-none",
-        )}
-      >
+    <>
+      <div className="fixed bottom-0 left-0 right-0 md:absolute md:bottom-4 md:left-1/2 md:transform md:-translate-x-1/2 z-20 p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:p-0 md:pb-0 md:max-w-[648px]">
         <div
           className={cn(
-            "bg-background/90 backdrop-blur-xl rounded-3xl",
-            "shadow-[0_0_0_1px_rgba(50,50,50,0.16),0_4px_8px_-0.5px_rgba(50,50,50,0.08),0_8px_16px_-2px_rgba(50,50,50,0.04)]",
-            "dark:shadow-none dark:outline-1 dark:outline-border",
+            "backdrop-blur-2xl rounded-[26px] p-1.5 transition-all",
+            selectedIds.length > 0
+              ? "bg-blue-500/10 shadow-[0_0_0_1px_rgba(59,130,246,0.2),0_4px_8px_-0.5px_rgba(59,130,246,0.08),0_8px_16px_-2px_rgba(59,130,246,0.04)] dark:shadow-none"
+              : "bg-orange-500/10 shadow-[0_0_0_1px_rgba(249,115,22,0.2),0_4px_8px_-0.5px_rgba(249,115,22,0.08),0_8px_16px_-2px_rgba(249,115,22,0.04)] dark:shadow-none",
           )}
         >
-          <div className="flex flex-col gap-3 px-3 md:px-3 py-2 md:py-3 relative">
-            <div className="relative">
-              <EditorContent editor={editor} />
+          <div style={{ filter: "url(#gooey)" }}>
+            {/* Editor section */}
+            <div className={cn("bg-background backdrop-blur-xl rounded-3xl")}>
+              <div className="relative px-3 md:px-3 py-2 md:py-3">
+                <EditorContent editor={editor} />
 
-              {/* Selected images preview */}
-              {selectedIds.length > 0 && (
-                <div className="absolute top-1 right-2 flex items-center justify-end">
-                  <div className="relative h-12 w-20">
-                    {selectedIds.slice(0, 3).map((id, index) => {
-                      const image = images.find((img) => img.id === id);
-                      if (!image) return null;
+                {/* Selected images preview */}
+                {selectedIds.length > 0 && (
+                  <div className="absolute top-4 right-4 flex items-center justify-end">
+                    <div className="relative h-12 w-20">
+                      {selectedIds.slice(0, 3).map((id, index) => {
+                        const image = images.find((img) => img.id === id);
+                        if (!image) return null;
 
-                      const isLast =
-                        index === Math.min(selectedIds.length - 1, 2);
-                      const offset = index * 8;
-                      const size = 40 - index * 4;
-                      const topOffset = index * 2;
+                        const isLast =
+                          index === Math.min(selectedIds.length - 1, 2);
+                        const offset = index * 8;
+                        const size = 40 - index * 4;
+                        const topOffset = index * 2;
 
-                      return (
-                        <div
-                          key={id}
-                          className="absolute rounded-lg border border-border/20 bg-background overflow-hidden"
-                          style={{
-                            right: `${offset}px`,
-                            top: `${topOffset}px`,
-                            zIndex: 3 - index,
-                            width: `${size}px`,
-                            height: `${size}px`,
-                          }}
-                        >
-                          <img
-                            src={image.src}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
-                          {isLast && selectedIds.length > 3 && (
-                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                              <span className="text-white text-xs font-medium">
-                                +{selectedIds.length - 3}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Bottom controls */}
-            <div className="flex items-center justify-between">
-              {/* Mode indicator badge */}
-              <div
-                className={cn(
-                  "py-1 rounded-xl overflow-clip flex items-center px-3",
-                  "pointer-events-none select-none",
-                  selectedIds.length > 0
-                    ? "bg-blue-500/10 dark:bg-blue-500/15 shadow-[0_0_0_1px_rgba(59,130,246,0.2),0_4px_8px_-0.5px_rgba(59,130,246,0.08),0_8px_16px_-2px_rgba(59,130,246,0.04)] dark:shadow-none dark:border dark:border-blue-500/30"
-                    : "bg-orange-500/10 dark:bg-orange-500/15 shadow-[0_0_0_1px_rgba(249,115,22,0.2),0_4px_8px_-0.5px_rgba(249,115,22,0.08),0_8px_16px_-2px_rgba(249,115,22,0.04)] dark:shadow-none dark:border dark:border-orange-500/30",
-                )}
-              >
-                {selectedIds.length > 0 ? (
-                  <div className="flex items-center gap-2 text-xs font-medium">
-                    <ImageIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />
-                    <span className="text-blue-600 dark:text-blue-500">
-                      Image to Image
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-xs font-medium">
-                    <span className="text-orange-600 dark:text-orange-500 font-bold text-sm">
-                      G
-                    </span>
-                    <span className="text-orange-600 dark:text-orange-500">
-                      Generate Image
-                    </span>
+                        return (
+                          <div
+                            key={id}
+                            className="absolute rounded-lg border border-border/20 bg-background overflow-hidden"
+                            style={{
+                              right: `${offset}px`,
+                              top: `${topOffset}px`,
+                              zIndex: 3 - index,
+                              width: `${size}px`,
+                              height: `${size}px`,
+                            }}
+                          >
+                            <img
+                              src={image.src}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                            {isLast && selectedIds.length > 3 && (
+                              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                <span className="text-white text-xs font-medium">
+                                  +{selectedIds.length - 3}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
+            </div>
 
-              <div className="flex items-center gap-2">
-                {/* Attachment button */}
-                <Tooltip>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="border-none"
-                    render={<TooltipTrigger />}
-                    onClick={() => {
-                      const input = document.createElement("input");
-                      input.type = "file";
-                      input.accept = "image/*";
-                      input.multiple = true;
-
-                      input.style.position = "fixed";
-                      input.style.top = "-1000px";
-                      input.style.left = "-1000px";
-                      input.style.opacity = "0";
-                      input.style.pointerEvents = "none";
-                      input.style.width = "1px";
-                      input.style.height = "1px";
-
-                      input.onchange = (e) => {
-                        try {
-                          handleFileUpload(
-                            (e.target as HTMLInputElement).files,
-                          );
-                        } catch (error) {
-                          console.error("File upload error:", error);
-                          toast({
-                            title: "Upload failed",
-                            description: "Failed to process selected files",
-                            variant: "destructive",
-                          });
-                        } finally {
-                          if (input.parentNode) {
-                            document.body.removeChild(input);
-                          }
-                        }
-                      };
-
-                      input.onerror = () => {
-                        console.error("File input error");
-                        if (input.parentNode) {
-                          document.body.removeChild(input);
-                        }
-                      };
-
-                      document.body.appendChild(input);
-
-                      setTimeout(() => {
-                        try {
-                          input.click();
-                        } catch (error) {
-                          console.error(
-                            "Failed to trigger file dialog:",
-                            error,
-                          );
-                          toast({
-                            title: "Upload unavailable",
-                            description:
-                              "File upload is not available. Try using drag & drop instead.",
-                            variant: "destructive",
-                          });
-                          if (input.parentNode) {
-                            document.body.removeChild(input);
-                          }
-                        }
-                      }, 10);
-
-                      setTimeout(() => {
-                        if (input.parentNode) {
-                          document.body.removeChild(input);
-                        }
-                      }, 30000);
-                    }}
-                    title="Upload images"
-                  >
-                    <Paperclip className="h-4 w-4" />
-                  </Button>
-                  <TooltipContent>
-                    <span>Upload</span>
-                  </TooltipContent>
-                </Tooltip>
-
-                {/* Run button */}
-                <Tooltip>
-                  <Button
-                    onClick={handleRun}
-                    variant="default"
-                    size="icon"
-                    disabled={isGenerating || !generationSettings.prompt.trim()}
-                    className={cn(
-                      "gap-2 font-medium transition-all",
-                      isGenerating && "bg-secondary",
-                    )}
-                    render={<TooltipTrigger />}
-                  >
-                    {isGenerating ? (
-                      <SpinnerIcon className="h-4 w-4 animate-spin text-white" />
-                    ) : (
-                      <PlayIcon className="h-4 w-4 text-white fill-white" />
-                    )}
-                  </Button>
-                  <TooltipContent>
-                    <div className="flex items-center gap-2">
-                      <span>Run</span>
-                      <ShortcutBadge
-                        variant="default"
-                        size="xs"
-                        shortcut={
-                          checkOS("Win") || checkOS("Linux")
-                            ? "ctrl+enter"
-                            : "meta+enter"
-                        }
-                      />
+            {/* Bottom controls - separate section */}
+            <div
+              className={cn("bg-background backdrop-blur-xl rounded-3xl mt-1")}
+            >
+              <div className="flex items-center justify-between px-3 py-2">
+                {/* Mode indicator badge */}
+                <div
+                  className={cn(
+                    "py-1 rounded-xl overflow-clip flex items-center px-3",
+                    "pointer-events-none select-none",
+                    selectedIds.length > 0
+                      ? "bg-blue-500/10 dark:bg-blue-500/15 shadow-[0_0_0_1px_rgba(59,130,246,0.2),0_4px_8px_-0.5px_rgba(59,130,246,0.08),0_8px_16px_-2px_rgba(59,130,246,0.04)] dark:shadow-none dark:border dark:border-blue-500/30"
+                      : "bg-orange-500/10 dark:bg-orange-500/15 shadow-[0_0_0_1px_rgba(249,115,22,0.2),0_4px_8px_-0.5px_rgba(249,115,22,0.08),0_8px_16px_-2px_rgba(249,115,22,0.04)] dark:shadow-none dark:border dark:border-orange-500/30",
+                  )}
+                >
+                  {selectedIds.length > 0 ? (
+                    <div className="flex items-center gap-2 text-xs font-medium">
+                      <ImageIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />
+                      <span className="text-blue-600 dark:text-blue-500">
+                        Image to Image
+                      </span>
                     </div>
-                  </TooltipContent>
-                </Tooltip>
+                  ) : (
+                    <div className="flex items-center gap-2 text-xs font-medium">
+                      <span className="text-orange-600 dark:text-orange-500 font-bold text-sm">
+                        G
+                      </span>
+                      <span className="text-orange-600 dark:text-orange-500">
+                        Generate Image
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {/* Attachment button */}
+                  <Tooltip>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="border-none"
+                      render={<TooltipTrigger />}
+                      onClick={() => {
+                        const input = document.createElement("input");
+                        input.type = "file";
+                        input.accept = "image/*";
+                        input.multiple = true;
+
+                        input.style.position = "fixed";
+                        input.style.top = "-1000px";
+                        input.style.left = "-1000px";
+                        input.style.opacity = "0";
+                        input.style.pointerEvents = "none";
+                        input.style.width = "1px";
+                        input.style.height = "1px";
+
+                        input.onchange = (e) => {
+                          try {
+                            handleFileUpload(
+                              (e.target as HTMLInputElement).files,
+                            );
+                          } catch (error) {
+                            console.error("File upload error:", error);
+                            toast({
+                              title: "Upload failed",
+                              description: "Failed to process selected files",
+                              variant: "destructive",
+                            });
+                          } finally {
+                            if (input.parentNode) {
+                              document.body.removeChild(input);
+                            }
+                          }
+                        };
+
+                        input.onerror = () => {
+                          console.error("File input error");
+                          if (input.parentNode) {
+                            document.body.removeChild(input);
+                          }
+                        };
+
+                        document.body.appendChild(input);
+
+                        setTimeout(() => {
+                          try {
+                            input.click();
+                          } catch (error) {
+                            console.error(
+                              "Failed to trigger file dialog:",
+                              error,
+                            );
+                            toast({
+                              title: "Upload unavailable",
+                              description:
+                                "File upload is not available. Try using drag & drop instead.",
+                              variant: "destructive",
+                            });
+                            if (input.parentNode) {
+                              document.body.removeChild(input);
+                            }
+                          }
+                        }, 10);
+
+                        setTimeout(() => {
+                          if (input.parentNode) {
+                            document.body.removeChild(input);
+                          }
+                        }, 30000);
+                      }}
+                      title="Upload images"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                    </Button>
+                    <TooltipContent>
+                      <span>Upload</span>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Run button */}
+                  <Tooltip>
+                    <Button
+                      onClick={handleRun}
+                      variant="default"
+                      size="icon"
+                      disabled={
+                        isGenerating || !generationSettings.prompt.trim()
+                      }
+                      className={cn(
+                        "gap-2 font-medium transition-all rounded-full",
+                        isGenerating && "bg-secondary",
+                      )}
+                      render={<TooltipTrigger />}
+                    >
+                      {isGenerating ? (
+                        <SpinnerIcon className="h-4 w-4 animate-spin text-white" />
+                      ) : (
+                        <PlayIcon className="h-4 w-4 text-white fill-white" />
+                      )}
+                    </Button>
+                    <TooltipContent>
+                      <div className="flex items-center gap-2">
+                        <span>Run</span>
+                        <ShortcutBadge
+                          variant="default"
+                          size="xs"
+                          shortcut={
+                            checkOS("Win") || checkOS("Linux")
+                              ? "ctrl+enter"
+                              : "meta+enter"
+                          }
+                        />
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
               </div>
             </div>
           </div>
@@ -738,6 +741,22 @@ export function PromptEditor({
           height: 0;
         }
       `}</style>
-    </div>
+
+      {/* SVG Gooey Filter for liquid melting effect */}
+      <svg style={{ width: 0, height: 0, position: "absolute" }}>
+        <defs>
+          <filter id="gooey" colorInterpolationFilters="sRGB">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+            <feColorMatrix
+              in="blur"
+              mode="matrix"
+              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8"
+              result="gooey"
+            />
+            <feBlend in="SourceGraphic" in2="gooey" mode="normal" />
+          </filter>
+        </defs>
+      </svg>
+    </>
   );
 }
