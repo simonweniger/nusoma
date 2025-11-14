@@ -79,7 +79,7 @@ import { CanvasLeftSidebar } from "@/components/canvas/CanvasLeftSidebar";
 //import { CanvasRightSidebar } from "@/components/canvas/CanvasRightSidebar";
 import { VideoOverlays } from "@/components/canvas/VideoOverlays";
 import { DimensionDisplay } from "@/components/canvas/DimensionDisplay";
-import { CanvasPromptEditor } from "@/components/canvas/CanvasPromptEditor";
+import { PromptEditor } from "@/components/canvas/PromptEditor";
 import { GeneratingPlaceholder } from "@/components/canvas/GeneratingPlaceholder";
 import { SettingsDialog } from "@/components/canvas/SettingsDialog";
 import Image from "next/image";
@@ -3134,7 +3134,7 @@ export default function OverlayPage() {
             </div>
 
             {/* Prompt Editor */}
-            <CanvasPromptEditor
+            <PromptEditor
               generationSettings={generationSettings}
               setGenerationSettings={setGenerationSettings}
               selectedIds={selectedIds}
@@ -3143,7 +3143,6 @@ export default function OverlayPage() {
               previousStyleId={previousStyleId}
               handleRun={handleRun}
               handleFileUpload={handleFileUpload}
-              setIsStyleDialogOpen={setIsStyleDialogOpen}
               toast={toast}
             />
 
