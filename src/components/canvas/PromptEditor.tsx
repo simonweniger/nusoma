@@ -750,12 +750,19 @@ export function PromptEditor({
       {/* SVG Gooey Filter for liquid melting effect */}
       <svg style={{ width: 0, height: 0, position: "absolute" }}>
         <defs>
-          <filter id="gooey">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+          <filter id="gooey" x="-50%" y="-50%" width="250%" height="250%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur">
+              <animate
+                attributeName="stdDeviation"
+                values="2;4;2"
+                dur="6s"
+                repeatCount="indefinite"
+              />
+            </feGaussianBlur>
             <feColorMatrix
               in="blur"
               mode="matrix"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
+              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 40 -12"
               result="gooey"
             />
             <feComposite in="SourceGraphic" in2="gooey" operator="atop" />

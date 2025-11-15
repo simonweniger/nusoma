@@ -260,18 +260,26 @@ export default function OverlayPage() {
   const folderName = (project?.folder?.name as string) || "Drafts";
 
   // Use canvas history hook
-  const { history, historyIndex, saveToHistory, undo, redo, canUndo, canRedo } =
-    useCanvasHistory({
-      projectId,
-      images,
-      videos,
-      selectedIds,
-      onRestore: (state) => {
-        setImages(state.images);
-        setVideos(state.videos || []);
-        setSelectedIds(state.selectedIds);
-      },
-    });
+  const {
+    history,
+    historyIndex,
+    saveToHistory,
+    undo,
+    redo,
+    restoreHistory,
+    canUndo,
+    canRedo,
+  } = useCanvasHistory({
+    projectId,
+    images,
+    videos,
+    selectedIds,
+    onRestore: (state) => {
+      setImages(state.images);
+      setVideos(state.videos || []);
+      setSelectedIds(state.selectedIds);
+    },
+  });
 
   // Function to handle the "Convert to Video" option in the context menu
   const handleConvertToVideo = (imageId: string) => {
@@ -2197,9 +2205,12 @@ export default function OverlayPage() {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Check if target is an input element
+      // Check if target is an input element or contenteditable (for TipTap editor)
       const isInputElement =
-        e.target && (e.target as HTMLElement).matches("input, textarea");
+        e.target &&
+        ((e.target as HTMLElement).matches("input, textarea") ||
+          (e.target as HTMLElement).isContentEditable ||
+          (e.target as HTMLElement).closest(".ProseMirror"));
 
       // Undo/Redo
       if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
@@ -2358,6 +2369,9 @@ export default function OverlayPage() {
         onAssetSelect={handleAssetSelect}
         projectName={projectName}
         folderName={folderName}
+        history={history}
+        historyIndex={historyIndex}
+        onRestoreHistory={restoreHistory}
       />
 
       {/* Main Canvas Area */}

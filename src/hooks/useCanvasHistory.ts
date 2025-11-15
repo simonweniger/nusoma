@@ -7,6 +7,7 @@ export interface HistoryState {
   images: PlacedImage[];
   videos?: PlacedVideo[]; // Optional for backward compatibility
   selectedIds: string[];
+  timestamp?: Date; // Optional timestamp from database
 }
 
 interface UseCanvasHistoryProps {
@@ -40,9 +41,10 @@ export function useCanvasHistory({
   );
 
   const history =
-    historyData?.canvasHistory?.map(
-      (snapshot: any) => snapshot.snapshotData as HistoryState,
-    ) || [];
+    historyData?.canvasHistory?.map((snapshot: any) => ({
+      ...(snapshot.snapshotData as HistoryState),
+      timestamp: snapshot.timestamp,
+    })) || [];
 
   const historyIndex =
     currentHistoryIndex === -1 && history.length > 0
@@ -139,6 +141,20 @@ export function useCanvasHistory({
     }
   }, [history, historyIndex, onRestore]);
 
+  // Restore to a specific history index
+  const restoreHistory = useCallback(
+    (index: number) => {
+      if (index >= 0 && index < history.length) {
+        const state = history[index];
+        if (state) {
+          onRestore(state);
+          setCurrentHistoryIndex(index);
+        }
+      }
+    },
+    [history, onRestore],
+  );
+
   // Initialize history index when history loads from DB
   useEffect(() => {
     if (currentHistoryIndex === -1 && history.length > 0) {
@@ -159,6 +175,7 @@ export function useCanvasHistory({
     saveToHistory,
     undo,
     redo,
+    restoreHistory,
     canUndo: historyIndex > 0,
     canRedo: historyIndex < history.length - 1,
   };
