@@ -115,16 +115,19 @@ export function Navbar(): React.JSX.Element {
                             navigationMenuTriggerStyle(),
                             "rounded-xl text-[15px] font-normal data-active:bg-accent",
                           )}
+                          render={
+                            <Link
+                              href={item.href}
+                              target={item.external ? "_blank" : undefined}
+                              rel={
+                                item.external
+                                  ? "noopener noreferrer"
+                                  : undefined
+                              }
+                            />
+                          }
                         >
-                          <Link
-                            href={item.href}
-                            target={item.external ? "_blank" : undefined}
-                            rel={
-                              item.external ? "noopener noreferrer" : undefined
-                            }
-                          >
-                            {item.title}
-                          </Link>
+                          {item.title}
                         </NavigationMenuLink>
                       </NavigationMenuItem>
                     ),
