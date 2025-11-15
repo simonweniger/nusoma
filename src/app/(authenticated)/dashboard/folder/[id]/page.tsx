@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { useRouter, useParams } from "next/navigation";
 import { Plus, Image, Settings } from "lucide-react";

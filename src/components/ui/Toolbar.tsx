@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Toolbar as BaseToolbar } from "@base-ui-components/react/toolbar";
 
-import { ButtonProps, buttonVariants } from "@/components/ui/Button";
+import { ButtonProps, buttonVariants } from "@/components/ui/button";
 
 import { cn } from "@/lib/utils";
 

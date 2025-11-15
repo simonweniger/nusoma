@@ -4,12 +4,17 @@ import { CoreProviders } from "./core-providers";
 import { focal, hal, halMono, commitMono, inconsolata } from "@/lib/fonts";
 import { BotIdClient } from "botid/client";
 import { Analytics } from "@vercel/analytics/next";
+import { CookieBanner } from "@/components/landing/fragments/cookie-banner";
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "white" },
+    { media: "(prefers-color-scheme: dark)", color: "black" },
+  ],
 };
 
 export const metadata: Metadata = {
@@ -45,6 +50,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
+  manifest: `${process.env.NEXT_PUBLIC_APP_URL}/manifest`,
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL!),
   alternates: {
     canonical: "/",
@@ -56,15 +62,12 @@ export const metadata: Metadata = {
     title: "Creative GenAI Canvas for Designers | nusoma",
     description: "Build your vision! With an GenAI canvas made for Designers.",
     siteName: "nusoma",
-    images: [
-      {
-        url: "/og-img.png",
-        width: 1200,
-        height: 630,
-        alt: "Creative GenAI Canvas for Designers | nusoma",
-        type: "image/png",
-      },
-    ],
+    images: {
+      url: `${process.env.NEXT_PUBLIC_APP_URL}/og-image`,
+      width: 1200,
+      height: 630,
+      alt: "nusoma",
+    },
   },
   twitter: {
     card: "summary_large_image",
@@ -135,6 +138,7 @@ export default function RootLayout({
       <body className={`font-sans bg-background text-foreground min-h-screen`}>
         <CoreProviders>
           <div className="root">{children}</div>
+          <CookieBanner />
         </CoreProviders>
       </body>
       <Analytics />

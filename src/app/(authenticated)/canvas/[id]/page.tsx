@@ -8,17 +8,12 @@ import { canvasStorage, type CanvasState } from "@/lib/instant-storage";
 import { useAuth } from "@/providers/auth-provider";
 import { id } from "@instantdb/react";
 
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { Plus, Undo, Redo, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
 import { useRef, useEffect } from "react";
-import {
-  TooltipTrigger,
-  TooltipContent,
-  Tooltip,
-} from "@/components/ui/Tooltip";
 import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import {
   Dialog,
@@ -26,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/Dialog";
+} from "@/components/ui/dialog";
 import { styleModels } from "@/lib/models";
 import { useToast } from "@/hooks/use-toast";
 

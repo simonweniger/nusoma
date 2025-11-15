@@ -1,4 +1,5 @@
 import { withBotId } from "botid/next/config";
+import { withContentCollections } from "@content-collections/next";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -44,4 +45,4 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
 };
 
-export default withBotId(nextConfig);
+export default withBotId(withContentCollections(nextConfig));

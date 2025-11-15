@@ -6,7 +6,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   PlayIcon,
   Paperclip,
@@ -30,8 +30,8 @@ import {
   TooltipTrigger,
   TooltipContent,
   Tooltip,
-} from "@/components/ui/Tooltip";
-import { Dialog, DialogContent } from "@/components/ui/Dialog";
+} from "@/components/ui/tooltip";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface PromptEditorProps {
   generationSettings: GenerationSettings;

@@ -6,9 +6,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/Dialog";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { ChevronRight, Trash2 } from "lucide-react";
 
 interface FolderSettingsDialogProps {

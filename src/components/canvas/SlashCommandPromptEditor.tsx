@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   PlayIcon,
   Paperclip,
@@ -26,8 +26,8 @@ import {
   TooltipTrigger,
   TooltipContent,
   Tooltip,
-} from "@/components/ui/Tooltip";
-import { Dialog, DialogContent } from "@/components/ui/Dialog";
+} from "@/components/ui/tooltip";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface SlashCommandPromptEditorProps {
   generationSettings: GenerationSettings;

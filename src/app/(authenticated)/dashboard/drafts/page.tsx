@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/providers/auth-provider";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { useRouter } from "next/navigation";
 import { Plus, Image } from "lucide-react";

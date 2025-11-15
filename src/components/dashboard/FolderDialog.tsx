@@ -7,9 +7,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/Dialog";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
 interface FolderDialogProps {

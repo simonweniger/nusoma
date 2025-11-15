@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/providers/auth-provider";
 import { useState } from "react";
 import { CreditCardIcon, DiamondsFourIcon } from "@phosphor-icons/react";
@@ -10,8 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/Dialog";
-import { Slider } from "@/components/ui/Slider";
+} from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
 import Link from "next/link";
 
 export default function PlansDialog() {

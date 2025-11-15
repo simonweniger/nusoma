@@ -10,7 +10,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 
-import { buttonVariants } from "./Button";
+import { buttonVariants } from "./button";
 
 import { cn } from "@/lib/utils";
 

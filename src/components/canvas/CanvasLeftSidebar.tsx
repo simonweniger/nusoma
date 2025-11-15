@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion } from "framer-motion";
+import React from "react";
+import { motion } from "motion/react";
 import {
   ImageIcon,
   VideoIcon,
@@ -19,8 +19,14 @@ import {
   SheetTrigger,
   SheetClose,
   SheetHeader,
-} from "@/components/ui/Sheet";
-import { Button } from "@/components/ui/Button";
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import {
+  UnderlinedTabs,
+  UnderlinedTabsList,
+  UnderlinedTabsTrigger,
+  UnderlinedTabsContent,
+} from "@/components/ui/tabs";
 import type { HistoryState } from "@/hooks/useCanvasHistory";
 
 interface CanvasLeftSidebarProps {
@@ -48,8 +54,6 @@ export function CanvasLeftSidebar({
   historyIndex = -1,
   onRestoreHistory,
 }: CanvasLeftSidebarProps) {
-  const [activeTab, setActiveTab] = useState<"assets" | "history">("assets");
-
   const allAssets = [
     ...images.map((img) => ({ ...img, type: "image" as const })),
     ...videos.map((vid) => ({ ...vid, type: "video" as const })),
@@ -134,39 +138,35 @@ export function CanvasLeftSidebar({
           </div>
         </SheetHeader>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-1 px-2 py-2 border-b border-border">
-          <button
-            onClick={() => setActiveTab("assets")}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors",
-              activeTab === "assets"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted",
-            )}
-          >
-            <FileIcon className="w-3.5 h-3.5" />
-            Assets
-            <span className="text-[10px] opacity-70">{allAssets.length}</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("history")}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors",
-              activeTab === "history"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted",
-            )}
-          >
-            <HistoryIcon className="w-3.5 h-3.5" />
-            History
-            <span className="text-[10px] opacity-70">{history.length}</span>
-          </button>
-        </div>
+        {/* Tabs */}
+        <UnderlinedTabs
+          defaultValue="assets"
+          className="flex-1 flex flex-col overflow-hidden"
+        >
+          <UnderlinedTabsList className="border-b border-border px-2">
+            <UnderlinedTabsTrigger
+              value="assets"
+              className="flex items-center gap-2"
+            >
+              <FileIcon className="w-3.5 h-3.5" />
+              <span>Assets</span>
+              <span className="text-[10px] opacity-70">{allAssets.length}</span>
+            </UnderlinedTabsTrigger>
+            <UnderlinedTabsTrigger
+              value="history"
+              className="flex items-center gap-2"
+            >
+              <HistoryIcon className="w-3.5 h-3.5" />
+              <span>History</span>
+              <span className="text-[10px] opacity-70">{history.length}</span>
+            </UnderlinedTabsTrigger>
+          </UnderlinedTabsList>
 
-        {/* Assets Tab */}
-        {activeTab === "assets" && (
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {/* Assets Tab Content */}
+          <UnderlinedTabsContent
+            value="assets"
+            className="flex-1 overflow-y-auto p-2 space-y-1"
+          >
             {allAssets.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center p-4">
                 <ImageIcon className="w-12 h-12 text-muted-foreground/50 mb-2" />
@@ -243,12 +243,13 @@ export function CanvasLeftSidebar({
                 </motion.button>
               ))
             )}
-          </div>
-        )}
+          </UnderlinedTabsContent>
 
-        {/* History Tab */}
-        {activeTab === "history" && (
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {/* History Tab Content */}
+          <UnderlinedTabsContent
+            value="history"
+            className="flex-1 overflow-y-auto p-2 space-y-1"
+          >
             {history.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center p-4">
                 <HistoryIcon className="w-12 h-12 text-muted-foreground/50 mb-2" />
@@ -357,8 +358,8 @@ export function CanvasLeftSidebar({
                 );
               })
             )}
-          </div>
-        )}
+          </UnderlinedTabsContent>
+        </UnderlinedTabs>
       </SheetContent>
     </Sheet>
   );

@@ -1,10 +1,9 @@
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   AlertDialog,
@@ -15,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/AlertDialog";
+} from "@/components/ui/alert-dialog";
 import { formatDistanceToNow } from "date-fns";
 import { Image, Trash2, FolderIcon } from "lucide-react";
 import { useRouter } from "next/navigation";

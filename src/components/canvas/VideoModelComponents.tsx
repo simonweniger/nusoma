@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/Input";
-import { Switch } from "@/components/ui/Switch";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/Tooltip";
+} from "@/components/ui/tooltip";
 import { Info, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   getVideoModelsByCategory,
   formatPricingMessage,
@@ -25,9 +25,9 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/Dialog";
+} from "@/components/ui/dialog";
 import { SpinnerIcon } from "@/components/icons";
-import { Alert, AlertDescription } from "@/components/ui/Alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // RadioGroup components
 export const RadioGroup = React.forwardRef<

@@ -25,12 +25,12 @@ import hotkeys from "hotkeys-js";
 import { AppSchema } from "@/instant.schema";
 import { InstaQLEntity, id } from "@instantdb/react";
 import NumberFlow from "@number-flow/react";
-import PlansDialog from "../PlansDialog";
+import PlansDialog from "../plans-dialog";
 import FolderDialog from "./FolderDialog";
-import UserProfileDialog from "../UserProfileDialog";
-import { Reorder, useDragControls } from "framer-motion";
+import UserProfileDialog from "../user-profile-dialog";
+import { Reorder, useDragControls } from "motion/react";
 import { Separator } from "../ui/separator";
-import { Button } from "../ui/Button";
+import { Button } from "../ui/button";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -38,7 +38,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "../ui/context-menu";
-import { ThemeToggle } from "../ThemeToggle";
+import { ThemeToggle } from "../theme-toggle";
 import { Logo, LogoIcon } from "@/components/icons";
 
 type Project = InstaQLEntity<AppSchema, "canvasProjects", { folder: {} }>;

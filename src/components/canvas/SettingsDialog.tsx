@@ -15,21 +15,21 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/Dialog";
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/Switch";
+import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   TooltipTrigger,
   TooltipContent,
   Tooltip,
-} from "@/components/ui/Tooltip";
+} from "@/components/ui/tooltip";
 
 interface SettingsDialogProps {
   showGrid: boolean;
