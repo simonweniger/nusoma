@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import { useMounted } from "@workspace/ui/hooks/use-mounted";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 import { type TableOfContents } from "~/lib/toc";
 

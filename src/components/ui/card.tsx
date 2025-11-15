@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+export type CardProps = React.ComponentPropsWithoutRef<"div">;
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & { compact?: boolean }
@@ -19,6 +20,7 @@ const Card = React.forwardRef<
 ));
 Card.displayName = "Card";
 
+export type CardHeaderProps = React.ComponentPropsWithoutRef<"div">;
 const CardHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -27,6 +29,7 @@ const CardHeader = React.forwardRef<
 ));
 CardHeader.displayName = "CardHeader";
 
+export type CardTitleProps = React.ComponentPropsWithoutRef<"h3">;
 const CardTitle = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLHeadingElement>
@@ -42,6 +45,7 @@ const CardTitle = React.forwardRef<
 ));
 CardTitle.displayName = "CardTitle";
 
+export type CardDescriptionProps = React.ComponentPropsWithoutRef<"p">;
 const CardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
@@ -54,6 +58,7 @@ const CardDescription = React.forwardRef<
 ));
 CardDescription.displayName = "CardDescription";
 
+export type CardContentProps = React.ComponentPropsWithoutRef<"div">;
 const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -71,6 +76,7 @@ const CardContent = React.forwardRef<
 ));
 CardContent.displayName = "CardContent";
 
+export type CardFooterProps = React.ComponentPropsWithoutRef<"div">;
 const CardFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>

@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 const DATA = [
   {

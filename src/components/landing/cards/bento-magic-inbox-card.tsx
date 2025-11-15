@@ -5,7 +5,7 @@ import { ArrowLeftRightIcon } from "lucide-react";
 import { motion } from "motion/react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 function AppleCalendar(
   props: React.SVGAttributes<SVGSVGElement>,

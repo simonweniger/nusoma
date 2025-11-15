@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { baseUrl, getPathname } from "@workspace/routes";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 import { DocsSearch } from "~/components/docs/docs-search";
 import { DOCS_LINKS } from "~/components/marketing-links";
