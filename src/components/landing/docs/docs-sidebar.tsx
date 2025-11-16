@@ -4,11 +4,11 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { baseUrl, getPathname } from "@workspace/routes";
+import { routes, getPathname } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
-import { DocsSearch } from "~/components/docs/docs-search";
-import { DOCS_LINKS } from "~/components/marketing-links";
+import { DocsSearch } from "@/components/landing/docs/docs-search";
+import { DOCS_LINKS } from "@/components/landing/marketing-links";
 
 export function DocsSidebar(): React.JSX.Element {
   const pathname = usePathname();
@@ -35,7 +35,7 @@ export function DocsSidebar(): React.JSX.Element {
                     href={item.href}
                     className={cn(
                       "group flex w-full items-center rounded-lg border border-transparent px-2 py-1 hover:underline",
-                      pathname === getPathname(item.href, baseUrl.Marketing)
+                      pathname === getPathname(item.href, routes.marketing.Docs)
                         ? "font-medium text-foreground bg-accent"
                         : "text-muted-foreground",
                     )}

@@ -3,15 +3,12 @@
 import * as React from "react";
 import NextError from "next/error";
 
-// import { useCaptureError } from '@workspace/monitoring/hooks/use-capture-error';
-
 export type GlobalErrorProps = {
   error: Error & { digest?: string };
   reset: () => void;
 };
 
 export default function GlobalError({
-   
   error: { digest, ...error },
 }: GlobalErrorProps): React.JSX.Element {
   // We don't monitor the marketing app, but you can enable it if users report errors.
