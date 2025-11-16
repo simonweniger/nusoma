@@ -16,7 +16,7 @@ export default function HomePage() {
       <Problem />
       <Solution />
       <Stats />
-      <Testimonials />
+      {/* <Testimonials /> */}
       <FAQ />
       <CTA />
     </MarketingLayout>

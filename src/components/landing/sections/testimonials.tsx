@@ -15,7 +15,7 @@ const DATA = [
   {
     name: "David Zhang",
     role: "VP of Sales at GlobalTech Solutions",
-    img: "https://randomuser.me/api/portraits/men/91.jpg",
+    img: "",
     description: (
       <p>
         {APP_NAME} has revolutionized how we manage customer relationships.{" "}
@@ -29,7 +29,7 @@ const DATA = [
   {
     name: "Maria Rodriguez",
     role: "Customer Success Director at Cloud Dynamics",
-    img: "https://randomuser.me/api/portraits/women/12.jpg",
+    img: "",
     description: (
       <p>
         {APP_NAME}'s customer prediction model has drastically improved our
@@ -42,7 +42,7 @@ const DATA = [
   {
     name: "James Wilson",
     role: "Head of Business Development at Velocity Inc",
-    img: "https://randomuser.me/api/portraits/men/45.jpg",
+    img: "",
     description: (
       <p>
         As a startup, we needed a system that could scale with us. {APP_NAME}{" "}
@@ -55,7 +55,7 @@ const DATA = [
   {
     name: "Sarah Kim",
     role: "Senior Account Executive at Digital First",
-    img: "https://randomuser.me/api/portraits/women/83.jpg",
+    img: "",
     description: (
       <p>
         {APP_NAME}'s multi-language support has made managing global customers
@@ -70,7 +70,7 @@ const DATA = [
   {
     name: "Marcus Johnson",
     role: "Sales Operations Manager at Revenue Pulse",
-    img: "https://randomuser.me/api/portraits/men/1.jpg",
+    img: "",
     description: (
       <p>
         {APP_NAME}'s analytics dashboard gives us unprecedented insights into
@@ -86,7 +86,7 @@ const DATA = [
   {
     name: "Priya Sharma",
     role: "Chief Revenue Officer at Scale Systems",
-    img: "https://randomuser.me/api/portraits/women/5.jpg",
+    img: "",
     description: (
       <p>
         {APP_NAME}'s integration with our existing tools has streamlined our
@@ -99,7 +99,7 @@ const DATA = [
   {
     name: "Miguel Santos",
     role: "Account Management Director at Grow Corp",
-    img: "https://randomuser.me/api/portraits/men/14.jpg",
+    img: "",
     description: (
       <p>
         {APP_NAME}'s sustainability tracking features help us monitor our
@@ -114,7 +114,7 @@ const DATA = [
   {
     name: "Lisa Thompson",
     role: "Inside Sales Manager at Quantum Enterprises",
-    img: "https://randomuser.me/api/portraits/women/56.jpg",
+    img: "",
     description: (
       <p>
         {APP_NAME}'s customer segmentation tools have transformed our marketing
@@ -129,7 +129,7 @@ const DATA = [
   {
     name: "Daniel Park",
     role: "Business Operations Lead at Swift Solutions",
-    img: "https://randomuser.me/api/portraits/men/18.jpg",
+    img: "",
     description: (
       <p>
         {APP_NAME}'s HIPAA-compliant features make it perfect for healthcare
@@ -144,7 +144,7 @@ const DATA = [
   {
     name: "Emma Anderson",
     role: "Director of Client Relations at Peak Partners",
-    img: "https://randomuser.me/api/portraits/women/73.jpg",
+    img: "",
     description: (
       <p>
         {APP_NAME}'s education-focused features have doubled our student
@@ -159,7 +159,7 @@ const DATA = [
   {
     name: "Robert Chen",
     role: "Sales Enablement Manager at Catalyst Group",
-    img: "https://randomuser.me/api/portraits/men/25.jpg",
+    img: "",
     description: (
       <p>
         {APP_NAME}'s enterprise-grade security features give us complete peace
@@ -171,7 +171,7 @@ const DATA = [
   {
     name: "Maya Patel",
     role: "Customer Experience Director at Apex Solutions",
-    img: "https://randomuser.me/api/portraits/women/78.jpg",
+    img: "",
     description: (
       <p>
         {APP_NAME}'s project management integration has streamlined our creative
@@ -184,7 +184,7 @@ const DATA = [
   {
     name: "Thomas O'Brien",
     role: "Sales Strategy Manager at Future Dynamics",
-    img: "https://randomuser.me/api/portraits/men/54.jpg",
+    img: "",
     description: (
       <p>
         {APP_NAME}'s startup-friendly pricing and scalability made it an easy

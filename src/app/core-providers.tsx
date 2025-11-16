@@ -12,7 +12,6 @@ import {
 import superjson from "superjson";
 import { makeQueryClient } from "@/lib/query-client";
 import { AppRouter } from "@/server/trpc/routers/_app";
-import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "next-themes";
 import { PostHogProvider } from "@/providers/posthog-provider";
 import { AuthProvider } from "@/providers/auth-provider";

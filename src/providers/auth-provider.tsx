@@ -186,7 +186,7 @@ function UnauthenticatedContent({
 }) {
   useEffect(() => {
     // Redirect unauthenticated users away from protected pages
-    if (isProtectedRoute || pathname === "/") {
+    if (isProtectedRoute) {
       router.push("/auth/signin");
     }
   }, [isProtectedRoute, pathname, router]);
