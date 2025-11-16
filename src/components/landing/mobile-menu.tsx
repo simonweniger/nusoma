@@ -65,9 +65,7 @@ export function MobileMenu({
         className={cn("flex items-center justify-between", className)}
         {...other}
       >
-        <Link href={routes.marketing.Index}>
-          <Logo />
-        </Link>
+        <Logo />
         <Button
           variant="ghost"
           size="icon"

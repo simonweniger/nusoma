@@ -31,10 +31,7 @@ export function Navbar(): React.JSX.Element {
       <div className="container">
         <nav className="hidden justify-between lg:flex">
           <div className="flex items-center gap-x-9">
-            <Link
-              href={routes.marketing.Index}
-              className="flex items-center gap-2"
-            >
+            <Link href={routes.marketing.Index}>
               <Logo />
             </Link>
             <div className="flex items-center">
