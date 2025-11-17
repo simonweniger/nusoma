@@ -135,10 +135,7 @@ export default function RootLayout({
           ]}
         />
       </head>
-      <body
-        className={`font-sans bg-background text-foreground min-h-screen`}
-        suppressHydrationWarning
-      >
+      <body className={`font-sans size-full`} suppressHydrationWarning>
         <CoreProviders>
           <div className="root">{children}</div>
           <CookieBanner />

@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 
 import { baseUrl, getPathname, routes } from "@/lib/routes";
 import { buttonVariants } from "@/components/ui/button";
-import { Logo } from "@/components/icons";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -23,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { MENU_LINKS } from "@/components/landing/marketing-links";
 import { MobileMenu } from "@/components/landing/mobile-menu";
 import { ExternalLink } from "./fragments/external-link";
+import { Logo } from "../icons";
 
 export function Navbar(): React.JSX.Element {
   const pathname = usePathname();
@@ -32,16 +32,10 @@ export function Navbar(): React.JSX.Element {
         <nav className="hidden justify-between lg:flex">
           <div className="flex items-center gap-x-9">
             <Link href={routes.marketing.Index}>
-              <Logo />
+              <Logo className="w-28" />
             </Link>
             <div className="flex items-center">
-              <NavigationMenu
-                style={
-                  {
-                    ["--radius"]: "1rem",
-                  } as React.CSSProperties
-                }
-              >
+              <NavigationMenu>
                 <NavigationMenuList>
                   {MENU_LINKS.map((item, index) =>
                     item.items ? (

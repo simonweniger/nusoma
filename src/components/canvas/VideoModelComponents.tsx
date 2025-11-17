@@ -16,7 +16,8 @@ import {
   type VideoModelConfig,
   type VideoModelOption,
 } from "@/lib/video-models";
-import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
+import { Radio } from "@base-ui-components/react/radio";
+import { RadioGroup as BaseRadioGroup } from "@base-ui-components/react/radio-group";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -30,26 +31,30 @@ import { SpinnerIcon } from "@/components/icons";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // RadioGroup components
-export const RadioGroup = React.forwardRef<
-  React.ElementRef<typeof RadioGroupPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>
+export const RadioGroup: React.FC<
+  React.ComponentPropsWithoutRef<typeof BaseRadioGroup>
+> = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<typeof BaseRadioGroup>
 >(({ className, ...props }, ref) => {
   return (
-    <RadioGroupPrimitive.Root
+    <BaseRadioGroup
       className={cn("grid gap-2", className)}
       {...props}
       ref={ref}
     />
   );
 });
-RadioGroup.displayName = RadioGroupPrimitive.Root.displayName;
+RadioGroup.displayName = "RadioGroup";
 
-export const RadioGroupItem = React.forwardRef<
-  React.ElementRef<typeof RadioGroupPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>
->(({ className, ...props }, ref) => {
+export const RadioGroupItem: React.FC<
+  React.ComponentPropsWithoutRef<typeof Radio.Root>
+> = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentPropsWithoutRef<typeof Radio.Root>
+>(({ className, children, ...props }, ref) => {
   return (
-    <RadioGroupPrimitive.Item
+    <Radio.Root
       ref={ref}
       className={cn(
         "aspect-square h-4 w-4 rounded-full border border-border text-primary shadow-sm focus:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
@@ -57,13 +62,14 @@ export const RadioGroupItem = React.forwardRef<
       )}
       {...props}
     >
-      <RadioGroupPrimitive.Indicator className="flex items-center justify-center">
+      <Radio.Indicator className="flex items-center justify-center">
         <div className="h-2 w-2 rounded-full bg-current" />
-      </RadioGroupPrimitive.Indicator>
-    </RadioGroupPrimitive.Item>
+      </Radio.Indicator>
+      {children}
+    </Radio.Root>
   );
 });
-RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName;
+RadioGroupItem.displayName = "RadioGroupItem";
 
 // VideoModelSelector Component
 interface VideoModelSelectorProps {
@@ -502,8 +508,8 @@ export const RemoveVideoBackgroundDialog: React.FC<
     onProcess(backgroundColor);
   };
 
-  const handleRadioChange = (value: string) => {
-    setBackgroundColor(value);
+  const handleRadioChange = (value: unknown) => {
+    setBackgroundColor(value as string);
   };
 
   // Define color mappings

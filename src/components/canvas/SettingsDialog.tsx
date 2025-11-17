@@ -64,11 +64,13 @@ export function SettingsDialog({
 
   return (
     <Dialog>
-      <DialogTrigger
-        render={(props) => (
-          <Tooltip>
+      <Tooltip>
+        <DialogTrigger
+          render={({ ref, ...dialogProps }) => (
             <Button
-              {...props}
+              {...dialogProps}
+              // @ts-expect-error - Base UI ref type mismatch
+              ref={ref}
               variant="secondary"
               size="icon-sm"
               className="relative"
@@ -76,12 +78,12 @@ export function SettingsDialog({
             >
               <SlidersHorizontal className="h-4 w-4" />
             </Button>
-            <TooltipContent>
-              <span>Settings</span>
-            </TooltipContent>
-          </Tooltip>
-        )}
-      />
+          )}
+        />
+        <TooltipContent>
+          <span>Settings</span>
+        </TooltipContent>
+      </Tooltip>
       <DialogContent className="w-[95vw] max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
@@ -100,8 +102,8 @@ export function SettingsDialog({
             </div>
             <Select
               value={theme || "system"}
-              onValueChange={(value: "system" | "light" | "dark") =>
-                setTheme(value)
+              onValueChange={(value) =>
+                setTheme(value as "system" | "light" | "dark")
               }
             >
               <SelectTrigger className="max-w-[140px] rounded-xl">
