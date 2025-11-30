@@ -60,7 +60,7 @@ export const MobileToolbar: React.FC<MobileToolbarProps> = ({
   return (
     <div
       className={cn(
-        "flex items-center flex-col gap-1 md:hidden bg-background/80 rounded-2xl p-1 bg-card",
+        "flex items-center flex-col gap-1 md:hidden bg-background/80 rounded-2xl p-1",
         "transition-transform duration-300 ease-in-out",
         selectedIds.length > 0
           ? "translate-x-0"
@@ -133,25 +133,27 @@ export const MobileToolbar: React.FC<MobileToolbarProps> = ({
       </Button>
 
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={selectedIds.length === 0}
-            className="w-12 h-12 p-0"
-            title="Layer Order"
-          >
-            <Layers className="h-12 w-12" />
-          </Button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={() => (
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={selectedIds.length === 0}
+              className="w-12 h-12 p-0"
+              title="Layer Order"
+            >
+              <Layers className="h-12 w-12" />
+            </Button>
+          )}
+        />
         <DropdownMenuContent
           side="right"
           sideOffset={10}
-          alignOffset={-4}
+          //alignOffset={-4}
           align="start"
           className="w-48 space-y-1 bg-background/80 border rounded-xl p-1"
         >
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem>
             <Button
               variant="secondary"
               size="sm"
@@ -163,7 +165,7 @@ export const MobileToolbar: React.FC<MobileToolbarProps> = ({
               <span className="font-medium">Send to Front</span>
             </Button>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem>
             <Button
               variant="secondary"
               size="sm"
@@ -175,7 +177,7 @@ export const MobileToolbar: React.FC<MobileToolbarProps> = ({
               <span className="font-medium">Bring Forward</span>
             </Button>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem>
             <Button
               variant="secondary"
               size="sm"
@@ -187,7 +189,7 @@ export const MobileToolbar: React.FC<MobileToolbarProps> = ({
               <span className="font-medium">Send Backward</span>
             </Button>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem>
             <Button
               variant="secondary"
               size="sm"
