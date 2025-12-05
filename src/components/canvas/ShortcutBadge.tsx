@@ -33,7 +33,8 @@ type BaseShortcutBadgeProps = {
 };
 
 interface ShortcutBadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
     BaseShortcutBadgeProps,
     VariantProps<typeof shortcutBadgeVariants> {}
 

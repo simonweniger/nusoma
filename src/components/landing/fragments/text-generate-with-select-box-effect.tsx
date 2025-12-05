@@ -68,7 +68,6 @@ export function TextGenerateWithSelectBoxEffect({
 
       return () => clearTimeout(timeoutId);
     }
-     
   }, [isInView, controls, selectionControls, wordsArray.length]);
 
   return (
