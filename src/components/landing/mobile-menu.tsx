@@ -13,18 +13,23 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import Logo from "@/components/logo";
 import { RemoveScroll } from "@/lib/remove-scroll";
 import { cn } from "@/lib/utils";
 
 import { ExternalLink } from "./fragments/external-link";
 import { DOCS_LINKS, MENU_LINKS } from "./marketing-links";
 import { ThemeToggle } from "../theme-toggle";
+import Logo from "../Logo";
+
+interface MobileMenuProps extends React.HTMLAttributes<HTMLDivElement> {
+  user?: any;
+}
 
 export function MobileMenu({
   className,
+  user,
   ...other
-}: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element {
+}: MobileMenuProps): React.JSX.Element {
   const [open, setOpen] = React.useState<boolean>(false);
   const pathname = usePathname();
   const isDocs = pathname.startsWith(
@@ -97,7 +102,10 @@ export function MobileMenu({
           {isDocs ? (
             <DocsMobileMenu onLinkClicked={handleToggleMobileMenu} />
           ) : (
-            <MainMobileMenu onLinkClicked={handleToggleMobileMenu} />
+            <MainMobileMenu
+              onLinkClicked={handleToggleMobileMenu}
+              user={user}
+            />
           )}
         </RemoveScroll>
       )}
@@ -107,135 +115,159 @@ export function MobileMenu({
 
 type MainMobileMenuProps = {
   onLinkClicked: () => void;
+  user?: any;
+  profile?: any;
 };
 
 function MainMobileMenu({
   onLinkClicked,
+  user,
+  profile,
 }: MainMobileMenuProps): React.JSX.Element {
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = React.useState(false);
+
   return (
-    <div className="fixed inset-0 z-50 mt-[69px] overflow-y-auto bg-background animate-in fade-in-0">
-      <div className="flex size-full flex-col items-start space-y-3 p-4">
-        <div className="flex w-full flex-col gap-2">
-          <Link
-            href={routes.auth.SignUp}
-            className={cn(
-              buttonVariants({
-                variant: "default",
-                size: "lg",
-              }),
-              "w-full rounded-xl",
-            )}
-            onClick={onLinkClicked}
-          >
-            Start for free
-          </Link>
-          <Link
-            href={routes.auth.SignIn}
-            onClick={onLinkClicked}
-            className={cn(
-              buttonVariants({
-                variant: "outline",
-                size: "lg",
-              }),
-              "w-full rounded-xl",
-            )}
-          >
-            Sign in
-          </Link>
-        </div>
-        <ul className="w-full">
-          {MENU_LINKS.map((item) => (
-            <li key={item.title} className="py-2">
-              {item.items ? (
-                <Collapsible
-                  open={expanded[item.title.toLowerCase()]}
-                  onOpenChange={(isOpen) =>
-                    setExpanded((prev) => ({
-                      ...prev,
-                      [item.title.toLowerCase()]: isOpen,
-                    }))
-                  }
-                >
-                  <CollapsibleTrigger>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="flex h-9 w-full items-center justify-between px-4 text-left"
-                    >
-                      <span className="text-base font-medium">
-                        {item.title}
-                      </span>
-                      {expanded[item.title.toLowerCase()] ? (
-                        <ChevronUpIcon className="size-4" />
-                      ) : (
-                        <ChevronDownIcon className="size-4" />
-                      )}
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <ul className="mt-2 pl-4">
-                      {item.items.map((subItem) => (
-                        <li key={subItem.title}>
-                          <Link
-                            href={subItem.href}
-                            target={subItem.external ? "_blank" : undefined}
-                            rel={
-                              subItem.external
-                                ? "noopener noreferrer"
-                                : undefined
-                            }
-                            className={cn(
-                              buttonVariants({ variant: "ghost" }),
-                              "m-0 h-auto w-full justify-start gap-4 p-1.5",
-                            )}
-                            onClick={onLinkClicked}
-                          >
-                            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border bg-background text-muted-foreground transition-colors group-hover:text-foreground">
-                              {subItem.icon}
-                            </div>
-                            <div>
-                              <span className="text-sm font-medium">
-                                {subItem.title}
-                                {subItem.external && (
-                                  <ExternalLink className="-mt-2 ml-1 inline size-2 text-muted-foreground" />
-                                )}
-                              </span>
-                              {subItem.description && (
-                                <p className="text-xs text-muted-foreground">
-                                  {subItem.description}
-                                </p>
-                              )}
-                            </div>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </CollapsibleContent>
-                </Collapsible>
-              ) : (
-                <Link
-                  href={item.href}
-                  target={item.external ? "_blank" : undefined}
-                  rel={item.external ? "noopener noreferrer" : undefined}
-                  className={cn(
-                    buttonVariants({ variant: "ghost" }),
-                    "w-full justify-start",
-                  )}
-                  onClick={onLinkClicked}
-                >
-                  <span className="text-base">{item.title}</span>
-                </Link>
+    <>
+      <div className="fixed inset-0 z-50 mt-[69px] overflow-y-auto bg-background animate-in fade-in-0">
+        <div className="flex size-full flex-col items-start space-y-3 p-4">
+          {user ? (
+            <Link
+              href={routes.dashboard}
+              className={cn(
+                buttonVariants({
+                  variant: "default",
+                  size: "lg",
+                }),
+                "w-full rounded-xl",
               )}
-            </li>
-          ))}
-        </ul>
-        <div className="flex w-full items-center justify-between gap-2 border-y border-border/40 p-4">
-          <div className="text-base font-medium">Theme</div>
-          <ThemeToggle />
+              onClick={onLinkClicked}
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <div className="flex w-full flex-col gap-2">
+              <Link
+                href={routes.auth.SignUp}
+                className={cn(
+                  buttonVariants({
+                    variant: "default",
+                    size: "lg",
+                  }),
+                  "w-full rounded-xl",
+                )}
+                onClick={onLinkClicked}
+              >
+                Start for free
+              </Link>
+              <Link
+                href={routes.auth.SignIn}
+                onClick={onLinkClicked}
+                className={cn(
+                  buttonVariants({
+                    variant: "outline",
+                    size: "lg",
+                  }),
+                  "w-full rounded-xl",
+                )}
+              >
+                Sign in
+              </Link>
+            </div>
+          )}
+          <ul className="w-full">
+            {MENU_LINKS.map((item) => (
+              <li key={item.title} className="py-2">
+                {item.items ? (
+                  <Collapsible
+                    open={expanded[item.title.toLowerCase()]}
+                    onOpenChange={(isOpen) =>
+                      setExpanded((prev) => ({
+                        ...prev,
+                        [item.title.toLowerCase()]: isOpen,
+                      }))
+                    }
+                  >
+                    <CollapsibleTrigger>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="flex h-9 w-full items-center justify-between px-4 text-left"
+                      >
+                        <span className="text-base font-medium">
+                          {item.title}
+                        </span>
+                        {expanded[item.title.toLowerCase()] ? (
+                          <ChevronUpIcon className="size-4" />
+                        ) : (
+                          <ChevronDownIcon className="size-4" />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <ul className="mt-2 pl-4">
+                        {item.items.map((subItem) => (
+                          <li key={subItem.title}>
+                            <Link
+                              href={subItem.href}
+                              target={subItem.external ? "_blank" : undefined}
+                              rel={
+                                subItem.external
+                                  ? "noopener noreferrer"
+                                  : undefined
+                              }
+                              className={cn(
+                                buttonVariants({ variant: "ghost" }),
+                                "m-0 h-auto w-full justify-start gap-4 p-1.5",
+                              )}
+                              onClick={onLinkClicked}
+                            >
+                              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border bg-background text-muted-foreground transition-colors group-hover:text-foreground">
+                                {subItem.icon}
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium">
+                                  {subItem.title}
+                                  {subItem.external && (
+                                    <ExternalLink className="-mt-2 ml-1 inline size-2 text-muted-foreground" />
+                                  )}
+                                </span>
+                                {subItem.description && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {subItem.description}
+                                  </p>
+                                )}
+                              </div>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </CollapsibleContent>
+                  </Collapsible>
+                ) : (
+                  <Link
+                    href={item.href}
+                    target={item.external ? "_blank" : undefined}
+                    rel={item.external ? "noopener noreferrer" : undefined}
+                    className={cn(
+                      buttonVariants({ variant: "ghost" }),
+                      "w-full justify-start",
+                    )}
+                    onClick={onLinkClicked}
+                  >
+                    <span className="text-base">{item.title}</span>
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ul>
+          <div className="flex w-full items-center justify-between gap-2 border-y border-border/40 p-4">
+            <div className="text-base font-medium">Theme</div>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

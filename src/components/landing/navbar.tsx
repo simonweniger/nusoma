@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -23,9 +24,12 @@ import { MENU_LINKS } from "@/components/landing/marketing-links";
 import { MobileMenu } from "@/components/landing/mobile-menu";
 import { ExternalLink } from "./fragments/external-link";
 import { Logo } from "../icons";
+import { useAuth } from "@/providers/auth-provider";
 
 export function Navbar(): React.JSX.Element {
   const pathname = usePathname();
+  const { user } = useAuth();
+
   return (
     <section className="sticky inset-x-0 top-0 z-40 border-b bg-background py-4">
       <div className="container">
@@ -129,31 +133,47 @@ export function Navbar(): React.JSX.Element {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle className="rounded-xl border-none shadow-none" />
-            <Link
-              href={routes.auth.SignIn}
-              className={cn(
-                buttonVariants({
-                  variant: "outline",
-                }),
-                "rounded-xl",
-              )}
-            >
-              Sign in
-            </Link>
-            <Link
-              href={routes.auth.SignUp}
-              className={cn(
-                buttonVariants({
-                  variant: "default",
-                }),
-                "rounded-xl",
-              )}
-            >
-              Start for free
-            </Link>
+            {user ? (
+              <Link
+                href={routes.dashboard}
+                className={cn(
+                  buttonVariants({
+                    variant: "outline",
+                  }),
+                  "rounded-xl",
+                )}
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href={routes.auth.SignIn}
+                  className={cn(
+                    buttonVariants({
+                      variant: "outline",
+                    }),
+                    "rounded-xl",
+                  )}
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href={routes.auth.SignUp}
+                  className={cn(
+                    buttonVariants({
+                      variant: "default",
+                    }),
+                    "rounded-xl",
+                  )}
+                >
+                  Start for free
+                </Link>
+              </>
+            )}
           </div>
         </nav>
-        <MobileMenu className="lg:hidden" />
+        <MobileMenu className="lg:hidden" user={user} />
       </div>
     </section>
   );

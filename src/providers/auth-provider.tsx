@@ -159,7 +159,7 @@ function AuthenticatedContent({
 }) {
   useEffect(() => {
     // Redirect authenticated users away from auth pages
-    if (isAuthRoute || pathname === "/") {
+    if (isAuthRoute) {
       router.push("/dashboard");
     }
   }, [isAuthRoute, pathname, router]);

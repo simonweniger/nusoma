@@ -6,13 +6,13 @@ import Link from "next/link";
 import { APP_NAME } from "@/lib/common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import Logo from "@/components/logo";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 import { ExternalLink } from "@/components/landing/fragments/external-link";
 import { FOOTER_LINKS, SOCIAL_LINKS } from "./marketing-links";
 import { useToast } from "@/hooks/use-toast";
+import { Logo } from "../icons";
 
 export function Footer(): React.JSX.Element {
   const toast = useToast();

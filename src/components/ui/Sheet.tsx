@@ -36,7 +36,7 @@ function SheetOverlay({
     <BaseSheet.Backdrop
       data-slot="sheet-overlay"
       className={cn(
-        "fixed inset-0 bg-black/50 transition-all duration-200 [&[data-ending-style]]:opacity-0 [&[data-starting-style]]:opacity-0",
+        "fixed inset-0 bg-black/50 transition-all duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
         className,
       )}
       {...props}
@@ -60,13 +60,13 @@ function SheetContent({
         className={cn(
           "bg-popover text-popover-foreground fixed z-50 flex max-h-[calc(100vh-2rem)] flex-col gap-4 rounded-lg shadow-lg outline-hidden transition ease-in-out data-closed:duration-300 data-open:duration-500",
           side === "right" &&
-            "inset-y-0 top-4 right-0 h-full w-3/4 origin-right -translate-x-4 border sm:max-w-sm [&[data-ending-style]]:translate-x-full [&[data-starting-style]]:translate-x-full",
+            "inset-y-0 top-4 right-0 h-full w-3/4 origin-right -translate-x-4 border sm:max-w-sm data-ending-style:translate-x-full data-starting-style:translate-x-full",
           side === "left" &&
-            "inset-y-0 top-4 left-0 h-full w-3/4 origin-left translate-x-4 border sm:max-w-sm [&[data-ending-style]]:-translate-x-full [&[data-starting-style]]:-translate-x-full",
+            "inset-y-0 top-4 left-0 h-full w-3/4 origin-left translate-x-4 border sm:max-w-sm data-ending-style:-translate-x-full data-starting-style:-translate-x-full",
           side === "top" &&
-            "inset-x-0 top-0 mx-auto h-auto w-[calc(100vw-2rem)] origin-top translate-y-4 border [&[data-ending-style]]:-translate-y-full [&[data-starting-style]]:-translate-y-full",
+            "inset-x-0 top-0 mx-auto h-auto w-[calc(100vw-2rem)] origin-top translate-y-4 border data-ending-style:-translate-y-full data-starting-style:-translate-y-full",
           side === "bottom" &&
-            "inset-x-0 bottom-0 mx-auto h-auto w-[calc(100vw-2rem)] origin-bottom -translate-y-4 border [&[data-ending-style]]:translate-y-full [&[data-starting-style]]:translate-y-full",
+            "inset-x-0 bottom-0 mx-auto h-auto w-[calc(100vw-2rem)] origin-bottom -translate-y-4 border data-ending-style:translate-y-full data-starting-style:translate-y-full",
           className,
         )}
         {...props}

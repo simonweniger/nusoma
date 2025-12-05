@@ -6,15 +6,10 @@ import rehypePrettyCode, { Options } from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
 import { codeImport } from "remark-code-import";
 import remarkGfm from "remark-gfm";
-import { createHighlighter } from "shiki";
 import { z } from "zod";
 
 const prettyCodeOptions: Options = {
   theme: "github-dark",
-  getHighlighter: (options) =>
-    createHighlighter({
-      ...options,
-    }),
   onVisitLine(node) {
     if (node.children.length === 0) {
       node.children = [{ type: "text", value: " " }];
@@ -42,6 +37,7 @@ export const authors = defineCollection({
     ref: z.string(),
     name: z.string().default("Anonymous"),
     avatar: z.string().url().default(""),
+    content: z.string(),
   }),
 });
 
@@ -55,6 +51,7 @@ export const posts = defineCollection({
     published: z.string().datetime(),
     category: z.string().default("Miscellaneous"),
     author: z.string(),
+    content: z.string(),
   }),
   transform: async (data, context) => {
     const body = await compileMDX(context, data, {
@@ -88,6 +85,7 @@ export const docs = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
+    content: z.string(),
   }),
   transform: async (data, context) => {
     const body = await compileMDX(context, data, {
