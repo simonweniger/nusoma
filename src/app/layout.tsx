@@ -1,7 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { CoreProviders } from "./core-providers";
-import { focal, hal, halMono, commitMono, inconsolata } from "@/lib/fonts";
+import {
+  geistSans,
+  geistMono,
+  doto,
+  focal,
+  hal,
+  halMono,
+  commitMono,
+} from "@/lib/fonts";
 import { BotIdClient } from "botid/client";
 import { Analytics } from "@vercel/analytics/next";
 import { CookieBanner } from "@/components/landing/fragments/cookie-banner";
@@ -107,10 +115,12 @@ export default function RootLayout({
     <html
       lang="en"
       className={[
+        geistSans.variable,
+        geistMono.variable,
+        doto.variable,
         hal.variable,
         halMono.variable,
         focal.variable,
-        inconsolata.variable,
         commitMono.variable,
       ].join(" ")}
       suppressHydrationWarning

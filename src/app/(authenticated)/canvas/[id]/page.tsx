@@ -2411,20 +2411,34 @@ export default function OverlayPage() {
                       : img,
                   ),
                 );
+
+                // Set success state first
                 setActiveGenerations((prev) => {
                   const newMap = new Map(prev);
-                  newMap.delete(id);
+                  const gen = newMap.get(id);
+                  if (gen) {
+                    newMap.set(id, { ...gen, state: "success" });
+                  }
                   return newMap;
                 });
-                setIsGenerating(false);
 
-                // Save to history for undo/redo
-                saveToHistory();
-
-                // Immediately save after generation completes
+                // Show success state for 1.5 seconds, then clean up
                 setTimeout(() => {
-                  saveToStorage();
-                }, 100); // Small delay to ensure state updates are processed
+                  setActiveGenerations((prev) => {
+                    const newMap = new Map(prev);
+                    newMap.delete(id);
+                    return newMap;
+                  });
+                  setIsGenerating(false);
+
+                  // Save to history for undo/redo
+                  saveToHistory();
+
+                  // Immediately save after generation completes
+                  setTimeout(() => {
+                    saveToStorage();
+                  }, 100); // Small delay to ensure state updates are processed
+                }, 1500);
               }}
               onError={(id, error) => {
                 console.error(`Generation error for ${id}:`, error);
@@ -3149,6 +3163,22 @@ export default function OverlayPage() {
               selectedIds={selectedIds}
               images={images}
               isGenerating={isGenerating}
+              generationState={
+                // Derive overall state from active generations
+                // Priority: success > running > submitting
+                // Default to "submitting" when isGenerating is true but no specific state found
+                Array.from(activeGenerations.values()).some(
+                  (g) => g.state === "success",
+                )
+                  ? "success"
+                  : Array.from(activeGenerations.values()).some(
+                        (g) => g.state === "running",
+                      )
+                    ? "running"
+                    : isGenerating
+                      ? "submitting" // Default to submitting when generation just started
+                      : "running"
+              }
               previousStyleId={previousStyleId}
               handleRun={handleRun}
               handleFileUpload={handleFileUpload}

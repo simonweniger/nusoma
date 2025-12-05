@@ -1,6 +1,6 @@
 // Docs: https://www.instantdb.com/docs/modeling-data
 
-import { i } from "@instantdb/react";
+import { i, InstaQLEntity } from "@instantdb/react";
 
 const _schema = i.schema({
   entities: {
@@ -135,6 +135,31 @@ const _schema = i.schema({
 type _AppSchema = typeof _schema;
 interface AppSchema extends _AppSchema {}
 const schema: AppSchema = _schema;
+
+// Export entity types for use in other files
+export type CanvasProject = InstaQLEntity<AppSchema, "canvasProjects">;
+export type CanvasElement = InstaQLEntity<AppSchema, "canvasElements">;
+export type CanvasAsset = InstaQLEntity<AppSchema, "canvasAssets">;
+export type CanvasHistory = InstaQLEntity<AppSchema, "canvasHistory">;
+export type UserProfile = InstaQLEntity<AppSchema, "userProfiles">;
+export type Folder = InstaQLEntity<AppSchema, "folders">;
+
+// Export types with relations for nested queries
+export type CanvasProjectWithElements = InstaQLEntity<
+  AppSchema,
+  "canvasProjects",
+  { elements: { asset: { file: {} } } }
+>;
+export type CanvasElementWithAsset = InstaQLEntity<
+  AppSchema,
+  "canvasElements",
+  { asset: { file: {} } }
+>;
+export type CanvasAssetWithFile = InstaQLEntity<
+  AppSchema,
+  "canvasAssets",
+  { file: {} }
+>;
 
 export type { AppSchema };
 export default schema;

@@ -1,4 +1,19 @@
 import localFont from "next/font/local";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+import { Doto } from "next/font/google";
+
+// Geist fonts (default sans and mono)
+export const geistSans = GeistSans;
+export const geistMono = GeistMono;
+
+// Doto - dotted display font
+export const doto = Doto({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-doto",
+  display: "swap",
+});
 
 // Focal Sans-Serif Font Family
 export const focal = localFont({

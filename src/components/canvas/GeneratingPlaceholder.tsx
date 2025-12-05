@@ -1,4 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  memo,
+  useCallback,
+} from "react";
 import { Group, Rect } from "react-konva";
 import { Html } from "react-konva-utils";
 import type { PlacedImage } from "@/types/canvas";
@@ -11,226 +18,274 @@ interface GeneratingPlaceholderProps {
   state?: PlaceholderState;
 }
 
-// Running animation - rotating pixel pattern that fills the placeholder
-function RunningAnimation({
-  color,
-  width,
-  height,
-}: {
-  color: string;
+// Icon patterns for content types (simple dot matrix icons)
+const imageIconPattern = [
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 1, 1, 1, 1, 1, 1, 0],
+  [0, 1, 0, 0, 0, 0, 1, 0],
+  [0, 1, 0, 1, 0, 0, 1, 0],
+  [0, 1, 0, 0, 0, 1, 1, 0],
+  [0, 1, 0, 0, 1, 0, 1, 0],
+  [0, 1, 1, 1, 1, 1, 1, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+];
+
+const videoIconPattern = [
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 1, 1, 1, 1, 1, 1, 0],
+  [0, 1, 0, 0, 0, 0, 1, 0],
+  [0, 1, 0, 1, 1, 0, 1, 0],
+  [0, 1, 0, 1, 1, 0, 1, 0],
+  [0, 1, 0, 0, 0, 0, 1, 0],
+  [0, 1, 1, 1, 1, 1, 1, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+];
+
+interface DottedPlaceholderGridProps {
   width: number;
   height: number;
-}) {
-  const [frame, setFrame] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFrame((prev) => (prev + 1) % 5);
-    }, 150);
-    return () => clearInterval(interval);
-  }, []);
-
-  const cellWidth = width / 8;
-  const cellHeight = height / 8;
-
-  // Define the rotation pattern across 5 frames
-  const getPattern = (frame: number) => {
-    const patterns = [
-      // Frame 0 - all faded
-      Array(8)
-        .fill(null)
-        .map(() => Array(8).fill(0.08)),
-      // Frame 1 - center square active
-      [
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 1.0, 1.0, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 1.0, 1.0, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-      ],
-      // Frame 2 - corners active
-      [
-        [1.0, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 1.0],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [1.0, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 1.0],
-      ],
-      // Frame 3 - sides active
-      [
-        [0.08, 0.08, 0.08, 1.0, 1.0, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [1.0, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 1.0],
-        [1.0, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 1.0],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08],
-        [0.08, 0.08, 0.08, 1.0, 1.0, 0.08, 0.08, 0.08],
-      ],
-      // Frame 4 - full border active
-      [
-        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-        [1.0, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 1.0],
-        [1.0, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 1.0],
-        [1.0, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 1.0],
-        [1.0, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 1.0],
-        [1.0, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 1.0],
-        [1.0, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 1.0],
-        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-      ],
-    ];
-    return patterns[frame];
-  };
-
-  const pattern = getPattern(frame);
-
-  return (
-    <svg
-      width="100%"
-      height="100%"
-      viewBox="0 0 8 8"
-      fill="none"
-      preserveAspectRatio="none"
-    >
-      {pattern.map((row, rowIndex) =>
-        row.map((opacity, colIndex) => (
-          <rect
-            key={`${rowIndex}-${colIndex}`}
-            x={colIndex}
-            y={rowIndex}
-            width={0.9}
-            height={0.9}
-            fill={color}
-            opacity={opacity}
-          />
-        )),
-      )}
-    </svg>
-  );
+  state: PlaceholderState;
+  outputType: "image" | "video";
+  color: string;
+  successColor: string;
 }
 
-// Success animation - expanding grid from center
-function SuccessAnimation({
-  color,
+const DottedPlaceholderGrid = memo(function DottedPlaceholderGrid({
   width,
   height,
-}: {
-  color: string;
-  width: number;
-  height: number;
-}) {
-  const [frame, setFrame] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFrame((prev) => (prev + 1) % 8);
-    }, 60);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <svg
-      width="100%"
-      height="100%"
-      viewBox="0 0 8 8"
-      fill="none"
-      preserveAspectRatio="none"
-    >
-      {/* Generate expanding grid pattern */}
-      {Array.from({ length: 8 }).map((_, row) =>
-        Array.from({ length: 8 }).map((_, col) => {
-          const centerX = 3.5;
-          const centerY = 3.5;
-          // Use Manhattan distance for diamond expansion
-          const distance = Math.abs(row - centerY) + Math.abs(col - centerX);
-          const shouldShow = distance <= frame;
-
-          // Calculate opacity based on how recently this cell was activated
-          const opacity = shouldShow
-            ? Math.max(0.3, 1 - (frame - distance) * 0.15)
-            : 0;
-
-          return (
-            <rect
-              key={`${row}-${col}`}
-              x={col}
-              y={row}
-              width={0.9}
-              height={0.9}
-              fill={color}
-              opacity={opacity}
-            />
-          );
-        }),
-      )}
-    </svg>
-  );
-}
-
-// Submitting animation - wave pattern across the grid
-function SubmittingAnimation({
+  state,
+  outputType,
   color,
-  width,
-  height,
-}: {
-  color: string;
-  width: number;
-  height: number;
-}) {
+  successColor,
+}: DottedPlaceholderGridProps) {
   const [frame, setFrame] = useState(0);
+  const rafRef = useRef<number>(0);
+  const lastTimeRef = useRef<number>(0);
 
+  // Memoize grid dimensions
+  const gridConfig = useMemo(() => {
+    const dotSize = Math.max(
+      2,
+      Math.min(4, Math.floor(Math.min(width, height) / 80)),
+    );
+    const gap = dotSize * 2;
+    const cols = Math.floor(width / (dotSize + gap));
+    const rows = Math.floor(height / (dotSize + gap));
+    const iconSize = 8;
+    const iconScale = Math.max(1, Math.floor(Math.min(cols, rows) / 16));
+    const iconCols = iconSize * iconScale;
+    const iconRows = iconSize * iconScale;
+    const iconStartCol = Math.floor((cols - iconCols) / 2);
+    const iconStartRow = Math.floor((rows - iconRows) / 2);
+    const gridWidth = cols * (dotSize + gap) - gap;
+    const gridHeight = rows * (dotSize + gap) - gap;
+    const centerX = (cols - 1) / 2;
+    const centerY = (rows - 1) / 2;
+
+    return {
+      dotSize,
+      gap,
+      cols,
+      rows,
+      iconScale,
+      iconCols,
+      iconRows,
+      iconStartCol,
+      iconStartRow,
+      gridWidth,
+      gridHeight,
+      centerX,
+      centerY,
+      rx: dotSize / 3,
+    };
+  }, [width, height]);
+
+  const iconPattern =
+    outputType === "video" ? videoIconPattern : imageIconPattern;
+
+  // Use requestAnimationFrame for smoother animations
   useEffect(() => {
-    const interval = setInterval(() => {
-      setFrame((prev) => (prev + 1) % 12);
-    }, 120);
-    return () => clearInterval(interval);
-  }, []);
+    const intervals: Record<PlaceholderState, number> = {
+      submitting: 100,
+      running: 150,
+      success: 60,
+    };
 
-  return (
-    <svg
-      width="100%"
-      height="100%"
-      viewBox="0 0 8 8"
-      fill="none"
-      preserveAspectRatio="none"
-    >
-      {/* Generate wave pattern */}
-      {Array.from({ length: 8 }).map((_, row) =>
-        Array.from({ length: 8 }).map((_, col) => {
-          // Create a diagonal wave pattern
+    const interval = intervals[state];
+
+    const animate = (timestamp: number) => {
+      if (timestamp - lastTimeRef.current >= interval) {
+        setFrame((prev) => (prev + 1) % 24);
+        lastTimeRef.current = timestamp;
+      }
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [state]);
+
+  const currentColor = state === "success" ? successColor : color;
+
+  // Pre-compute grid positions once
+  const gridPositions = useMemo(() => {
+    const {
+      cols,
+      rows,
+      dotSize,
+      gap,
+      iconStartRow,
+      iconStartCol,
+      iconCols,
+      iconRows,
+      iconScale,
+    } = gridConfig;
+    const positions: Array<{
+      x: number;
+      y: number;
+      row: number;
+      col: number;
+      isIcon: boolean;
+      isEdge: boolean;
+      isCorner: boolean;
+    }> = [];
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const isTopEdge = row === 0;
+        const isBottomEdge = row === rows - 1;
+        const isLeftEdge = col === 0;
+        const isRightEdge = col === cols - 1;
+        const isEdge = isTopEdge || isBottomEdge || isLeftEdge || isRightEdge;
+        const isCorner =
+          (isTopEdge || isBottomEdge) && (isLeftEdge || isRightEdge);
+
+        // Check if icon dot
+        let isIcon = false;
+        if (
+          row >= iconStartRow &&
+          row < iconStartRow + iconRows &&
+          col >= iconStartCol &&
+          col < iconStartCol + iconCols
+        ) {
+          const iconRow = Math.floor((row - iconStartRow) / iconScale);
+          const iconCol = Math.floor((col - iconStartCol) / iconScale);
+          isIcon = iconPattern[iconRow]?.[iconCol] === 1;
+        }
+
+        positions.push({
+          x: col * (dotSize + gap),
+          y: row * (dotSize + gap),
+          row,
+          col,
+          isIcon,
+          isEdge,
+          isCorner,
+        });
+      }
+    }
+
+    return positions;
+  }, [gridConfig, iconPattern]);
+
+  // Calculate opacities based on frame and state
+  const rects = useMemo(() => {
+    const { centerX, centerY } = gridConfig;
+
+    return gridPositions.map((pos) => {
+      const { row, col, isIcon, isEdge, isCorner } = pos;
+      let opacity: number;
+
+      switch (state) {
+        case "submitting": {
           const diagonalPosition = row + col;
-          const wavePosition = (diagonalPosition + frame) % 12;
+          const wavePosition = (diagonalPosition + frame) % 16;
 
-          // Calculate opacity based on wave position
-          let opacity = 0.08;
-          if (wavePosition < 3) {
-            opacity = 0.3 + wavePosition * 0.25;
-          } else if (wavePosition >= 3 && wavePosition < 6) {
-            opacity = 1.0 - (wavePosition - 3) * 0.25;
+          if (isIcon) {
+            opacity = Math.sin(frame * 0.3) * 0.3 + 0.7;
+          } else if (wavePosition < 4) {
+            opacity = 0.06 + wavePosition * 0.08;
+          } else if (wavePosition < 8) {
+            opacity = 0.38 - (wavePosition - 4) * 0.08;
+          } else {
+            opacity = 0.04;
           }
+          break;
+        }
 
-          return (
-            <rect
-              key={`${row}-${col}`}
-              x={col}
-              y={row}
-              width={0.9}
-              height={0.9}
-              fill={color}
-              opacity={opacity}
-            />
-          );
-        }),
-      )}
+        case "running": {
+          const patternPhase = frame % 20;
+
+          if (isIcon) {
+            opacity = Math.sin(frame * 0.2) * 0.2 + 0.8;
+          } else if (patternPhase < 5) {
+            opacity = isEdge ? 0.15 : 0.04;
+          } else if (patternPhase < 10) {
+            opacity = isCorner ? 0.6 : isEdge ? 0.1 : 0.03;
+          } else if (patternPhase < 15) {
+            opacity = isEdge ? 0.4 : 0.03;
+          } else {
+            opacity = isEdge ? 0.5 : 0.05;
+          }
+          break;
+        }
+
+        case "success": {
+          const manhattanDistance =
+            Math.abs(row - centerY) + Math.abs(col - centerX);
+          const maxManhattan = centerX + centerY;
+          const expansionProgress = (frame % 16) / 16;
+          const threshold = expansionProgress * maxManhattan * 1.5;
+
+          if (isIcon) {
+            opacity = 1;
+          } else if (manhattanDistance <= threshold) {
+            opacity = Math.max(
+              0.3,
+              1 - ((threshold - manhattanDistance) / maxManhattan) * 0.5,
+            );
+          } else {
+            opacity = 0.05;
+          }
+          break;
+        }
+
+        default:
+          opacity = isIcon ? 0.8 : 0.05;
+      }
+
+      return { ...pos, opacity };
+    });
+  }, [gridPositions, gridConfig, state, frame]);
+
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox={`0 0 ${gridConfig.gridWidth} ${gridConfig.gridHeight}`}
+      preserveAspectRatio="xMidYMid slice"
+      style={{ position: "absolute", inset: 0 }}
+    >
+      {rects.map(({ x, y, opacity }, i) => (
+        <rect
+          key={i}
+          x={x}
+          y={y}
+          width={gridConfig.dotSize}
+          height={gridConfig.dotSize}
+          rx={gridConfig.rx}
+          fill={currentColor}
+          opacity={opacity}
+        />
+      ))}
     </svg>
   );
-}
+});
 
 export function GeneratingPlaceholder({
   image,
@@ -243,40 +298,7 @@ export function GeneratingPlaceholder({
   // Determine colors based on state
   const strokeColor = state === "success" ? successColor : color;
   const fillColor =
-    state === "success"
-      ? "rgba(34, 197, 94, 0.1)" // green with opacity
-      : "rgba(51, 92, 225, 0.1)"; // red with opacity
-
-  // Determine which animation to show
-  const renderAnimation = () => {
-    switch (state) {
-      case "submitting":
-        return (
-          <SubmittingAnimation
-            color={color}
-            width={image.width}
-            height={image.height}
-          />
-        );
-      case "success":
-        return (
-          <SuccessAnimation
-            color={successColor}
-            width={image.width}
-            height={image.height}
-          />
-        );
-      case "running":
-      default:
-        return (
-          <RunningAnimation
-            color={color}
-            width={image.width}
-            height={image.height}
-          />
-        );
-    }
-  };
+    state === "success" ? "rgba(34, 197, 94, 0.08)" : "rgba(51, 92, 225, 0.08)";
 
   return (
     <Group x={image.x} y={image.y}>
@@ -288,20 +310,33 @@ export function GeneratingPlaceholder({
         stroke={strokeColor}
         strokeWidth={2}
         dash={state === "success" ? undefined : [10, 5]}
-        //cornerRadius={8}
       />
 
-      {/* Full-size grid animation */}
+      {/* Dotted grid with icon */}
       <Html
+        groupProps={{
+          x: 0,
+          y: 0,
+        }}
         divProps={{
           style: {
             width: `${image.width}px`,
             height: `${image.height}px`,
             pointerEvents: "none",
+            overflow: "hidden",
           },
         }}
       >
-        {renderAnimation()}
+        <div style={{ width: "100%", height: "100%", position: "relative" }}>
+          <DottedPlaceholderGrid
+            width={image.width}
+            height={image.height}
+            state={state}
+            outputType={outputType}
+            color={color}
+            successColor={successColor}
+          />
+        </div>
       </Html>
     </Group>
   );

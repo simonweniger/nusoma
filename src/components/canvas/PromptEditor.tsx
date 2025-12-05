@@ -1,12 +1,19 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  memo,
+  useRef,
+  useDeferredValue,
+} from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
-import { Button } from "@/components/ui/button";
 import {
   PlayIcon,
   Paperclip,
@@ -18,9 +25,9 @@ import {
   Palette,
   Sparkles,
   X,
+  ZapIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SpinnerIcon } from "@/components/icons";
 import { styleModels } from "@/lib/models";
 import { promptTemplates, PromptTemplate } from "@/lib/prompt-templates";
 import { checkOS } from "@/utils/os-utils";
@@ -31,7 +38,70 @@ import {
   TooltipContent,
   Tooltip,
 } from "@/components/ui/tooltip";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DottedDialogOverlay,
+} from "@/components/ui/dialog";
+import {
+  DottedToolbar,
+  DottedBadge,
+  DottedIconButton,
+  DottedLoader,
+  DottedRasterIcon,
+  DottedRasterText,
+} from "@/components/ui/dotted";
+
+type GenerationState = "submitting" | "running" | "success";
+
+// Memoized icons to prevent re-rasterization
+const MemoizedPlayIcon = memo(function MemoizedPlayIcon() {
+  return (
+    <DottedRasterIcon
+      icon={<PlayIcon fill="black" strokeWidth={0} />}
+      size={18}
+      resolution={14}
+      color="rgb(59, 130, 246)"
+      threshold={60}
+    />
+  );
+});
+
+const MemoizedPaperclipIcon = memo(function MemoizedPaperclipIcon() {
+  return (
+    <DottedRasterIcon
+      icon={<Paperclip strokeWidth={1.5} />}
+      size={18}
+      resolution={14}
+      color="rgb(156, 163, 175)"
+      threshold={180}
+    />
+  );
+});
+
+const MemoizedImageModeIcon = memo(function MemoizedImageModeIcon() {
+  return (
+    <DottedRasterIcon
+      icon={<ImageIcon strokeWidth={1.5} />}
+      size={14}
+      resolution={12}
+      color="rgb(59, 130, 246)"
+      threshold={60}
+    />
+  );
+});
+
+const MemoizedGenerateModeIcon = memo(function MemoizedGenerateModeIcon() {
+  return (
+    <DottedRasterIcon
+      icon={<ZapIcon strokeWidth={1.5} />}
+      size={16}
+      resolution={18}
+      color="rgb(249, 115, 22)"
+      threshold={60}
+    />
+  );
+});
 
 interface PromptEditorProps {
   generationSettings: GenerationSettings;
@@ -39,6 +109,7 @@ interface PromptEditorProps {
   selectedIds: string[];
   images: PlacedImage[];
   isGenerating: boolean;
+  generationState?: GenerationState;
   previousStyleId: string;
   handleRun: () => void;
   handleFileUpload: (files: FileList | null) => void;
@@ -149,12 +220,66 @@ const ChipNode = Node.create({
   },
 });
 
-export function PromptEditor({
+// Memoized mode badge text
+const MemoizedModeText = memo(function MemoizedModeText({
+  isImageMode,
+}: {
+  isImageMode: boolean;
+}) {
+  return (
+    <DottedRasterText
+      text={isImageMode ? "Image to Image" : "Generate Image"}
+      height={14}
+      resolution={20}
+      fontFamily="Geist Mono, ui-monospace, monospace"
+      fontWeight={500}
+      threshold={0}
+      color={isImageMode ? "rgb(59, 130, 246)" : "rgb(249, 115, 22)"}
+    />
+  );
+});
+
+// Memoized status text
+const MemoizedStatusText = memo(function MemoizedStatusText({
+  state,
+  isImageMode,
+}: {
+  state: GenerationState;
+  isImageMode: boolean;
+}) {
+  const text =
+    state === "submitting"
+      ? "Submitting..."
+      : state === "success"
+        ? "Complete!"
+        : "Generating...";
+  const color =
+    state === "success"
+      ? "rgb(34, 197, 94)"
+      : isImageMode
+        ? "rgb(59, 130, 246)"
+        : "rgb(249, 115, 22)";
+
+  return (
+    <DottedRasterText
+      text={text}
+      height={16}
+      resolution={20}
+      fontFamily="Geist Mono, ui-monospace, monospace"
+      fontWeight={500}
+      threshold={0}
+      color={color}
+    />
+  );
+});
+
+export const PromptEditor = memo(function PromptEditor({
   generationSettings,
   setGenerationSettings,
   selectedIds,
   images,
   isGenerating,
+  generationState = "running",
   previousStyleId,
   handleRun,
   handleFileUpload,
@@ -163,7 +288,14 @@ export function PromptEditor({
   const [showMenu, setShowMenu] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
-  const slashPositionRef = React.useRef<number | null>(null);
+  const slashPositionRef = useRef<number | null>(null);
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Defer the generation state for non-critical updates
+  const deferredGenerationState = useDeferredValue(generationState);
+
+  // Memoize whether we're in image mode
+  const isImageMode = selectedIds.length > 0;
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -193,77 +325,95 @@ export function PromptEditor({
     },
   });
 
-  const handleEditorUpdate = (editor: any) => {
-    // Extract text and chip values
-    const json = editor.getJSON();
-    const parts: string[] = [];
-
-    const extractContent = (node: any) => {
-      if (node.type === "chip") {
-        parts.push(node.attrs.value);
-      } else if (node.type === "text") {
-        // Add text content (trim to avoid extra spaces)
-        const text = node.text?.trim();
-        if (text) parts.push(text);
-      } else if (node.content) {
-        node.content.forEach(extractContent);
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
       }
     };
+  }, []);
 
-    json.content?.forEach(extractContent);
+  const handleEditorUpdate = useCallback(
+    (editor: any) => {
+      // Extract text and chip values
+      const json = editor.getJSON();
+      const parts: string[] = [];
 
-    const combinedPrompt = parts.filter(Boolean).join(", ");
+      const extractContent = (node: any) => {
+        if (node.type === "chip") {
+          parts.push(node.attrs.value);
+        } else if (node.type === "text") {
+          // Add text content (trim to avoid extra spaces)
+          const text = node.text?.trim();
+          if (text) parts.push(text);
+        } else if (node.content) {
+          node.content.forEach(extractContent);
+        }
+      };
 
-    setGenerationSettings({
-      ...generationSettings,
-      prompt: combinedPrompt,
-    });
+      json.content?.forEach(extractContent);
 
-    // Detect slash command at cursor position
-    const { from } = editor.state.selection;
-    const textBeforeCursor = editor.state.doc.textBetween(0, from, "\n");
+      const combinedPrompt = parts.filter(Boolean).join(", ");
 
-    // If menu is already open, update search query based on saved slash position
-    if (showMenu && slashPositionRef.current !== null) {
-      const textAfterSlash = textBeforeCursor.substring(
-        slashPositionRef.current + 1,
-      );
-
-      // Close menu if user typed space or moved cursor away from slash
-      if (textAfterSlash.includes(" ") || from < slashPositionRef.current) {
-        setShowMenu(false);
-        slashPositionRef.current = null;
-        setSearchQuery("");
-      } else {
-        setSearchQuery(textAfterSlash);
+      // Debounce the settings update to avoid excessive re-renders
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
       }
-      return;
-    }
+      updateTimeoutRef.current = setTimeout(() => {
+        setGenerationSettings({
+          ...generationSettings,
+          prompt: combinedPrompt,
+        });
+      }, 16); // ~1 frame at 60fps
 
-    // Look for new slash command
-    const lastSlashIndex = textBeforeCursor.lastIndexOf("/");
+      // Detect slash command at cursor position
+      const { from } = editor.state.selection;
+      const textBeforeCursor = editor.state.doc.textBetween(0, from, "\n");
 
-    if (lastSlashIndex !== -1) {
-      const textAfterSlash = textBeforeCursor.substring(lastSlashIndex + 1);
-      const charBeforeSlash = textBeforeCursor[lastSlashIndex - 1];
+      // If menu is already open, update search query based on saved slash position
+      if (showMenu && slashPositionRef.current !== null) {
+        const textAfterSlash = textBeforeCursor.substring(
+          slashPositionRef.current + 1,
+        );
 
-      // Only show if slash is at word boundary and we haven't typed a space yet
-      const shouldShow =
-        (!charBeforeSlash ||
-          charBeforeSlash === " " ||
-          charBeforeSlash === "," ||
-          charBeforeSlash === "\n") &&
-        !textAfterSlash.includes(" ") &&
-        from > lastSlashIndex;
-
-      if (shouldShow) {
-        slashPositionRef.current = lastSlashIndex;
-        setSearchQuery(textAfterSlash);
-        setShowMenu(true);
-        setSelectedIndex(0);
+        // Close menu if user typed space or moved cursor away from slash
+        if (textAfterSlash.includes(" ") || from < slashPositionRef.current) {
+          setShowMenu(false);
+          slashPositionRef.current = null;
+          setSearchQuery("");
+        } else {
+          setSearchQuery(textAfterSlash);
+        }
+        return;
       }
-    }
-  };
+
+      // Look for new slash command
+      const lastSlashIndex = textBeforeCursor.lastIndexOf("/");
+
+      if (lastSlashIndex !== -1) {
+        const textAfterSlash = textBeforeCursor.substring(lastSlashIndex + 1);
+        const charBeforeSlash = textBeforeCursor[lastSlashIndex - 1];
+
+        // Only show if slash is at word boundary and we haven't typed a space yet
+        const shouldShow =
+          (!charBeforeSlash ||
+            charBeforeSlash === " " ||
+            charBeforeSlash === "," ||
+            charBeforeSlash === "\n") &&
+          !textAfterSlash.includes(" ") &&
+          from > lastSlashIndex;
+
+        if (shouldShow) {
+          slashPositionRef.current = lastSlashIndex;
+          setSearchQuery(textAfterSlash);
+          setShowMenu(true);
+          setSelectedIndex(0);
+        }
+      }
+    },
+    [showMenu, generationSettings, setGenerationSettings],
+  );
 
   const insertStyleChip = (style: any) => {
     if (!editor || slashPositionRef.current === null) return;
@@ -434,15 +584,15 @@ export function PromptEditor({
           className={cn(
             "p-4 transition-all ease-in-out duration-100",
             selectedIds.length > 0
-              ? "bg-blue-500/10 dark:shadow-none"
-              : "bg-orange-500/10 dark:shadow-none",
+              ? "bg-blue-600/8 dark:shadow-blue-600/50"
+              : "bg-orange-600/8 dark:shadow-orange-600/50",
           )}
           style={{ filter: "url(#gooey)" }}
         >
           {/* Editor section */}
           <div
             className={cn(
-              "bg-background/90 backdrop-blur-xl rounded-3xl",
+              "bg-background rounded-3xl",
               "shadow-[0_0_0_1px_rgba(50,50,50,0.16),0_4px_8px_-0.5px_rgba(50,50,50,0.08),0_8px_16px_-2px_rgba(50,50,50,0.04)]",
             )}
           >
@@ -496,165 +646,185 @@ export function PromptEditor({
             </div>
           </div>
 
-          <div
-            className={cn(
-              "bg-background/90 backdrop-blur-xl rounded-[20px] mt-0",
-              "shadow-[0_0_0_1px_rgba(50,50,50,0.16),0_4px_8px_-0.5px_rgba(50,50,50,0.08),0_8px_16px_-2px_rgba(50,50,50,0.04)]",
-              //"dark:shadow-none dark:outline-1 dark:outline-border",
-            )}
+          {/* Dotted Toolbar */}
+          <DottedToolbar
+            variant="default"
+            isLoading={isGenerating}
+            cols={180}
+            rows={20}
+            dotSize={3}
+            gap={4}
+            className="relative rounded-[20px] mt-0 py-2 px-3"
           >
-            <div className="flex items-center justify-between px-2 py-2">
-              {/* Mode indicator badge */}
-              <div
-                className={cn(
-                  "py-1 rounded-xl overflow-clip flex items-center px-3",
-                  "pointer-events-none select-none",
-                  selectedIds.length > 0
-                    ? "bg-blue-500/10 dark:bg-blue-500/15 shadow-[0_0_0_1px_rgba(59,130,246,0.2),0_4px_8px_-0.5px_rgba(59,130,246,0.08),0_8px_16px_-2px_rgba(59,130,246,0.04)] dark:shadow-none dark:border dark:border-blue-500/30"
-                    : "bg-orange-500/10 dark:bg-orange-500/15 shadow-[0_0_0_1px_rgba(249,115,22,0.2),0_4px_8px_-0.5px_rgba(249,115,22,0.08),0_8px_16px_-2px_rgba(249,115,22,0.04)] dark:shadow-none dark:border dark:border-orange-500/30",
-                )}
-              >
-                {selectedIds.length > 0 ? (
-                  <div className="flex items-center gap-2 text-xs font-medium">
-                    <ImageIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />
-                    <span className="text-blue-600 dark:text-blue-500">
-                      Image to Image
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-xs font-medium">
-                    <span className="text-orange-600 dark:text-orange-500 font-bold text-sm">
-                      G
-                    </span>
-                    <span className="text-orange-600 dark:text-orange-500">
-                      Generate Image
-                    </span>
-                  </div>
-                )}
+            <div className="absolute z-10 top-[-8px] right-2 left-2 w-full h-4 bg-linear-to-b from-background/50 to-transparent blur-sm" />
+            <div className="absolute z-10 bottom-[-8px] right-2 left-2 w-full h-4 bg-linear-to-t from-background/50 to-transparent blur-sm" />
+            {/* Loading state - full width animation with status */}
+            {isGenerating ? (
+              <div className="flex items-center w-full min-h-[36px] relative">
+                {/* Status text on the left */}
+                <div className="flex items-center gap-3 z-10">
+                  <MemoizedStatusText
+                    state={deferredGenerationState}
+                    isImageMode={isImageMode}
+                  />
+                </div>
+
+                {/* Full-width loading animation overlay */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <DottedLoader
+                    state={deferredGenerationState}
+                    cols={200}
+                    rows={14}
+                    dotSize={1}
+                    gap={2}
+                    color={
+                      isImageMode ? "rgb(59, 130, 246)" : "rgb(249, 115, 22)"
+                    }
+                    successColor="rgb(34, 197, 94)"
+                    className="opacity-30"
+                  />
+                </div>
               </div>
-
-              <div className="flex items-center gap-2">
-                {/* Attachment button */}
-                <Tooltip>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="border-none"
-                    render={<TooltipTrigger />}
-                    onClick={() => {
-                      const input = document.createElement("input");
-                      input.type = "file";
-                      input.accept = "image/*";
-                      input.multiple = true;
-
-                      input.style.position = "fixed";
-                      input.style.top = "-1000px";
-                      input.style.left = "-1000px";
-                      input.style.opacity = "0";
-                      input.style.pointerEvents = "none";
-                      input.style.width = "1px";
-                      input.style.height = "1px";
-
-                      input.onchange = (e) => {
-                        try {
-                          handleFileUpload(
-                            (e.target as HTMLInputElement).files,
-                          );
-                        } catch (error) {
-                          console.error("File upload error:", error);
-                          toast({
-                            title: "Upload failed",
-                            description: "Failed to process selected files",
-                            variant: "destructive",
-                          });
-                        } finally {
-                          if (input.parentNode) {
-                            document.body.removeChild(input);
-                          }
-                        }
-                      };
-
-                      input.onerror = () => {
-                        console.error("File input error");
-                        if (input.parentNode) {
-                          document.body.removeChild(input);
-                        }
-                      };
-
-                      document.body.appendChild(input);
-
-                      setTimeout(() => {
-                        try {
-                          input.click();
-                        } catch (error) {
-                          console.error(
-                            "Failed to trigger file dialog:",
-                            error,
-                          );
-                          toast({
-                            title: "Upload unavailable",
-                            description:
-                              "File upload is not available. Try using drag & drop instead.",
-                            variant: "destructive",
-                          });
-                          if (input.parentNode) {
-                            document.body.removeChild(input);
-                          }
-                        }
-                      }, 10);
-
-                      setTimeout(() => {
-                        if (input.parentNode) {
-                          document.body.removeChild(input);
-                        }
-                      }, 30000);
-                    }}
-                    title="Upload images"
-                  >
-                    <Paperclip className="h-4 w-4" />
-                  </Button>
-                  <TooltipContent>
-                    <span>Upload</span>
-                  </TooltipContent>
-                </Tooltip>
-
-                {/* Run button */}
-                <Tooltip>
-                  <Button
-                    onClick={handleRun}
-                    variant="default"
-                    size="icon"
-                    disabled={isGenerating || !generationSettings.prompt.trim()}
-                    className={cn(
-                      "gap-2 font-medium transition-all rounded-full",
-                      isGenerating && "bg-secondary",
-                    )}
-                    render={<TooltipTrigger />}
-                  >
-                    {isGenerating ? (
-                      <SpinnerIcon className="h-4 w-4 animate-spin text-white" />
+            ) : (
+              <div className="flex items-center justify-between w-full min-h-[36px]">
+                {/* Mode indicator badge */}
+                <DottedBadge
+                  variant={isImageMode ? "blue" : "orange"}
+                  cols={isImageMode ? 56 : 58}
+                  rows={11}
+                  dotSize={1}
+                  gap={2}
+                  icon={
+                    isImageMode ? (
+                      <MemoizedImageModeIcon />
                     ) : (
-                      <PlayIcon className="h-4 w-4 text-white fill-white" />
-                    )}
-                  </Button>
-                  <TooltipContent>
-                    <div className="flex items-center gap-2">
-                      <span>Run</span>
-                      <ShortcutBadge
-                        variant="default"
-                        size="xs"
-                        shortcut={
-                          checkOS("Win") || checkOS("Linux")
-                            ? "ctrl+enter"
-                            : "meta+enter"
-                        }
-                      />
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
+                      <MemoizedGenerateModeIcon />
+                    )
+                  }
+                  active={true}
+                >
+                  <MemoizedModeText isImageMode={isImageMode} />
+                </DottedBadge>
+
+                <div className="flex items-center gap-1">
+                  {/* Attachment button */}
+                  <Tooltip>
+                    <DottedIconButton
+                      variant="secondary"
+                      size="sm"
+                      gridSize={12}
+                      dotSize={2}
+                      gap={1}
+                      onClick={() => {
+                        const input = document.createElement("input");
+                        input.type = "file";
+                        input.accept = "image/*";
+                        input.multiple = true;
+
+                        input.style.position = "fixed";
+                        input.style.top = "-1000px";
+                        input.style.left = "-1000px";
+                        input.style.opacity = "0";
+                        input.style.pointerEvents = "none";
+                        input.style.width = "1px";
+                        input.style.height = "1px";
+
+                        input.onchange = (e) => {
+                          try {
+                            handleFileUpload(
+                              (e.target as HTMLInputElement).files,
+                            );
+                          } catch (error) {
+                            console.error("File upload error:", error);
+                            toast({
+                              title: "Upload failed",
+                              description: "Failed to process selected files",
+                              variant: "destructive",
+                            });
+                          } finally {
+                            if (input.parentNode) {
+                              document.body.removeChild(input);
+                            }
+                          }
+                        };
+
+                        input.onerror = () => {
+                          console.error("File input error");
+                          if (input.parentNode) {
+                            document.body.removeChild(input);
+                          }
+                        };
+
+                        document.body.appendChild(input);
+
+                        setTimeout(() => {
+                          try {
+                            input.click();
+                          } catch (error) {
+                            console.error(
+                              "Failed to trigger file dialog:",
+                              error,
+                            );
+                            toast({
+                              title: "Upload unavailable",
+                              description:
+                                "File upload is not available. Try using drag & drop instead.",
+                              variant: "destructive",
+                            });
+                            if (input.parentNode) {
+                              document.body.removeChild(input);
+                            }
+                          }
+                        }, 10);
+
+                        setTimeout(() => {
+                          if (input.parentNode) {
+                            document.body.removeChild(input);
+                          }
+                        }, 30000);
+                      }}
+                      title="Upload images"
+                      icon={<MemoizedPaperclipIcon />}
+                    />
+                    <TooltipContent>
+                      <span>Upload</span>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Run button */}
+                  <Tooltip>
+                    <DottedIconButton
+                      variant="default"
+                      size="md"
+                      gridSize={12}
+                      dotSize={2}
+                      gap={1}
+                      onClick={handleRun}
+                      disabled={
+                        isGenerating || !generationSettings.prompt.trim()
+                      }
+                      isLoading={isGenerating}
+                      icon={!isGenerating ? <MemoizedPlayIcon /> : undefined}
+                    />
+                    <TooltipContent>
+                      <div className="flex items-center gap-2">
+                        <span>Run</span>
+                        <ShortcutBadge
+                          variant="default"
+                          size="xs"
+                          shortcut={
+                            checkOS("Win") || checkOS("Linux")
+                              ? "ctrl+enter"
+                              : "meta+enter"
+                          }
+                        />
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
               </div>
-            </div>
-          </div>
+            )}
+          </DottedToolbar>
         </div>
       </div>
 
@@ -677,6 +847,7 @@ export function PromptEditor({
           setShowMenu(open);
         }}
       >
+        <DottedDialogOverlay />
         <DialogContent
           className="overflow-hidden p-0 w-full max-w-[95vw] sm:max-w-[90vw] lg:max-w-4xl"
           showCloseButton={false}
@@ -754,15 +925,16 @@ export function PromptEditor({
             <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur">
               <animate
                 attributeName="stdDeviation"
-                values="2;4;2"
-                dur="6s"
+                values="1.5;2;3.5;2;1.5"
+                dur="3s"
+                timing-function="linear"
                 repeatCount="indefinite"
               />
             </feGaussianBlur>
             <feColorMatrix
               in="blur"
               mode="matrix"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 40 -12"
+              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 54 -10"
               result="gooey"
             />
             <feComposite in="SourceGraphic" in2="gooey" operator="atop" />
@@ -771,4 +943,4 @@ export function PromptEditor({
       </svg>
     </>
   );
-}
+});

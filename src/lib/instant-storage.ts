@@ -1,5 +1,42 @@
 import { db } from "./db";
 import { id } from "@instantdb/react";
+import type {
+  CanvasProject,
+  CanvasElement as SchemaCanvasElement,
+  CanvasAsset,
+  CanvasAssetWithFile,
+  CanvasProjectWithElements,
+  CanvasElementWithAsset,
+} from "../instant.schema";
+
+// Helper types for query results
+interface QueryResult<T> {
+  data: T;
+}
+
+interface CanvasProjectsQueryData {
+  canvasProjects: CanvasProject[];
+}
+
+interface CanvasProjectsWithElementsQueryData {
+  canvasProjects: CanvasProjectWithElements[];
+}
+
+interface CanvasElementsQueryData {
+  canvasElements: SchemaCanvasElement[];
+}
+
+interface CanvasElementsWithAssetQueryData {
+  canvasElements: CanvasElementWithAsset[];
+}
+
+interface CanvasAssetsQueryData {
+  canvasAssets: CanvasAsset[];
+}
+
+interface CanvasAssetsWithFileQueryData {
+  canvasAssets: CanvasAssetWithFile[];
+}
 
 interface CanvasImage {
   id: string;
@@ -146,8 +183,8 @@ class InstantCanvasStorage {
       },
     });
 
-    const projects = result.data.canvasProjects || [];
-    if (projects.length > 0) {
+    const { canvasProjects: projects } = result.data as CanvasProjectsQueryData;
+    if (projects && projects.length > 0) {
       this.currentProjectId = projects[0].id;
       return this.currentProjectId;
     }
@@ -271,14 +308,15 @@ class InstantCanvasStorage {
       });
 
       const asset = result.data.canvasAssets[0];
+
       if (!asset) {
         console.warn(`Asset ${assetId} not found`);
-        throw new Error(`Asset ${assetId} not found`);
+        return undefined;
       }
 
       if (!asset.file) {
         console.warn(`Asset ${assetId} is missing file`);
-        throw new Error(`Asset ${assetId} is missing file`);
+        return undefined;
       }
 
       return {
@@ -465,6 +503,9 @@ class InstantCanvasStorage {
   async saveCanvasState(state: CanvasState): Promise<void> {
     try {
       const projectId = await this.getCurrentProject();
+      if (!projectId) {
+        throw new Error("No project ID available");
+      }
 
       // Update project viewport and metadata
       await db.transact([
@@ -482,24 +523,24 @@ class InstantCanvasStorage {
         canvasElements: {
           $: {
             where: {
-              "project.id": projectId,
+              "project.id": projectId as string,
             },
           },
         },
       });
 
-      const existingIds = new Set(
-        //TODO: Add better typing for this
-        existingElements.data.canvasElements.map((element: any) => element.id),
-      );
+      const { canvasElements } =
+        existingElements.data as CanvasElementsQueryData;
+      const elements = canvasElements || [];
+      const existingIds = new Set(elements.map((element) => element.id));
       const newElementIds = new Set(
         state.elements.map((element) => element.id),
       );
 
       // Delete elements that are no longer in the state
-      const deleteTxs = existingElements.data.canvasElements
-        .filter((element: any) => !newElementIds.has(element.id))
-        .map((element: any) => db.tx.canvasElements[element.id].delete());
+      const deleteTxs = elements
+        .filter((element) => !newElementIds.has(element.id))
+        .map((element) => db.tx.canvasElements[element.id].delete());
 
       if (deleteTxs.length > 0) {
         await db.transact(deleteTxs);
@@ -534,7 +575,7 @@ class InstantCanvasStorage {
         const txs: any[] = [updateTx];
 
         // Link to project if this is a new element
-        if (!exists) {
+        if (!exists && projectId) {
           txs.push(
             db.tx.canvasElements[elementId].link({ project: projectId }),
           );
@@ -611,8 +652,9 @@ class InstantCanvasStorage {
 
       console.log("Query result:", result);
 
-      const projects = result.data.canvasProjects || [];
-      const project = projects[0];
+      const { canvasProjects: projects } =
+        result.data as CanvasProjectsWithElementsQueryData;
+      const project = projects?.[0];
 
       if (!project) {
         console.log("No project found - returning null");
@@ -621,47 +663,46 @@ class InstantCanvasStorage {
 
       this.currentProjectId = project.id;
 
-      const elements: CanvasElement[] = (project.elements || []).map(
-        (el: any) => {
-          const imageId = el.type === "image" ? el.asset?.id : undefined;
-          const videoId = el.type === "video" ? el.asset?.id : undefined;
+      const projectElements = project.elements || [];
+      const elements: CanvasElement[] = projectElements.map((el) => {
+        const imageId = el.type === "image" ? el.asset?.id : undefined;
+        const videoId = el.type === "video" ? el.asset?.id : undefined;
 
-          // Log if asset is missing
-          if (el.type === "image" && !el.asset) {
-            console.warn(`Element ${el.id} is missing asset link!`);
-          }
+        // Log if asset is missing
+        if (el.type === "image" && !el.asset) {
+          console.warn(`Element ${el.id} is missing asset link!`);
+        }
 
-          return {
-            id: el.id,
-            type: el.type,
-            imageId,
-            videoId,
-            transform: {
-              x: el.x,
-              y: el.y,
-              rotation: el.rotation,
-              scale: el.scale,
-              cropBox:
-                el.cropX !== undefined
-                  ? {
-                      x: el.cropX,
-                      y: el.cropY,
-                      width: el.cropWidth,
-                      height: el.cropHeight,
-                    }
-                  : undefined,
-            },
-            zIndex: el.zIndex,
-            width: el.width,
-            height: el.height,
-            duration: el.duration,
-            currentTime: el.currentTime,
-            isPlaying: el.isPlaying,
-            volume: el.volume,
-            muted: el.muted,
-          };
-        },
-      );
+        return {
+          id: el.id,
+          type: el.type as CanvasElement["type"],
+          imageId,
+          videoId,
+          transform: {
+            x: el.x ?? 0,
+            y: el.y ?? 0,
+            rotation: el.rotation ?? 0,
+            scale: el.scale ?? 1,
+            cropBox:
+              el.cropX !== undefined
+                ? {
+                    x: el.cropX ?? 0,
+                    y: el.cropY ?? 0,
+                    width: el.cropWidth ?? 0,
+                    height: el.cropHeight ?? 0,
+                  }
+                : undefined,
+          },
+          zIndex: el.zIndex ?? 0,
+          width: el.width,
+          height: el.height,
+          duration: el.duration,
+          currentTime: el.currentTime,
+          isPlaying: el.isPlaying,
+          volume: el.volume,
+          muted: el.muted,
+        };
+      });
 
       console.log(
         "Successfully loaded canvas state with",
@@ -704,22 +745,30 @@ class InstantCanvasStorage {
       console.log("Starting asset link fix...");
 
       const projectId = await this.getCurrentProject();
+      if (!projectId) {
+        throw new Error("No project ID available");
+      }
 
       // Get all elements for this project
       const result = await db.queryOnce({
         canvasElements: {
           $: {
             where: {
-              "project.id": projectId,
+              "project.id": projectId as string,
             },
           },
           asset: {},
         },
       });
 
-      const fixTxs: any[] = [];
+      const fixTxs: ReturnType<
+        (typeof db.tx.canvasElements)[string]["link"]
+      >[] = [];
+      const { canvasElements } =
+        result.data as CanvasElementsWithAssetQueryData;
+      const elements = canvasElements || [];
 
-      for (const element of result.data.canvasElements) {
+      for (const element of elements) {
         // If element has no asset link but should have one, add it
         if (!element.asset) {
           // Try to find asset by matching element ID with asset ID
@@ -731,11 +780,13 @@ class InstantCanvasStorage {
             },
           });
 
-          if (assetResult.data.canvasAssets.length > 0) {
+          const { canvasAssets: assets } =
+            assetResult.data as CanvasAssetsQueryData;
+          if (assets && assets.length > 0) {
             console.log(`Fixing asset link for element ${element.id}`);
             fixTxs.push(
               db.tx.canvasElements[element.id].link({
-                asset: assetResult.data.canvasAssets[0].id,
+                asset: assets[0].id,
               }),
             );
           }
@@ -784,17 +835,19 @@ class InstantCanvasStorage {
           : undefined,
       );
 
-      const projects = result.data.canvasProjects || [];
+      const { canvasProjects: projects } =
+        result.data as CanvasProjectsWithElementsQueryData;
+      const projectList = projects || [];
 
       // Delete all elements
-      const elementTxs = projects.flatMap((project: any) =>
-        (project.elements || []).map((el: any) =>
+      const elementTxs = projectList.flatMap((project) =>
+        (project.elements || []).map((el) =>
           db.tx.canvasElements[el.id].delete(),
         ),
       );
 
       // Delete all projects
-      const projectTxs = projects.map((project: any) =>
+      const projectTxs = projectList.map((project) =>
         db.tx.canvasProjects[project.id].delete(),
       );
 
@@ -808,7 +861,9 @@ class InstantCanvasStorage {
       });
 
       // Delete all assets
-      const assetTxs = assetResult.data.canvasAssets.map((asset: any) =>
+      const { canvasAssets } = assetResult.data as CanvasAssetsQueryData;
+      const assetList = canvasAssets || [];
+      const assetTxs = assetList.map((asset) =>
         db.tx.canvasAssets[asset.id].delete(),
       );
 
@@ -858,12 +913,14 @@ class InstantCanvasStorage {
           : undefined,
       );
 
-      const projects = result.data.canvasProjects || [];
+      const { canvasProjects: projects } =
+        result.data as CanvasProjectsQueryData;
+      const projectList = projects || [];
       // Keep only the most recent project, delete others
-      const projectsToDelete = projects.slice(1);
+      const projectsToDelete = projectList.slice(1);
 
       if (projectsToDelete.length > 0) {
-        const txs = projectsToDelete.map((project: any) =>
+        const txs = projectsToDelete.map((project) =>
           db.tx.canvasProjects[project.id].delete(),
         );
         await db.transact(txs);

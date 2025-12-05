@@ -28,6 +28,27 @@ function DialogClose({
   return <BaseDialog.Close data-slot="dialog-close" {...props} />;
 }
 
+function DottedDialogOverlay({
+  className,
+  ...props
+}: React.ComponentProps<typeof BaseDialog.Backdrop>) {
+  return (
+    <BaseDialog.Backdrop
+      data-slot="dialog-overlay"
+      className={cn(
+        "fixed inset-0 transition-all duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
+        "bg-dots-pattern dark:bg-dots-pattern-dark",
+        "bg-size-[4px_4px]",
+        "[backdrop-filter:brightness(1.2)_blur(3px)]",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out",
+        "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
 function DialogOverlay({
   className,
   ...props
@@ -134,6 +155,7 @@ function DialogDescription({
 export {
   Dialog,
   DialogPortal,
+  DottedDialogOverlay,
   DialogOverlay,
   DialogClose,
   DialogTrigger,
