@@ -1,9 +1,6 @@
 export { DottedGrid } from "./DottedGrid";
 export type { DottedGridProps } from "./DottedGrid";
 
-export { DottedButton, dottedButtonVariants } from "./DottedButton";
-export type { DottedButtonProps } from "./DottedButton";
-
 export { DottedBadge, dottedBadgeVariants } from "./DottedBadge";
 export type { DottedBadgeProps } from "./DottedBadge";
 
@@ -12,9 +9,6 @@ export type { DottedLoaderProps, LoaderState } from "./DottedLoader";
 
 export { DottedToolbar } from "./DottedToolbar";
 export type { DottedToolbarProps } from "./DottedToolbar";
-
-export { DottedIconButton, dottedIconButtonVariants } from "./DottedIconButton";
-export type { DottedIconButtonProps } from "./DottedIconButton";
 
 export { DottedIcon, iconPatterns } from "./DottedIcon";
 export type { DottedIconProps, IconType } from "./DottedIcon";

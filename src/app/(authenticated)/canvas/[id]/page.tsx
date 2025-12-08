@@ -3164,9 +3164,6 @@ export default function OverlayPage() {
               images={images}
               isGenerating={isGenerating}
               generationState={
-                // Derive overall state from active generations
-                // Priority: success > running > submitting
-                // Default to "submitting" when isGenerating is true but no specific state found
                 Array.from(activeGenerations.values()).some(
                   (g) => g.state === "success",
                 )

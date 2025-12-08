@@ -69,7 +69,6 @@ export function SettingsDialog({
           render={({ ref, ...dialogProps }) => (
             <Button
               {...dialogProps}
-              // @ts-expect-error - Base UI ref type mismatch
               ref={ref}
               variant="secondary"
               size="icon-sm"

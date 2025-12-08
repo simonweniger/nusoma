@@ -16,7 +16,6 @@ import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import {
   PlayIcon,
-  Paperclip,
   ImageIcon,
   Wand2,
   Camera,
@@ -25,7 +24,7 @@ import {
   Palette,
   Sparkles,
   X,
-  ZapIcon,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { styleModels } from "@/lib/models";
@@ -38,70 +37,11 @@ import {
   TooltipContent,
   Tooltip,
 } from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DottedDialogOverlay,
-} from "@/components/ui/dialog";
-import {
-  DottedToolbar,
-  DottedBadge,
-  DottedIconButton,
-  DottedLoader,
-  DottedRasterIcon,
-  DottedRasterText,
-} from "@/components/ui/dotted";
+import { Dialog, DottedDialogContent } from "@/components/ui/dialog";
+import { Matrix, loader, pulse } from "@/components/ui/matrix";
+import { Button } from "@/components/ui/button";
 
 type GenerationState = "submitting" | "running" | "success";
-
-// Memoized icons to prevent re-rasterization
-const MemoizedPlayIcon = memo(function MemoizedPlayIcon() {
-  return (
-    <DottedRasterIcon
-      icon={<PlayIcon fill="black" strokeWidth={0} />}
-      size={18}
-      resolution={14}
-      color="rgb(59, 130, 246)"
-      threshold={60}
-    />
-  );
-});
-
-const MemoizedPaperclipIcon = memo(function MemoizedPaperclipIcon() {
-  return (
-    <DottedRasterIcon
-      icon={<Paperclip strokeWidth={1.5} />}
-      size={18}
-      resolution={14}
-      color="rgb(156, 163, 175)"
-      threshold={180}
-    />
-  );
-});
-
-const MemoizedImageModeIcon = memo(function MemoizedImageModeIcon() {
-  return (
-    <DottedRasterIcon
-      icon={<ImageIcon strokeWidth={1.5} />}
-      size={14}
-      resolution={12}
-      color="rgb(59, 130, 246)"
-      threshold={60}
-    />
-  );
-});
-
-const MemoizedGenerateModeIcon = memo(function MemoizedGenerateModeIcon() {
-  return (
-    <DottedRasterIcon
-      icon={<ZapIcon strokeWidth={1.5} />}
-      size={16}
-      resolution={18}
-      color="rgb(249, 115, 22)"
-      threshold={60}
-    />
-  );
-});
 
 interface PromptEditorProps {
   generationSettings: GenerationSettings;
@@ -220,56 +160,94 @@ const ChipNode = Node.create({
   },
 });
 
-// Memoized mode badge text
-const MemoizedModeText = memo(function MemoizedModeText({
-  isImageMode,
-}: {
-  isImageMode: boolean;
-}) {
-  return (
-    <DottedRasterText
-      text={isImageMode ? "Image to Image" : "Generate Image"}
-      height={14}
-      resolution={20}
-      fontFamily="Geist Mono, ui-monospace, monospace"
-      fontWeight={500}
-      threshold={0}
-      color={isImageMode ? "rgb(59, 130, 246)" : "rgb(249, 115, 22)"}
-    />
-  );
-});
+// Matrix toolbar constants
+const MATRIX_ROWS = 10;
+const MATRIX_COLS = 110;
+const MATRIX_DOT_SIZE = 2;
+const MATRIX_GAP = 2;
 
-// Memoized status text
-const MemoizedStatusText = memo(function MemoizedStatusText({
+// Pre-computed background pattern (static, no need for useMemo)
+const BACKGROUND_PATTERN: number[][] = Array.from({ length: MATRIX_ROWS }, () =>
+  new Array(MATRIX_COLS).fill(0),
+);
+
+// Full-width Matrix toolbar background with content overlay
+const MatrixToolbar = memo(function MatrixToolbar({
+  isGenerating,
   state,
   isImageMode,
 }: {
+  isGenerating: boolean;
   state: GenerationState;
   isImageMode: boolean;
 }) {
-  const text =
-    state === "submitting"
+  const statusText = isGenerating
+    ? state === "submitting"
       ? "Submitting..."
       : state === "success"
         ? "Complete!"
-        : "Generating...";
+        : "Generating..."
+    : isImageMode
+      ? "Image to Image"
+      : "Generate Image";
+
   const color =
-    state === "success"
+    state === "success" && isGenerating
       ? "rgb(34, 197, 94)"
       : isImageMode
         ? "rgb(59, 130, 246)"
         : "rgb(249, 115, 22)";
 
+  const toolbarWidth =
+    MATRIX_COLS * (MATRIX_DOT_SIZE + MATRIX_GAP) - MATRIX_GAP;
+  const toolbarHeight =
+    MATRIX_ROWS * (MATRIX_DOT_SIZE + MATRIX_GAP) - MATRIX_GAP;
+
   return (
-    <DottedRasterText
-      text={text}
-      height={16}
-      resolution={20}
-      fontFamily="Geist Mono, ui-monospace, monospace"
-      fontWeight={500}
-      threshold={0}
-      color={color}
-    />
+    <div
+      className="relative w-full flex items-center px-6 justify-start"
+      style={{
+        height: toolbarHeight,
+        minWidth: toolbarWidth,
+      }}
+    >
+      {/* Background Matrix - spans full width */}
+      <Matrix
+        rows={MATRIX_ROWS}
+        cols={MATRIX_COLS}
+        pattern={BACKGROUND_PATTERN}
+        size={MATRIX_DOT_SIZE}
+        gap={MATRIX_GAP}
+        palette={{ on: color, off: "var(--muted-foreground)" }}
+        brightness={1}
+        className="absolute inset-0 m-auto"
+      />
+
+      {/* Content overlay - centered */}
+      <div className="relative z-10 flex items-center gap-4">
+        {/* Animated icon */}
+        <Matrix
+          rows={7}
+          cols={7}
+          frames={isGenerating ? (state === "success" ? pulse : loader) : pulse}
+          fps={isGenerating ? (state === "success" ? 16 : 12) : 10}
+          autoplay
+          loop
+          size={MATRIX_DOT_SIZE}
+          gap={MATRIX_GAP}
+          palette={{ on: color, off: "transparent" }}
+          brightness={1}
+        />
+
+        {/* Text label */}
+        <span
+          className="text-lg font-extrabold font-dotted tracking-wide"
+          style={{ color }}
+        >
+          {statusText}
+        </span>
+      </div>
+    </div>
   );
 });
 
@@ -646,185 +624,177 @@ export const PromptEditor = memo(function PromptEditor({
             </div>
           </div>
 
-          {/* Dotted Toolbar */}
-          <DottedToolbar
-            variant="default"
-            isLoading={isGenerating}
-            cols={180}
-            rows={20}
-            dotSize={3}
-            gap={4}
-            className="relative rounded-[20px] mt-0 py-2 px-3"
-          >
-            <div className="absolute z-10 top-[-8px] right-2 left-2 w-full h-4 bg-linear-to-b from-background/50 to-transparent blur-sm" />
-            <div className="absolute z-10 bottom-[-8px] right-2 left-2 w-full h-4 bg-linear-to-t from-background/50 to-transparent blur-sm" />
-            {/* Loading state - full width animation with status */}
-            {isGenerating ? (
-              <div className="flex items-center w-full min-h-[36px] relative">
-                {/* Status text on the left */}
-                <div className="flex items-center gap-3 z-10">
-                  <MemoizedStatusText
-                    state={deferredGenerationState}
-                    isImageMode={isImageMode}
-                  />
-                </div>
-
-                {/* Full-width loading animation overlay */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <DottedLoader
-                    state={deferredGenerationState}
-                    cols={200}
-                    rows={14}
-                    dotSize={1}
-                    gap={2}
-                    color={
-                      isImageMode ? "rgb(59, 130, 246)" : "rgb(249, 115, 22)"
-                    }
-                    successColor="rgb(34, 197, 94)"
-                    className="opacity-30"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between w-full min-h-[36px]">
-                {/* Mode indicator badge */}
-                <DottedBadge
-                  variant={isImageMode ? "blue" : "orange"}
-                  cols={isImageMode ? 56 : 58}
-                  rows={11}
-                  dotSize={1}
-                  gap={2}
-                  icon={
-                    isImageMode ? (
-                      <MemoizedImageModeIcon />
-                    ) : (
-                      <MemoizedGenerateModeIcon />
-                    )
+          {/* Toolbar - inside gooey filter for melting effect */}
+          <div className="bg-background shadow-inner rounded-[22px] border border-border p-2 flex items-center gap-2">
+            {/* Isolate buttons from gooey filter */}
+            <div
+              className="flex items-center gap-2 w-full"
+              style={{ isolation: "isolate" }}
+            >
+              {/* Left: Generation type selector (placeholder for future implementation) */}
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      //size="sm"
+                      className="gap-1.5 text-muted-foreground hover:text-foreground"
+                    >
+                      <ImageIcon className="h-4 w-4" />
+                      <span className="text-xs font-medium">Image</span>
+                      {/* <ChevronDown className="h-3 w-3 opacity-50" /> */}
+                    </Button>
                   }
-                  active={true}
-                >
-                  <MemoizedModeText isImageMode={isImageMode} />
-                </DottedBadge>
+                />
+                <TooltipContent>
+                  <span>Generation type (coming soon)</span>
+                </TooltipContent>
+              </Tooltip>
 
-                <div className="flex items-center gap-1">
-                  {/* Attachment button */}
-                  <Tooltip>
-                    <DottedIconButton
-                      variant="secondary"
-                      size="sm"
-                      gridSize={12}
-                      dotSize={2}
-                      gap={1}
-                      onClick={() => {
-                        const input = document.createElement("input");
-                        input.type = "file";
-                        input.accept = "image/*";
-                        input.multiple = true;
-
-                        input.style.position = "fixed";
-                        input.style.top = "-1000px";
-                        input.style.left = "-1000px";
-                        input.style.opacity = "0";
-                        input.style.pointerEvents = "none";
-                        input.style.width = "1px";
-                        input.style.height = "1px";
-
-                        input.onchange = (e) => {
-                          try {
-                            handleFileUpload(
-                              (e.target as HTMLInputElement).files,
-                            );
-                          } catch (error) {
-                            console.error("File upload error:", error);
-                            toast({
-                              title: "Upload failed",
-                              description: "Failed to process selected files",
-                              variant: "destructive",
-                            });
-                          } finally {
-                            if (input.parentNode) {
-                              document.body.removeChild(input);
-                            }
-                          }
-                        };
-
-                        input.onerror = () => {
-                          console.error("File input error");
-                          if (input.parentNode) {
-                            document.body.removeChild(input);
-                          }
-                        };
-
-                        document.body.appendChild(input);
-
-                        setTimeout(() => {
-                          try {
-                            input.click();
-                          } catch (error) {
-                            console.error(
-                              "Failed to trigger file dialog:",
-                              error,
-                            );
-                            toast({
-                              title: "Upload unavailable",
-                              description:
-                                "File upload is not available. Try using drag & drop instead.",
-                              variant: "destructive",
-                            });
-                            if (input.parentNode) {
-                              document.body.removeChild(input);
-                            }
-                          }
-                        }, 10);
-
-                        setTimeout(() => {
-                          if (input.parentNode) {
-                            document.body.removeChild(input);
-                          }
-                        }, 30000);
-                      }}
-                      title="Upload images"
-                      icon={<MemoizedPaperclipIcon />}
-                    />
-                    <TooltipContent>
-                      <span>Upload</span>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  {/* Run button */}
-                  <Tooltip>
-                    <DottedIconButton
-                      variant="default"
-                      size="md"
-                      gridSize={12}
-                      dotSize={2}
-                      gap={1}
-                      onClick={handleRun}
-                      disabled={
-                        isGenerating || !generationSettings.prompt.trim()
-                      }
-                      isLoading={isGenerating}
-                      icon={!isGenerating ? <MemoizedPlayIcon /> : undefined}
-                    />
-                    <TooltipContent>
-                      <div className="flex items-center gap-2">
-                        <span>Run</span>
-                        <ShortcutBadge
-                          variant="default"
-                          size="xs"
-                          shortcut={
-                            checkOS("Win") || checkOS("Linux")
-                              ? "ctrl+enter"
-                              : "meta+enter"
-                          }
-                        />
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
+              {/* Center: Matrix status display area */}
+              <div
+                className={cn(
+                  "relative flex-1 rounded-xl overflow-hidden",
+                  "flex items-center justify-center",
+                  "bg-background border border-border/80 shadow-inner box-shadow-xs",
+                )}
+              >
+                <MatrixToolbar
+                  isGenerating={isGenerating}
+                  state={deferredGenerationState}
+                  isImageMode={isImageMode}
+                />
               </div>
-            )}
-          </DottedToolbar>
+
+              {/* Right: Action buttons */}
+              <div className="flex items-center gap-1.5">
+                {/* Upload button */}
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        onClick={() => {
+                          const input = document.createElement("input");
+                          input.type = "file";
+                          input.accept = "image/*";
+                          input.multiple = true;
+
+                          input.style.position = "fixed";
+                          input.style.top = "-1000px";
+                          input.style.left = "-1000px";
+                          input.style.opacity = "0";
+                          input.style.pointerEvents = "none";
+                          input.style.width = "1px";
+                          input.style.height = "1px";
+
+                          input.onchange = (e) => {
+                            try {
+                              handleFileUpload(
+                                (e.target as HTMLInputElement).files,
+                              );
+                            } catch (error) {
+                              console.error("File upload error:", error);
+                              toast({
+                                title: "Upload failed",
+                                description: "Failed to process selected files",
+                                variant: "destructive",
+                              });
+                            } finally {
+                              if (input.parentNode) {
+                                document.body.removeChild(input);
+                              }
+                            }
+                          };
+
+                          input.onerror = () => {
+                            console.error("File input error");
+                            if (input.parentNode) {
+                              document.body.removeChild(input);
+                            }
+                          };
+
+                          document.body.appendChild(input);
+
+                          setTimeout(() => {
+                            try {
+                              input.click();
+                            } catch (error) {
+                              console.error(
+                                "Failed to trigger file dialog:",
+                                error,
+                              );
+                              toast({
+                                title: "Upload unavailable",
+                                description:
+                                  "File upload is not available. Try using drag & drop instead.",
+                                variant: "destructive",
+                              });
+                              if (input.parentNode) {
+                                document.body.removeChild(input);
+                              }
+                            }
+                          }, 10);
+
+                          setTimeout(() => {
+                            if (input.parentNode) {
+                              document.body.removeChild(input);
+                            }
+                          }, 30000);
+                        }}
+                      >
+                        <Upload className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>
+                    <span>Upload images</span>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Run button */}
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="default"
+                        size="icon"
+                        onClick={handleRun}
+                        disabled={
+                          isGenerating || !generationSettings.prompt.trim()
+                        }
+                      >
+                        {isGenerating ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        ) : (
+                          <PlayIcon
+                            className="h-4 w-4"
+                            fill="currentColor"
+                            strokeWidth={0}
+                          />
+                        )}
+                        {/* <span>Run</span> */}
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>
+                    <div className="flex items-center gap-2">
+                      <ShortcutBadge
+                        variant="default"
+                        size="xs"
+                        shortcut={
+                          checkOS("Win") || checkOS("Linux")
+                            ? "ctrl+enter"
+                            : "meta+enter"
+                        }
+                      />
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -847,8 +817,7 @@ export const PromptEditor = memo(function PromptEditor({
           setShowMenu(open);
         }}
       >
-        <DottedDialogOverlay />
-        <DialogContent
+        <DottedDialogContent
           className="overflow-hidden p-0 w-full max-w-[95vw] sm:max-w-[90vw] lg:max-w-4xl"
           showCloseButton={false}
         >
@@ -900,7 +869,7 @@ export const PromptEditor = memo(function PromptEditor({
               </div>
             ))}
           </div>
-        </DialogContent>
+        </DottedDialogContent>
       </Dialog>
 
       {/* Tiptap Styles */}

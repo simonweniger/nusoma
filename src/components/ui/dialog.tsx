@@ -28,27 +28,6 @@ function DialogClose({
   return <BaseDialog.Close data-slot="dialog-close" {...props} />;
 }
 
-function DottedDialogOverlay({
-  className,
-  ...props
-}: React.ComponentProps<typeof BaseDialog.Backdrop>) {
-  return (
-    <BaseDialog.Backdrop
-      data-slot="dialog-overlay"
-      className={cn(
-        "fixed inset-0 transition-all duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
-        "bg-dots-pattern dark:bg-dots-pattern-dark",
-        "bg-size-[4px_4px]",
-        "[backdrop-filter:brightness(1.2)_blur(3px)]",
-        "data-[state=open]:animate-in data-[state=closed]:animate-out",
-        "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
 function DialogOverlay({
   className,
   ...props
@@ -65,6 +44,37 @@ function DialogOverlay({
   );
 }
 
+function DottedDialogOverlay({
+  className,
+  dotSize = 1,
+  gap = 3,
+  dotColor = "rgba(255, 255, 255, 0.025)",
+  ...props
+}: React.ComponentProps<typeof BaseDialog.Backdrop> & {
+  dotSize?: number;
+  gap?: number;
+  dotColor?: string;
+}) {
+  const spacing = dotSize + gap;
+
+  return (
+    <BaseDialog.Backdrop
+      data-slot="dialog-overlay"
+      className={cn(
+        "fixed inset-0 transition-all duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
+        className,
+      )}
+      style={{
+        backgroundColor: "rgba(0, 0, 0, 0.75)",
+        backgroundImage: `radial-gradient(circle, ${dotColor} ${dotSize}px, transparent ${dotSize}px)`,
+        backgroundSize: `${spacing}px ${spacing}px`,
+        backgroundPosition: "0 0",
+      }}
+      {...props}
+    />
+  );
+}
+
 function DialogContent({
   className,
   children,
@@ -76,6 +86,50 @@ function DialogContent({
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
+      <BaseDialog.Popup
+        data-slot="dialog-content"
+        className={cn(
+          "bg-popover text-popover-foreground fixed z-50 grid w-full sm:max-w-[calc(100%-2rem)]",
+          "gap-4 rounded-lg border p-6 shadow-lg duration-200 outline-none sm:max-w-lg sm:scale-[calc(1-0.1*var(--nested-dialogs))]",
+          "fixed bottom-0 w-full sm:top-[50%] sm:bottom-auto sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%]",
+          "duration-200",
+          "data-starting-style:translate-y-full data-starting-style:opacity-0",
+          "data-ending-style:translate-y-full data-ending-style:opacity-0",
+          "data-starting-style:sm:translate-y-[-50%] data-starting-style:sm:scale-95",
+          "data-ending-style:sm:translate-y-[-50%] data-ending-style:sm:scale-95",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+        {showCloseButton && (
+          <DialogClose className="ring-offset-popover focus:ring-ring text-muted-foreground absolute top-4 right-4 rounded-xs opacity-50 transition-opacity hover:opacity-100 focus:ring-[3px] focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+            <XIcon />
+            <span className="sr-only">Close</span>
+          </DialogClose>
+        )}
+      </BaseDialog.Popup>
+    </DialogPortal>
+  );
+}
+
+function DottedDialogContent({
+  className,
+  children,
+  showCloseButton = true,
+  dotSize = 1,
+  gap = 4,
+  dotColor = "rgba(255, 255, 255, 0.015)",
+  ...props
+}: React.ComponentProps<typeof BaseDialog.Popup> & {
+  showCloseButton?: boolean;
+  dotSize?: number;
+  gap?: number;
+  dotColor?: string;
+}) {
+  return (
+    <DialogPortal data-slot="dialog-portal">
+      <DottedDialogOverlay dotSize={dotSize} gap={gap} dotColor={dotColor} />
       <BaseDialog.Popup
         data-slot="dialog-content"
         className={cn(
@@ -156,6 +210,7 @@ export {
   Dialog,
   DialogPortal,
   DottedDialogOverlay,
+  DottedDialogContent,
   DialogOverlay,
   DialogClose,
   DialogTrigger,
