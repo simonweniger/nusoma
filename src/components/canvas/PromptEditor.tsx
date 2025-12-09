@@ -3,7 +3,6 @@
 import React, {
   useEffect,
   useState,
-  useMemo,
   useCallback,
   memo,
   useRef,
@@ -16,7 +15,6 @@ import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import {
   PlayIcon,
-  ImageIcon,
   Wand2,
   Camera,
   Lightbulb,
@@ -29,6 +27,13 @@ import {
 import { cn } from "@/lib/utils";
 import { styleModels } from "@/lib/models";
 import { promptTemplates, PromptTemplate } from "@/lib/prompt-templates";
+import {
+  type GenerationType,
+  generationTypeConfigs,
+  getSelectableGenerationTypes,
+  getGenerationModeForContext,
+  getGenerationTypeColor,
+} from "@/lib/generation-types";
 import { checkOS } from "@/utils/os-utils";
 import { ShortcutBadge } from "@/components/canvas/ShortcutBadge";
 import type { GenerationSettings, PlacedImage } from "@/types/canvas";
@@ -160,6 +165,108 @@ const ChipNode = Node.create({
   },
 });
 
+// Build generation type options from global config
+const selectableGenerationTypes = getSelectableGenerationTypes();
+
+interface GenerationTypeOption {
+  id: GenerationType;
+  label: string;
+  icon: React.ReactNode;
+  color: string;
+  disabled?: boolean;
+}
+
+// Build options from the global config
+const generationTypeOptions: GenerationTypeOption[] = Object.values(
+  generationTypeConfigs,
+).map((config) => {
+  const IconComponent = config.icon;
+  const isEnabled = selectableGenerationTypes.some((t) => t.id === config.id);
+  return {
+    id: config.id,
+    label: config.label,
+    icon: <IconComponent />, // Size controlled by .tactile-btn__icon [&_svg]:size-4
+    color: getGenerationTypeColor(config.id),
+    disabled: !isEnabled,
+  };
+});
+
+// Tactile 3D Button Component
+const TactileButton = memo(function TactileButton({
+  isActive,
+  onClick,
+  icon,
+  color,
+  disabled,
+}: {
+  isActive: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  color: string;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "tactile-btn relative",
+        "size-9 rounded-md", // Match button.tsx icon size
+        "transition-all duration-150 ease-out",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+        disabled && "opacity-40 cursor-not-allowed",
+        isActive ? "tactile-btn--active" : "tactile-btn--inactive",
+      )}
+      style={
+        isActive
+          ? ({ "--tactile-glow-color": color } as React.CSSProperties)
+          : undefined
+      }
+    >
+      <span className="tactile-btn__icon absolute inset-0 flex items-center justify-center [&_svg]:size-4">
+        {icon}
+      </span>
+    </button>
+  );
+});
+
+// Tactile Button Group Container
+const TactileButtonGroup = memo(function TactileButtonGroup({
+  options,
+  activeId,
+  onChange,
+}: {
+  options: GenerationTypeOption[];
+  activeId: GenerationType;
+  onChange: (id: GenerationType) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      {options.map((option) => (
+        <Tooltip key={option.id}>
+          <TooltipTrigger
+            render={
+              <TactileButton
+                isActive={activeId === option.id}
+                onClick={() => !option.disabled && onChange(option.id)}
+                icon={option.icon}
+                color={option.color}
+                disabled={option.disabled}
+              />
+            }
+          />
+          <TooltipContent>
+            <span>
+              {option.label}
+              {option.disabled && " (coming soon)"}
+            </span>
+          </TooltipContent>
+        </Tooltip>
+      ))}
+    </div>
+  );
+});
+
 // Matrix toolbar constants
 const MATRIX_ROWS = 10;
 const MATRIX_COLS = 110;
@@ -175,28 +282,33 @@ const BACKGROUND_PATTERN: number[][] = Array.from({ length: MATRIX_ROWS }, () =>
 const MatrixToolbar = memo(function MatrixToolbar({
   isGenerating,
   state,
-  isImageMode,
+  generationType,
+  hasInputAsset,
 }: {
   isGenerating: boolean;
   state: GenerationState;
-  isImageMode: boolean;
+  generationType: GenerationType;
+  hasInputAsset: boolean;
 }) {
+  // Get the current generation mode based on context
+  const currentMode = getGenerationModeForContext(
+    generationType,
+    hasInputAsset,
+    hasInputAsset ? "image" : undefined, // For now, assume image input
+  );
+
   const statusText = isGenerating
     ? state === "submitting"
       ? "Submitting..."
       : state === "success"
         ? "Complete!"
         : "Generating..."
-    : isImageMode
-      ? "Image to Image"
-      : "Generate Image";
+    : currentMode?.shortLabel || "Generate";
 
   const color =
     state === "success" && isGenerating
-      ? "rgb(34, 197, 94)"
-      : isImageMode
-        ? "rgb(59, 130, 246)"
-        : "rgb(249, 115, 22)";
+      ? "rgb(34, 197, 94)" // green-500
+      : getGenerationTypeColor(generationType);
 
   const toolbarWidth =
     MATRIX_COLS * (MATRIX_DOT_SIZE + MATRIX_GAP) - MATRIX_GAP;
@@ -266,6 +378,7 @@ export const PromptEditor = memo(function PromptEditor({
   const [showMenu, setShowMenu] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [generationType, setGenerationType] = useState<GenerationType>("image");
   const slashPositionRef = useRef<number | null>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -559,13 +672,11 @@ export const PromptEditor = memo(function PromptEditor({
     <>
       <div className="fixed bottom-0 left-0 right-0 md:absolute md:bottom-4 md:left-1/2 md:transform md:-translate-x-1/2 z-20 p-2 md:p-0 md:pb-0 md:max-w-[648px]">
         <div
-          className={cn(
-            "p-4 transition-all ease-in-out duration-100",
-            selectedIds.length > 0
-              ? "bg-blue-600/8 dark:shadow-blue-600/50"
-              : "bg-orange-600/8 dark:shadow-orange-600/50",
-          )}
-          style={{ filter: "url(#gooey)" }}
+          className="p-4 transition-all ease-in-out duration-100"
+          style={{
+            filter: "url(#gooey)",
+            backgroundColor: `color-mix(in srgb, ${getGenerationTypeColor(generationType)} 8%, transparent)`,
+          }}
         >
           {/* Editor section */}
           <div
@@ -624,34 +735,18 @@ export const PromptEditor = memo(function PromptEditor({
             </div>
           </div>
 
-          {/* Toolbar - inside gooey filter for melting effect */}
-          <div className="bg-background shadow-inner rounded-[22px] border border-border p-2 flex items-center gap-2">
-            {/* Isolate buttons from gooey filter */}
+          <div className="tactile-group shadow-inner rounded-[22px] border border-border p-2 flex items-center gap-2">
             <div
               className="flex items-center gap-2 w-full"
-              style={{ isolation: "isolate" }}
+              style={{ isolation: "isolate" }} // Isolate buttons from gooey filter
             >
-              {/* Left: Generation type selector (placeholder for future implementation) */}
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      //size="sm"
-                      className="gap-1.5 text-muted-foreground hover:text-foreground"
-                    >
-                      <ImageIcon className="h-4 w-4" />
-                      <span className="text-xs font-medium">Image</span>
-                      {/* <ChevronDown className="h-3 w-3 opacity-50" /> */}
-                    </Button>
-                  }
-                />
-                <TooltipContent>
-                  <span>Generation type (coming soon)</span>
-                </TooltipContent>
-              </Tooltip>
+              {/* Left: Generation type selector */}
+              <TactileButtonGroup
+                options={generationTypeOptions}
+                activeId={generationType}
+                onChange={setGenerationType}
+              />
 
-              {/* Center: Matrix status display area */}
               <div
                 className={cn(
                   "relative flex-1 rounded-xl overflow-hidden",
@@ -662,7 +757,8 @@ export const PromptEditor = memo(function PromptEditor({
                 <MatrixToolbar
                   isGenerating={isGenerating}
                   state={deferredGenerationState}
-                  isImageMode={isImageMode}
+                  generationType={generationType}
+                  hasInputAsset={isImageMode}
                 />
               </div>
 
@@ -673,7 +769,7 @@ export const PromptEditor = memo(function PromptEditor({
                   <TooltipTrigger
                     render={
                       <Button
-                        variant="secondary"
+                        variant="tactileSecondary"
                         size="icon"
                         onClick={() => {
                           const input = document.createElement("input");
@@ -758,7 +854,7 @@ export const PromptEditor = memo(function PromptEditor({
                   <TooltipTrigger
                     render={
                       <Button
-                        variant="default"
+                        variant="tactilePrimary"
                         size="icon"
                         onClick={handleRun}
                         disabled={
@@ -884,6 +980,108 @@ export const PromptEditor = memo(function PromptEditor({
           opacity: 0.5;
           pointer-events: none;
           height: 0;
+        }
+
+        /* ========================================
+           Tactile Button Styles
+           ======================================== */
+
+        /* Container */
+        .tactile-group {
+          background: linear-gradient(180deg, #2a2a30 0%, #1a1a1f 100%);
+          box-shadow:
+            inset 0 1px 1px rgba(255, 255, 255, 0.05),
+            inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+            0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Button base */
+        .tactile-btn {
+          position: relative;
+          cursor: pointer;
+          background: linear-gradient(180deg, #3a3a42 0%, #2a2a32 100%);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Icon styling */
+        .tactile-btn__icon {
+          z-index: 10;
+          pointer-events: none;
+          transition: all 0.15s ease;
+        }
+
+        /* ---- INACTIVE STATE ---- */
+        .tactile-btn--inactive {
+          transform: translateY(0);
+          box-shadow:
+            0 2px 4px rgba(0, 0, 0, 0.3),
+            0 4px 8px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .tactile-btn--inactive .tactile-btn__icon {
+          color: rgba(255, 255, 255, 0.45);
+        }
+
+        .tactile-btn--inactive:hover {
+          background: linear-gradient(180deg, #424249 0%, #32323a 100%);
+        }
+
+        .tactile-btn--inactive:hover .tactile-btn__icon {
+          color: rgba(255, 255, 255, 0.65);
+        }
+
+        /* ---- ACTIVE STATE (pressed) ---- */
+        .tactile-btn--active {
+          transform: translateY(1px);
+          background: linear-gradient(180deg, #28282e 0%, #1e1e24 100%);
+          box-shadow:
+            inset 0 2px 4px rgba(0, 0, 0, 0.4),
+            inset 0 1px 2px rgba(0, 0, 0, 0.3),
+            0 1px 1px rgba(0, 0, 0, 0.2);
+          border-color: rgba(0, 0, 0, 0.2);
+        }
+
+        /* Glowing icon */
+        .tactile-btn--active .tactile-btn__icon {
+          color: var(--tactile-glow-color, hsl(var(--primary)));
+          filter: drop-shadow(0 0 3px var(--tactile-glow-color))
+            drop-shadow(0 0 6px var(--tactile-glow-color))
+            drop-shadow(
+              0 0 10px
+                color-mix(in srgb, var(--tactile-glow-color) 60%, transparent)
+            );
+          animation: tactile-glow 2.5s ease-in-out infinite;
+        }
+
+        @keyframes tactile-glow {
+          0%,
+          100% {
+            filter: drop-shadow(0 0 2px var(--tactile-glow-color))
+              drop-shadow(0 0 4px var(--tactile-glow-color))
+              drop-shadow(
+                0 0 8px
+                  color-mix(in srgb, var(--tactile-glow-color) 50%, transparent)
+              );
+          }
+          50% {
+            filter: drop-shadow(0 0 4px var(--tactile-glow-color))
+              drop-shadow(0 0 8px var(--tactile-glow-color))
+              drop-shadow(
+                0 0 14px
+                  color-mix(in srgb, var(--tactile-glow-color) 70%, transparent)
+              );
+          }
+        }
+
+        @media (prefers-reduced-motion) {
+          .tactile-btn {
+            transition: none !important;
+          }
+          .tactile-btn--active .tactile-btn__icon {
+            animation: none !important;
+            filter: drop-shadow(0 0 4px var(--tactile-glow-color));
+          }
         }
       `}</style>
 
