@@ -1,185 +1,231 @@
-# Infinite Kanvas
+# Introduction
 
-![Infinite Kanvas](./public/og-img.png)
+Next 16 starter kit based on Next.js, Auth.js and Drizzle designed to accelerate the development of web-based (SaaS) applications.
 
-An infinite canvas image editor with AI transformations using fal.ai. Built with Next.js, React Konva, and tRPC.
+# Quickstart
 
-## Features
+Get started in about 30 minutes by following these steps.
 
-- Infinite canvas with pan/zoom
-- Drag & drop image upload
-- AI style transfer via Flux Kontext LoRA
-- Background removal and object isolation
-- Real-time streaming of AI results
-- Multi-selection and image manipulation
-- Auto-save to IndexedDB
-- Undo/redo support
+## Preparation
 
-## Technical Details
+1. Unpack the Archive
 
-### Canvas
-
-React Konva for 2D canvas rendering with viewport culling for performance.
-
-### fal.ai Integration
-
-The app integrates with fal.ai's API in several clever ways:
-
-#### 1. Proxy Architecture
-
-To bypass Vercel's 4.5MB request body limit, we implement a proxy pattern:
-
-```typescript
-// Client uploads through proxy
-const uploadResult = await falClient.storage.upload(blob);
-
-// Proxy endpoint at /api/fal handles the request
-export const POST = route.POST; // fal.ai's Next.js proxy
-```
-
-This allows users to upload large images that would otherwise be rejected by Vercel's edge runtime.
-
-#### 2. Rate Limiting
-
-The application implements a three-tier rate limiting system for users without API keys:
-
-```typescript
-const limiter = {
-  perMinute: createRateLimiter(5, "60 s"), // 10 requests per minute
-  perHour: createRateLimiter(15, "60 m"), // 30 requests per hour
-  perDay: createRateLimiter(50, "24 h"), // 100 requests per day
-};
-```
-
-Users can bypass rate limits by adding their own fal.ai API key, which switches them to their own quota.
-
-#### 3. Real-time Streaming
-
-Image generation uses fal.ai's streaming API to provide live updates:
-
-```typescript
-// Server-side streaming with tRPC
-const stream = await falClient.stream("fal-ai/flux-kontext-lora", {
-  input: { image_url, prompt, loras },
-});
-
-for await (const event of stream) {
-  yield tracked(eventId, { type: "progress", data: event });
-}
-```
-
-The client receives these updates via a tRPC subscription and updates the canvas in real-time, creating a smooth user experience where images gradually appear as they're being generated.
-
-### State Management
-
-The application uses a combination of React state and IndexedDB for persistence:
-
-- **Canvas State**: Images, positions, and transformations stored in React state
-- **History**: Undo/redo stack maintained in memory
-- **Persistence**: Auto-saves to IndexedDB with debouncing
-- **Image Storage**: Original image data stored separately in IndexedDB to handle large files
-
-### API Architecture
-
-Built with tRPC for type-safe API calls:
-
-- `removeBackground`: Uses fal.ai's Bria background removal model
-- `isolateObject`: Leverages EVF-SAM for semantic object segmentation
-- `generateTextToImage`: Text-to-image generation with Flux
-- `generateImageStream`: Streaming image-to-image transformations
-
-## How AI Features Work
-
-### Style Transfer
-
-Uses fal.ai's Flux Kontext LoRA model to apply artistic styles:
-
-1. User selects an image and a style (or provides custom LoRA URL)
-2. Image is uploaded to fal.ai storage via proxy
-3. Streaming transformation begins, updating canvas in real-time
-4. Final high-quality result replaces the preview
-
-### Object Isolation
-
-Powered by EVF-SAM (Enhanced Visual Foundation Segment Anything Model):
-
-1. User describes object in natural language (e.g., "the red car")
-2. EVF-SAM generates a segmentation mask
-3. Server applies mask to original image using Sharp
-4. Isolated object with transparent background returned to canvas
-
-### Background Removal
-
-Uses Bria's specialized background removal model:
-
-1. Automatic subject detection
-2. Clean edge preservation
-3. Transparent PNG output
-
-## Performance Optimizations
-
-- **Viewport Culling**: Only renders visible images
-- **Streaming Images**: Custom hook prevents flickering during updates
-- **Debounced Saving**: Reduces IndexedDB writes
-- **Image Resizing**: Automatically resizes large images before upload
-- **Lazy Loading**: Default images load asynchronously
-
-## Development
-
-### Setup
-
-1. Clone the repository
-2. Install dependencies: `pnpm install`
-3. Add your fal.ai API key to `.env.local`:
-
-   ```
-   FAL_KEY=your_fal_api_key_here
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-   # Optional
-   KV_REST_API_URL=
-   KV_REST_API_TOKEN=
-   ```
-
-4. Run development server: `pnpm run dev`
-
-### Pre-commit Hooks
-
-The project uses [Husky](https://github.com/typicode/husky) and [lint-staged](https://github.com/lint-staged/lint-staged) for automated code formatting and linting before commits.
-
-Pre-commit hooks are automatically installed when you run `pnpm install` (via the `prepare` script).
-
-The hooks will:
-
-- Run Prettier formatting on staged files
-- Run ESLint with auto-fix on staged files
-- Only process files that are staged for commit (more efficient than processing all files)
-
-If you need to manually run the pre-commit checks:
+2. Switch to the project's root directory
 
 ```bash
-npx lint-staged
+cd monorepo-next-drizzle-authjs
 ```
 
-### Tech Stack
+2. Install PNPM if not already installed
 
-- **Next.js 15**: React framework with App Router
-- **React Konva**: Canvas rendering engine
-- **tRPC**: Type-safe API layer
-- **fal.ai SDK**: AI model integration
-- **Tailwind CSS**: Styling
-- **IndexedDB**: Client-side storage
-- **Sharp**: Server-side image processing
+```bash
+npm i -g pnpm
+```
 
-## Deployment
+3. Install the package dependencies of the whole monorepo
 
-The app is optimized for Vercel deployment:
+```bash
+pnpm i
+```
 
-- Uses edge-compatible APIs
-- Implements request proxying for large files
-- Automatic image optimization disabled for canvas compatibility
-- Bot protection via BotId integration
+4. Copy the sample configurations
 
-## License
+```bash
+cp apps/dashboard/.env.example apps/dashboard/.env
+cp apps/marketing/.env.example apps/marketing/.env
+cp apps/public-api/.env.example apps/public-api/.env
+cp packages/database/.env.example packages/database/.env
+```
 
-MIT
+## Services
+
+### Database
+
+#### Install PostgreSQL
+
+1.  Install PostgreSQL via Homebrew, Chocolatey or download it from the [website](https://www.postgresql.org/download/).
+
+```bash
+brew install postgresql
+```
+
+2. Add an initial user.
+
+```bash
+sudo -u postgres psql
+CREATE USER postgres WITH PASSWORD 'password';
+ALTER USER postgres WITH SUPERUSER;
+\q
+```
+
+3.  Update database `packages/database/.env` with your credentials.
+
+```bash
+DATABASE_URL=postgresql://postgres:password@localhost:5432/database?schema=public
+```
+
+4. Create the database
+
+```bash
+psql -U postgres -c "CREATE DATABASE database;"
+```
+
+5. Apply the database migrations.
+
+```bash
+pnpm --filter database push
+```
+
+6. Update also the dashboard `apps/dashboard/.env` with your credentials.
+
+```bash
+DATABASE_URL=postgresql://postgres:password@localhost:5432/database?schema=public
+```
+
+### Google Login (Optional)
+
+1. Visit the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create an account if you don't have one already.
+3. Navigate to APIs or [click here](https://console.cloud.google.com/apis)
+4. Configure the `OAuth consent screen` and add yourself as test user.
+5. Click on `Credentials`, create new OAuth credentials and save those credentials.
+6. Add the Authorized JavaScript origin to the credential settings.
+
+```bash
+http://localhost:3000
+```
+
+7. Add the Authorized redirect URI to the credential settings.
+
+```bash
+http://localhost:3000/api/auth/callback/google
+```
+
+8. Update dashboard `apps/dashboard/.env` with the created credentials.
+
+```bash
+AUTH_GOOGLE_CLIENT_ID=
+AUTH_GOOGLE_CLIENT_SECRET=
+```
+
+### Microsoft Login (Optional)
+
+1. Visit the [Azure Portal](https://portal.azure.com/).
+2. Create an account if you don't have one already.
+3. Navigate to your Entra ID (Active Directory).
+4. Register a new application with platform web.
+5. Click on `Authentication` in the menu and add the redirect URIs
+
+```bash
+http://localhost:3000
+http://localhost:3000/api/auth/callback/microsoft-entra-id
+```
+
+6. Under `Certificates & Secrets`, create a new client secret.
+7. Update dashboard `apps/dashboard/.env` with the created secret.
+
+```bash
+AUTH_MICROSOFT_ENTRA_ID_CLIENT_ID=
+AUTH_MICROSOFT_ENTRA_ID_CLIENT_SECRET=
+```
+
+### Stripe
+
+1. Visit the [Stripe Dashboard](https://dashboard.stripe.com/).
+2. Create an account if you don't have one already.
+3. Activate test mode.
+4. Activate the customer billing portal.
+5. Create a product.
+6. Create a price for the product.
+7. Navigate to developer section and copy the API credentials.
+8. Update dashboard `apps/dashboard/.env` with the IDs and credentials.
+
+```bash
+NEXT_PUBLIC_BILLING_PRICE_PRO_MONTH_ID=
+NEXT_PUBLIC_BILLING_PRICE_PRO_YEAR_ID=
+NEXT_PUBLIC_BILLING_PRICE_LIFETIME_ID=
+NEXT_PUBLIC_BILLING_PRICE_ENTERPRISE_MONTH_ID=
+NEXT_PUBLIC_BILLING_PRICE_ENTERPRISE_YEAR_ID=
+BILLING_STRIPE_SECRET_KEY=
+BILLING_STRIPE_WEBHOOK_SECRET=
+```
+
+### SMTP Provider
+
+The starter kit supports Nodemailer (SMTP) and Resend.
+
+1. Choose an SMTP provider in `packages/email/provider/index.ts`.
+2. Update dashboard `apps/dashboard/.env` with SMTP credentials.
+
+```bash
+EMAIL_FROM=
+
+# Provider: NodeMailer
+
+EMAIL_NODEMAILER_URL=
+
+# Provider: Postmark
+EMAIL_POSTMARK_SERVER_TOKEN=
+
+# Provider: Resend
+EMAIL_RESEND_API_KEY=
+
+# Provider: SendGrid
+EMAIL_SENDGRID_API_KEY=
+```
+
+For Gmail you need an **app-specific password** and set it up like this
+
+```bash
+EMAIL_NODEMAILER_URL=smtp://myemail@gmail.com:suyz yeba qtgv xrnp@smtp.gmail.com:465
+```
+
+We recommend Resend for the ease of use.
+
+<Callout>SMTP provider is mandatory for credentials login.</Callout>
+
+## Dashboard Application
+
+1. Start the dashboard application
+
+```bash
+pnpm --filter dashboard dev
+```
+
+2. Navigate to http://localhost:3000
+
+You’re all set to start!
+
+## Marketing Application
+
+1. Start the marketing application
+
+```bash
+pnpm --filter marketing dev
+```
+
+2. Navigate to http://localhost:3001
+
+You’re all set to start!
+
+## Public API Application
+
+1. Start the public API application
+
+```bash
+pnpm --filter public-api dev
+```
+
+2. Navigate to http://localhost:3002
+
+You’re all set to start!
+
+## Troubleshoot
+
+### It seems that I can't login
+
+The database is probably not set up.
+
+### NPM throws an error
+
+In the monorepo version npm is no longer supported. It's all pnpm now. The problem is that npm, yarn and pnpm have different workspace syntax and package hoisting patterns. Supporting all package managers is not possible in a monorepo setup and pnpm is the most popular one.

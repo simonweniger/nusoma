@@ -1,0 +1,99 @@
+'use server';
+
+import { updateTag } from 'next/cache';
+import { redirect } from 'next/navigation';
+
+import { adjustSeats } from '@workspace/billing/seats';
+import { NotFoundError, PreConditionError } from '@workspace/common/errors';
+import { db, eq } from '@workspace/database/client';
+import {
+  InvitationStatus,
+  invitationTable,
+  membershipTable,
+  organizationTable
+} from '@workspace/database/schema';
+import { replaceOrgSlug, routes } from '@workspace/routes';
+
+import { authActionClient } from '~/actions/safe-action';
+import { Caching, OrganizationCacheKey, UserCacheKey } from '~/data/caching';
+import { acceptInvitationSchema } from '~/schemas/invitations/accept-invitation-schema';
+
+export const acceptInvitation = authActionClient
+  .metadata({ actionName: 'acceptInvitation' })
+  .inputSchema(acceptInvitationSchema)
+  .action(async ({ parsedInput, ctx }) => {
+    const [invitation] = await db
+      .select({
+        status: invitationTable.status,
+        email: invitationTable.email,
+        role: invitationTable.role,
+        organizationId: invitationTable.organizationId
+      })
+      .from(invitationTable)
+      .where(eq(invitationTable.id, parsedInput.invitationId))
+      .limit(1);
+
+    if (!invitation) {
+      throw new NotFoundError('Invitation not found');
+    }
+    if (invitation.status === InvitationStatus.REVOKED) {
+      throw new PreConditionError('Invitation was revoked');
+    }
+    if (invitation.status === InvitationStatus.ACCEPTED) {
+      throw new PreConditionError('Invitation was already accepted');
+    }
+    const normalizedEmail = invitation.email.toLowerCase();
+    if (normalizedEmail !== ctx.session.user.email) {
+      throw new PreConditionError('Email does not match');
+    }
+    const [organization] = await db
+      .select({
+        slug: organizationTable.slug
+      })
+      .from(organizationTable)
+      .where(eq(organizationTable.id, invitation.organizationId))
+      .limit(1);
+
+    if (!organization) {
+      throw new NotFoundError('Organization not found');
+    }
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(invitationTable)
+        .set({ status: InvitationStatus.ACCEPTED })
+        .where(eq(invitationTable.id, parsedInput.invitationId));
+
+      await tx.insert(membershipTable).values({
+        organizationId: invitation.organizationId,
+        userId: ctx.session.user.id,
+        role: invitation.role
+      });
+    });
+
+    try {
+      await adjustSeats(invitation.organizationId);
+    } catch (e) {
+      console.error(e);
+    }
+
+    updateTag(
+      Caching.createOrganizationTag(
+        OrganizationCacheKey.Members,
+        invitation.organizationId
+      ));
+    updateTag(
+      Caching.createOrganizationTag(
+        OrganizationCacheKey.Invitations,
+        invitation.organizationId
+      ));
+    updateTag(
+      Caching.createUserTag(UserCacheKey.Organizations, ctx.session.user.id));
+
+    return redirect(
+      replaceOrgSlug(
+        routes.dashboard.organizations.slug.Home,
+        organization.slug
+      )
+    );
+  });
