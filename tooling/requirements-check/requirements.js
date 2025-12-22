@@ -1,39 +1,31 @@
 import { execSync } from 'child_process';
 
-function checkPnpmVersion() {
-  const requiredPnpmVersion = '>=9.12.0';
-  const currentPnpmVersion = execSync('pnpm --version').toString().trim();
-  const [major, minor] = currentPnpmVersion.split('.').map(Number);
+function checkBunVersion() {
+  const currentBunVersion = execSync('bun --version').toString().trim();
+  const [major] = currentBunVersion.split('.').map(Number);
 
-  if (!currentPnpmVersion) {
+  if (!currentBunVersion) {
     console.error(
       `\x1b[31m%s\x1b[0m`,
-      `You are running the application from a directory that does not have pnpm installed. Please install pnpm and run "pnpm install" in your project directory.`,
+      `You are running the application from a directory that does not have Bun installed. Please install Bun and run "bun install" in your project directory.`,
     );
 
     process.exit(1);
   }
 
-  if (major < 9) {
+  if (major < 1) {
     console.error(
       `\x1b[31m%s\x1b[0m`,
-      `You are running pnpm ${currentPnpmVersion}. The application requires pnpm ${requiredPnpmVersion}.`,
+      `You are running bun ${currentBunVersion}. The application requires bun >= 1.0.0.`,
     );
 
     process.exit(1);
   }
 
-  if (major === 9 && minor < 12) {
-    console.warn(
-      `\x1b[33m%s\x1b[0m`,
-      `You are running pnpm ${currentPnpmVersion}. Recommendation is pnpm 9.12.0 or higher.`,
-    );
-  } else {
-    console.log(
-      `\x1b[32m%s\x1b[0m`,
-      `You are running pnpm ${currentPnpmVersion}.`,
-    );
-  }
+  console.log(
+    `\x1b[32m%s\x1b[0m`,
+    `You are running bun ${currentBunVersion}.`,
+  );
 }
 
 function checkNodeVersion() {
@@ -72,7 +64,7 @@ function checkPathNotOneDrive() {
 function checkRequirements() {
   checkNodeVersion();
   checkPathNotOneDrive();
-  checkPnpmVersion();
+  checkBunVersion();
 }
 
 void checkRequirements();

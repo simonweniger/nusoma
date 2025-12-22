@@ -11,10 +11,10 @@ Make sure you have a `.env` with a valid `DATABASE_URL=<URL>`.
 To start the application, run:
 
 ```bash
-pnpm --filter=public-api dev
+bun run --filter=public-api dev
 ```
 
-Once the application is running, navigate to http://localhost:3002 in your browser to access the public API.
+Once the application is running, navigate to <http://localhost:3002> in your browser to access the public API.
 
 ## Important Notes
 

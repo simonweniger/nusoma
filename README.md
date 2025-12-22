@@ -16,16 +16,13 @@ Get started in about 30 minutes by following these steps.
 cd monorepo-next-drizzle-authjs
 ```
 
-2. Install PNPM if not already installed
-
-```bash
-npm i -g pnpm
-```
+2. Install Bun if not already installed
+(See <https://bun.sh/> for instructions)
 
 3. Install the package dependencies of the whole monorepo
 
 ```bash
-pnpm i
+bun install
 ```
 
 4. Copy the sample configurations
@@ -43,7 +40,7 @@ cp packages/database/.env.example packages/database/.env
 
 #### Install PostgreSQL
 
-1.  Install PostgreSQL via Homebrew, Chocolatey or download it from the [website](https://www.postgresql.org/download/).
+1. Install PostgreSQL via Homebrew, Chocolatey or download it from the [website](https://www.postgresql.org/download/).
 
 ```bash
 brew install postgresql
@@ -58,7 +55,7 @@ ALTER USER postgres WITH SUPERUSER;
 \q
 ```
 
-3.  Update database `packages/database/.env` with your credentials.
+3. Update database `packages/database/.env` with your credentials.
 
 ```bash
 DATABASE_URL=postgresql://postgres:password@localhost:5432/database?schema=public
@@ -73,7 +70,7 @@ psql -U postgres -c "CREATE DATABASE database;"
 5. Apply the database migrations.
 
 ```bash
-pnpm --filter database push
+bun run --filter database push
 ```
 
 6. Update also the dashboard `apps/dashboard/.env` with your credentials.
@@ -189,10 +186,10 @@ We recommend Resend for the ease of use.
 1. Start the dashboard application
 
 ```bash
-pnpm --filter dashboard dev
+bun run --filter dashboard dev
 ```
 
-2. Navigate to http://localhost:3000
+2. Navigate to <http://localhost:3000>
 
 You’re all set to start!
 
@@ -201,10 +198,10 @@ You’re all set to start!
 1. Start the marketing application
 
 ```bash
-pnpm --filter marketing dev
+bun run --filter marketing dev
 ```
 
-2. Navigate to http://localhost:3001
+2. Navigate to <http://localhost:3001>
 
 You’re all set to start!
 
@@ -213,10 +210,10 @@ You’re all set to start!
 1. Start the public API application
 
 ```bash
-pnpm --filter public-api dev
+bun run --filter public-api dev
 ```
 
-2. Navigate to http://localhost:3002
+2. Navigate to <http://localhost:3002>
 
 You’re all set to start!
 
@@ -228,4 +225,4 @@ The database is probably not set up.
 
 ### NPM throws an error
 
-In the monorepo version npm is no longer supported. It's all pnpm now. The problem is that npm, yarn and pnpm have different workspace syntax and package hoisting patterns. Supporting all package managers is not possible in a monorepo setup and pnpm is the most popular one.
+In the monorepo version npm is no longer supported. It's all Bun now. The problem is that npm, yarn and pnpm have different workspace syntax and package hoisting patterns. Supporting all package managers is not possible in a monorepo setup and Bun is the fastest one.
