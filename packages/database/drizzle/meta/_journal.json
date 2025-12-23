@@ -15,6 +15,34 @@
       "when": 1749340615681,
       "tag": "20250607235655_absurd_wasp",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766497069467,
+      "tag": "20251223133749_mixed_unicorn",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1766497707120,
+      "tag": "20251223134827_cute_hulk",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1766500462922,
+      "tag": "20251223143422_flippant_paibok",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1766506407631,
+      "tag": "20251223161327_even_sleeper",
+      "breakpoints": true
     }
   ]
 }

@@ -10,7 +10,9 @@ import { userTable } from '@workspace/database/schema';
 import { Caching, UserCacheKey } from '~/data/caching';
 import type { TransactionalEmailsDto } from '~/types/dtos/transactional-emails-dto';
 
-async function getTransactionalEmailsData(userId: string): Promise<TransactionalEmailsDto> {
+async function getTransactionalEmailsData(
+  userId: string
+): Promise<TransactionalEmailsDto> {
   'use cache';
   cacheLife('default');
   cacheTag(Caching.createUserTag(UserCacheKey.TransactionalEmails, userId));

@@ -12,7 +12,7 @@ import {
   resetPasswordRequestTable,
   sessionTable,
   userTable,
-  verificationTokenTable
+  verificationTable
 } from '@workspace/database/schema';
 
 import { authActionClient } from '~/actions/safe-action';
@@ -36,8 +36,8 @@ export const deleteAccount = authActionClient
         .delete(sessionTable)
         .where(eq(sessionTable.userId, ctx.session.user.id));
       await trx
-        .delete(verificationTokenTable)
-        .where(eq(verificationTokenTable.identifier, ctx.session.user.email));
+        .delete(verificationTable)
+        .where(eq(verificationTable.identifier, ctx.session.user.email));
       await trx
         .delete(changeEmailRequestTable)
         .where(eq(changeEmailRequestTable.userId, ctx.session.user.id));

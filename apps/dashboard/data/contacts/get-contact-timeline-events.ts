@@ -85,10 +85,7 @@ async function getContactTimelineEventsData(
       }
     })
     .from(contactCommentTable)
-    .innerJoin(
-      contactTable,
-      eq(contactCommentTable.contactId, contactTable.id)
-    )
+    .innerJoin(contactTable, eq(contactCommentTable.contactId, contactTable.id))
     .innerJoin(userTable, eq(userTable.id, contactCommentTable.userId))
     .where(
       and(
@@ -105,16 +102,17 @@ async function getContactTimelineEventsData(
         .map((activity) => activity.actorId)
     )
   ];
-  const actors = actorIds.length > 0 
-    ? await db
-        .select({
-          id: userTable.id,
-          name: userTable.name,
-          image: userTable.image
-        })
-        .from(userTable)
-        .where(inArray(userTable.id, actorIds))
-    : [];
+  const actors =
+    actorIds.length > 0
+      ? await db
+          .select({
+            id: userTable.id,
+            name: userTable.name,
+            image: userTable.image
+          })
+          .from(userTable)
+          .where(inArray(userTable.id, actorIds))
+      : [];
 
   const mappedActivities: ActivityTimelineEventDto[] = activities.map(
     (activity) => {
@@ -136,22 +134,20 @@ async function getContactTimelineEventsData(
     }
   );
 
-  const mappedComments: CommentTimelineEventDto[] = comments.map(
-    (comment) => ({
-      id: comment.id,
-      contactId: comment.contactId,
-      type: 'comment',
-      text: comment.text,
-      edited: comment.createdAt.getTime() !== comment.updatedAt.getTime(),
-      createdAt: comment.createdAt,
-      updatedAt: comment.updatedAt,
-      sender: {
-        id: comment.user.id,
-        name: comment.user.name,
-        image: comment.user.image ?? undefined
-      }
-    })
-  );
+  const mappedComments: CommentTimelineEventDto[] = comments.map((comment) => ({
+    id: comment.id,
+    contactId: comment.contactId,
+    type: 'comment',
+    text: comment.text,
+    edited: comment.createdAt.getTime() !== comment.updatedAt.getTime(),
+    createdAt: comment.createdAt,
+    updatedAt: comment.updatedAt,
+    sender: {
+      id: comment.user.id,
+      name: comment.user.name,
+      image: comment.user.image ?? undefined
+    }
+  }));
 
   const sorted: TimelineEventDto[] = [
     ...mappedActivities,
@@ -179,5 +175,8 @@ export async function getContactTimelineEvents(
     throw new ValidationError(JSON.stringify(result.error.flatten()));
   }
 
-  return getContactTimelineEventsData(ctx.organization.id, result.data.contactId);
+  return getContactTimelineEventsData(
+    ctx.organization.id,
+    result.data.contactId
+  );
 }

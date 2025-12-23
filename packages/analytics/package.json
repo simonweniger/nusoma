@@ -16,8 +16,8 @@
     "next": "16.0.10",
     "posthog-js": "1.298.1",
     "posthog-node": "4.16.0",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "zod": "4.1.13"
   },
   "devDependencies": {

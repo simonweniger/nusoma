@@ -30,5 +30,6 @@ export const disableAuthenticatorApp = authActionClient
       Caching.createUserTag(
         UserCacheKey.MultiFactorAuthentication,
         ctx.session.user.id
-      ));
+      )
+    );
   });

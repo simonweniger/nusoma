@@ -5,19 +5,24 @@ import { WebhookTrigger } from '@workspace/database/schema';
 export const updateWebhookSchema = z.object({
   id: z
     .string({
-        error: (issue) => issue.input === undefined ? 'Id is required.' : 'Id must be a string.'
+      error: (issue) =>
+        issue.input === undefined ? 'Id is required.' : 'Id must be a string.'
     })
     .trim()
     .uuid('Id is invalid.')
     .min(1, 'Id is required.')
     .max(36, 'Maximum 36 characters allowed.'),
-  url: z.url('Enter a valid URL with schema.')
-        .trim()
+  url: z
+    .url('Enter a valid URL with schema.')
+    .trim()
     .min(1, 'Webhook URL is required.')
     .max(2000, 'Maximum 2000 characters allowed.'),
   triggers: z.array(
     z.enum(WebhookTrigger, {
-        error: (issue) => issue.input === undefined ? 'Trigger is required' : 'Trigger must be a string'
+      error: (issue) =>
+        issue.input === undefined
+          ? 'Trigger is required'
+          : 'Trigger must be a string'
     })
   ),
   secret: z

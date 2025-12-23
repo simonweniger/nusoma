@@ -1,10 +1,13 @@
 import { z } from 'zod';
 
-import { OAuthProvider } from '@workspace/auth/providers.types';
+import { OAuthProviders } from '~/types/auth';
 
 export const connectAccountSchema = z.object({
-  provider: z.enum(OAuthProvider, {
-      error: (issue) => issue.input === undefined ? 'Provider is required' : 'Provider must be a string'
+  provider: z.enum(OAuthProviders, {
+    error: (issue) =>
+      issue.input === undefined
+        ? 'Provider is required'
+        : 'Provider must be a string'
   })
 });
 

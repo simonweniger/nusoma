@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 
-import { OAuthProvider } from '@workspace/auth/providers.types';
 import {
   GoogleIcon,
   MicrosoftIcon
@@ -14,6 +13,8 @@ import { cn } from '@workspace/ui/lib/utils';
 import { connectAccount } from '~/actions/account/connect-account';
 import { disconnectAccount } from '~/actions/account/disconnect-account';
 import { identityProviderLabels } from '~/lib/labels';
+import { Provider } from '~/types/auth'; // Import Provider
+
 import type { ConnectedAccountDto } from '~/types/dtos/connected-account-dto';
 
 export type ConnectedAccountListProps =
@@ -53,7 +54,7 @@ function ConnectedAccountListItem({
 }: ConnectedAccountListItemProps): React.JSX.Element {
   const handleConnect = async () => {
     const result = await connectAccount({
-      provider: connectedAccount.id as OAuthProvider
+      provider: connectedAccount.id
     });
     if (result?.serverError || result?.validationErrors) {
       toast.error("Couldn't connect account");
@@ -61,7 +62,7 @@ function ConnectedAccountListItem({
   };
   const handleDisconnect = async () => {
     const result = await disconnectAccount({
-      provider: connectedAccount.id as OAuthProvider
+      provider: connectedAccount.id
     });
     if (!result?.serverError && !result?.validationErrors) {
       toast.success('Account disconnected');
@@ -81,7 +82,7 @@ function ConnectedAccountListItem({
         <Icon connectedAccount={connectedAccount} />
         <div>
           <h5 className="text-sm font-medium">
-            {identityProviderLabels[connectedAccount.id as OAuthProvider]}
+            {identityProviderLabels[connectedAccount.id as Provider]}
           </h5>
           <p className="text-sm text-muted-foreground">
             {connectedAccount.linked ? 'Connected' : 'Not connected'}
@@ -113,21 +114,23 @@ function Icon({
   connectedAccount
 }: {
   connectedAccount: ConnectedAccountDto;
-}): React.JSX.Element {
+}): React.JSX.Element | null {
   switch (connectedAccount.id) {
-    case OAuthProvider.Google:
+    case 'google':
       return (
         <GoogleIcon
           width="20"
           height="20"
         />
       );
-    case OAuthProvider.MicrosoftEntraId:
+    case 'microsoft':
       return (
         <MicrosoftIcon
           width="20"
           height="20"
         />
       );
+    default:
+      return null;
   }
 }

@@ -15,8 +15,8 @@ export function getRedirectToSignIn(): string {
   const callbackUrl = getRequestStoragePathname();
 
   return callbackUrl
-    ? `${routes.dashboard.Api}/auth/signin?${new URLSearchParams({ callbackUrl })}`
-    : `${routes.dashboard.Api}/auth/signin`;
+    ? `${routes.dashboard.auth.SignIn}?${new URLSearchParams({ callbackUrl })}`
+    : routes.dashboard.auth.SignIn;
 }
 
 export async function getRedirectAfterSignIn(): Promise<string> {

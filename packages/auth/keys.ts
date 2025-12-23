@@ -8,7 +8,9 @@ export const keys = () =>
       AUTH_GOOGLE_CLIENT_ID: z.string().optional(),
       AUTH_GOOGLE_CLIENT_SECRET: z.string().optional(),
       AUTH_MICROSOFT_ENTRA_ID_CLIENT_ID: z.string().optional(),
-      AUTH_MICROSOFT_ENTRA_ID_CLIENT_SECRET: z.string().optional()
+      AUTH_MICROSOFT_ENTRA_ID_CLIENT_SECRET: z.string().optional(),
+      POLAR_ACCESS_TOKEN: z.string().optional(),
+      POLAR_ORGANIZATION_ID: z.string().optional()
     },
     runtimeEnv: {
       AUTH_SECRET: process.env.AUTH_SECRET,
@@ -17,6 +19,8 @@ export const keys = () =>
       AUTH_MICROSOFT_ENTRA_ID_CLIENT_ID:
         process.env.AUTH_MICROSOFT_ENTRA_ID_CLIENT_ID,
       AUTH_MICROSOFT_ENTRA_ID_CLIENT_SECRET:
-        process.env.AUTH_MICROSOFT_ENTRA_ID_CLIENT_SECRET
+        process.env.AUTH_MICROSOFT_ENTRA_ID_CLIENT_SECRET,
+      POLAR_ACCESS_TOKEN: process.env.POLAR_ACCESS_TOKEN,
+      POLAR_ORGANIZATION_ID: process.env.POLAR_ORGANIZATION_ID
     }
   });

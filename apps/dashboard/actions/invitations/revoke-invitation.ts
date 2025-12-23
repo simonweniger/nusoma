@@ -61,5 +61,6 @@ export const revokeInvitation = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.Invitations,
         ctx.organization.id
-      ));
+      )
+    );
   });

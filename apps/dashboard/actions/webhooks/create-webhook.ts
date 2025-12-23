@@ -24,5 +24,6 @@ export const createWebhook = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.Webhooks,
         ctx.organization.id
-      ));
+      )
+    );
   });

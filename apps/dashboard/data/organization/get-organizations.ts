@@ -9,7 +9,9 @@ import { membershipTable, organizationTable } from '@workspace/database/schema';
 import { Caching, UserCacheKey } from '~/data/caching';
 import type { OrganizationDto } from '~/types/dtos/organization-dto';
 
-async function getOrganizationsData(userId: string): Promise<OrganizationDto[]> {
+async function getOrganizationsData(
+  userId: string
+): Promise<OrganizationDto[]> {
   'use cache';
   cacheLife('default');
   cacheTag(Caching.createUserTag(UserCacheKey.Organizations, userId));

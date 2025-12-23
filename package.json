@@ -22,10 +22,14 @@
     "postinstall": "manypkg fix"
   },
   "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "4.7.0",
     "@manypkg/cli": "0.25.1",
     "@turbo/gen": "2.6.1",
     "cross-env": "7.0.3",
-    "turbo": "2.6.1",
+    "eslint": "9.39.1",
+    "prettier": "3.7.3",
+    "prettier-plugin-tailwindcss": "0.7.1",
+    "turbo": "^2.7.1",
     "typescript": "5.9.3"
   },
   "overrides": {

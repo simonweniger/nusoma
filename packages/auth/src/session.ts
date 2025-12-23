@@ -1,6 +1,5 @@
 import { randomUUID } from 'crypto';
 import { addSeconds } from 'date-fns';
-import { type NextAuthConfig, type Session } from 'next-auth';
 import { validate as uuidValidate } from 'uuid';
 
 import type { Maybe } from '@workspace/common/maybe';
@@ -10,59 +9,55 @@ import {
   type IsDefinedGuard
 } from '@workspace/common/type-guards';
 
+import { auth } from './index';
+
+type BetterAuthSession = typeof auth.$Infer.Session;
+
 export function checkSession(
-  session: Maybe<Session>
-): session is IsDefinedGuard<
-  Session & {
-    user: IsDefinedGuard<Session['user']> & {
-      id: string;
-      email: string;
-      name: string;
-    };
-  }
-> {
-  // session
-  if (!session) {
+  sessionData: Maybe<BetterAuthSession>
+): sessionData is IsDefinedGuard<BetterAuthSession> {
+  // sessionData
+  if (!sessionData) {
     // Normal behavior, no need to log a warning
     return false;
   }
 
-  // session.user
-  if (!session.user) {
+  // sessionData.user
+  if (!sessionData.user) {
     console.warn('No user found in the session. Unable to validate session.');
     return false;
   }
 
-  // session.user.id
-  if (!isDefined(session.user.id)) {
+  // sessionData.user.id
+  if (!isDefined(sessionData.user.id)) {
     console.warn('User ID is undefined. Validation failed.');
     return false;
   }
-  if (!uuidValidate(session.user.id)) {
+  if (!uuidValidate(sessionData.user.id)) {
     console.warn('Invalid user ID format. Expected a UUID.');
     return false;
   }
 
-  // session.user.email
-  if (!isDefined(session.user.email)) {
-    console.warn(`User ${session.user.id} has an undefined email.`);
+  // sessionData.user.email
+  if (!isDefined(sessionData.user.email)) {
+    console.warn(`User ${sessionData.user.id} has an undefined email.`);
     return false;
   }
-  if (!isString(session.user.email)) {
+  if (!isString(sessionData.user.email)) {
     console.warn(
-      `Invalid email type for user ${session.user.id}. Expected a string.`
+      `Invalid email type for user ${sessionData.user.id}. Expected a string.`
     );
     return false;
   }
 
-  // session.user.name
-  if (!isDefined(session.user.name)) {
-    console.warn(`User ${session.user.id} has an undefined name.`);
+  // sessionData.user.name
+  if (!isDefined(sessionData.user.name)) {
+    console.warn(`User ${sessionData.user.id} has an undefined name.`);
     return false;
   }
-  if (!isString(session.user.name)) {
+  if (!isString(sessionData.user.name)) {
     console.warn(
-      `Invalid name type for user ${session.user.id}. Expected a string.`
+      `Invalid name type for user ${sessionData.user.id}. Expected a string.`
     );
     return false;
   }
@@ -75,12 +70,12 @@ export function generateSessionToken(): string {
 }
 
 export function getSessionExpiryFromNow(): Date {
-  return addSeconds(Date.now(), session.maxAge);
+  return addSeconds(Date.now(), 30 * 24 * 60 * 60); // 30 days default
 }
 
 export const session = {
-  strategy: 'database',
   maxAge: 60 * 60 * 24 * 30, // 30 days
   updateAge: 24 * 60 * 60, // 24 hours
-  generateSessionToken
-} satisfies NextAuthConfig['session'];
+  generateSessionToken,
+  strategy: 'database'
+};

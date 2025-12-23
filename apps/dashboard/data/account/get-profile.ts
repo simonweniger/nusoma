@@ -10,7 +10,9 @@ import { userTable } from '@workspace/database/schema';
 import { Caching, UserCacheKey } from '~/data/caching';
 import type { ProfileDto } from '~/types/dtos/profile-dto';
 
-async function getProfileData(userId: string): Promise<Omit<ProfileDto, 'isOwner' | 'role'>> {
+async function getProfileData(
+  userId: string
+): Promise<Omit<ProfileDto, 'isOwner' | 'role'>> {
   'use cache';
   cacheLife('default');
   cacheTag(Caching.createUserTag(UserCacheKey.Profile, userId));

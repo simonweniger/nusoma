@@ -43,7 +43,9 @@ export const changeRole = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.Members,
         ctx.organization.id
-      ));
+      )
+    );
     updateTag(
-      Caching.createUserTag(UserCacheKey.PersonalDetails, parsedInput.id));
+      Caching.createUserTag(UserCacheKey.PersonalDetails, parsedInput.id)
+    );
   });

@@ -60,19 +60,23 @@ export const transferOwnership = authOrganizationActionClient
         );
     });
 
+    updateTag(Caching.createUserTag(UserCacheKey.Profile, ctx.session.user.id));
     updateTag(
-      Caching.createUserTag(UserCacheKey.Profile, ctx.session.user.id));
+      Caching.createUserTag(UserCacheKey.Profile, parsedInput.targetId)
+    );
     updateTag(
-      Caching.createUserTag(UserCacheKey.Profile, parsedInput.targetId));
+      Caching.createUserTag(UserCacheKey.Organizations, ctx.session.user.id)
+    );
     updateTag(
-      Caching.createUserTag(UserCacheKey.Organizations, ctx.session.user.id));
-    updateTag(
-      Caching.createUserTag(UserCacheKey.Organizations, parsedInput.targetId));
+      Caching.createUserTag(UserCacheKey.Organizations, parsedInput.targetId)
+    );
     updateTag(
       Caching.createOrganizationTag(
         OrganizationCacheKey.Members,
         ctx.organization.id
-      ));
+      )
+    );
     updateTag(
-      Caching.createUserTag(UserCacheKey.PersonalDetails, parsedInput.targetId));
+      Caching.createUserTag(UserCacheKey.PersonalDetails, parsedInput.targetId)
+    );
   });

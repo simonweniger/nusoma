@@ -1,18 +1,22 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 
+import { authClient } from '@workspace/auth/client';
+import { routes } from '@workspace/routes';
 import { Button, type ButtonProps } from '@workspace/ui/components/button';
-import { toast } from '@workspace/ui/components/sonner';
-
-import { signOut } from '~/actions/auth/sign-out';
 
 export function SignOutButton(props: ButtonProps): React.JSX.Element {
+  const router = useRouter();
   const handleSignOut = async (): Promise<void> => {
-    const result = await signOut({ redirect: true });
-    if (result?.serverError || result?.validationErrors) {
-      toast.error("Couldn't sign out");
-    }
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push(routes.dashboard.auth.SignIn);
+        }
+      }
+    });
   };
   return (
     <Button

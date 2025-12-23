@@ -12,8 +12,10 @@ import {
 import { cn } from '../lib/utils';
 import { Button } from './button';
 
-export interface ImageDropzoneProps
-  extends Omit<DropzoneOptions, 'onDrop' | 'onError'> {
+export interface ImageDropzoneProps extends Omit<
+  DropzoneOptions,
+  'onDrop' | 'onError'
+> {
   title?: string;
   subtitle?: string;
   src?: string;

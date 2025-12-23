@@ -31,7 +31,8 @@ export const addContact = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.Contacts,
         ctx.organization.id
-      ));
+      )
+    );
 
     for (const membership of ctx.organization.memberships) {
       updateTag(
@@ -39,6 +40,7 @@ export const addContact = authOrganizationActionClient
           OrganizationCacheKey.Favorites,
           ctx.organization.id,
           membership.userId
-        ));
+        )
+      );
     }
   });

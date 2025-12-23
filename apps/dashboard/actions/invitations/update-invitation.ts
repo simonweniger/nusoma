@@ -51,5 +51,6 @@ export const updateInvitation = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.Invitations,
         ctx.organization.id
-      ));
+      )
+    );
   });

@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { OAuthProvider } from '@workspace/auth/providers.types';
 import { APP_NAME } from '@workspace/common/app';
 import { NotFoundError } from '@workspace/common/errors';
 import { and, db, eq } from '@workspace/database/client';
@@ -13,6 +12,7 @@ import { replaceOrgSlug, routes } from '@workspace/routes';
 import { authOrganizationActionClient } from '~/actions/safe-action';
 import { identityProviderLabels } from '~/lib/labels';
 import { disconnectAccountSchema } from '~/schemas/account/disconnect-account-schema';
+import { Provider } from '~/types/auth'; // Fix import
 
 export const disconnectAccount = authOrganizationActionClient
   .metadata({ actionName: 'disconnectAccount' })
@@ -22,12 +22,12 @@ export const disconnectAccount = authOrganizationActionClient
     const [account] = await db
       .select({
         id: accountTable.id,
-        provider: accountTable.provider
+        providerId: accountTable.providerId // Use providerId
       })
       .from(accountTable)
       .where(
         and(
-          eq(accountTable.provider, normalizedProvider),
+          eq(accountTable.providerId, normalizedProvider), // Use providerId
           eq(accountTable.userId, ctx.session.user.id)
         )
       )
@@ -44,7 +44,7 @@ export const disconnectAccount = authOrganizationActionClient
         recipient: ctx.session.user.email,
         appName: APP_NAME,
         name: ctx.session.user.name,
-        provider: identityProviderLabels[account.provider as OAuthProvider],
+        provider: identityProviderLabels[account.providerId as Provider], // Use Provider cast
         action: 'disconnected'
       });
     } catch (e) {

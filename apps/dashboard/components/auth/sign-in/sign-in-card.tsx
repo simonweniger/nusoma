@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   AlertCircleIcon,
   ArrowRightIcon,
@@ -9,7 +10,7 @@ import {
   MailIcon
 } from 'lucide-react';
 
-import { AuthErrorCode } from '@workspace/auth/errors';
+import { authClient } from '@workspace/auth/client';
 import { routes } from '@workspace/routes';
 import { Alert, AlertDescription } from '@workspace/ui/components/alert';
 import {
@@ -39,12 +40,8 @@ import { InputWithAdornments } from '@workspace/ui/components/input-with-adornme
 import { toast } from '@workspace/ui/components/sonner';
 import { cn } from '@workspace/ui/lib/utils';
 
-import { continueWithGoogle } from '~/actions/auth/continue-with-google';
-import { continueWithMicrosoft } from '~/actions/auth/continue-with-microsoft';
-import { signInWithCredentials } from '~/actions/auth/sign-in-with-credentials';
 import { OrContinueWith } from '~/components/auth/or-continue-with';
 import { useZodForm } from '~/hooks/use-zod-form';
-import { authErrorLabels } from '~/lib/labels';
 import {
   passThroughCredentialsSchema,
   type PassThroughCredentialsSchema
@@ -54,6 +51,10 @@ export function SignInCard({
   className,
   ...other
 }: CardProps): React.JSX.Element {
+  const searchParams = useSearchParams();
+  const callbackUrl =
+    searchParams.get('callbackUrl') || routes.dashboard.organizations.Index;
+
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [errorMessage, setErrorMessage] = React.useState<string>();
   const [unverifiedEmail, setUnverifiedEmail] = React.useState<
@@ -70,6 +71,7 @@ export function SignInCard({
     }
   });
   const canSubmit = !isLoading && !methods.formState.isSubmitting;
+
   const onSubmit = async (
     values: PassThroughCredentialsSchema
   ): Promise<void> => {
@@ -77,49 +79,61 @@ export function SignInCard({
       return;
     }
     setIsLoading(true);
-    const result = await signInWithCredentials(values);
+    setErrorMessage(undefined);
+    setUnverifiedEmail(undefined);
 
-    if (result?.validationErrors?._errors) {
-      const errorCode = result.validationErrors._errors[0] as AuthErrorCode;
+    const { error } = await authClient.signIn.email({
+      email: values.email,
+      password: values.password,
+      callbackURL: callbackUrl
+    });
 
-      setUnverifiedEmail(
-        errorCode === AuthErrorCode.UnverifiedEmail ? values.email : undefined
-      );
-      setErrorMessage(
-        authErrorLabels[
-          errorCode in authErrorLabels ? errorCode : AuthErrorCode.UnknownError
-        ]
-      );
-
-      setIsLoading(false);
-    } else if (result?.serverError) {
-      setUnverifiedEmail(undefined);
-      setErrorMessage(result.serverError);
+    if (error) {
+      // Check for specific error codes if available to detect unverified email
+      // Better Auth usually returns readable messages, but we might want to map specific cases
+      if (error.status === 403 && error.code === 'EMAIL_NOT_VERIFIED') {
+        setUnverifiedEmail(values.email);
+        setErrorMessage('Email not verified. Please verify your email.');
+      } else {
+        setErrorMessage(error.message || 'An error occurred during sign in');
+      }
       setIsLoading(false);
     }
+    // On success, Better Auth redirects automatically if callbackURL is provided
   };
+
   const handleSignInWithGoogle = async (): Promise<void> => {
     if (!canSubmit) {
       return;
     }
     setIsLoading(true);
-    const result = await continueWithGoogle();
-    if (result?.serverError || result?.validationErrors) {
-      toast.error("Couldn't continue with Google");
+    const { error } = await authClient.signIn.social({
+      provider: 'google',
+      callbackURL: callbackUrl
+    });
+
+    if (error) {
+      toast.error(error.message || "Couldn't continue with Google");
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
+
   const handleSignInWithMicrosoft = async (): Promise<void> => {
     if (!canSubmit) {
       return;
     }
     setIsLoading(true);
-    const result = await continueWithMicrosoft();
-    if (result?.serverError || result?.validationErrors) {
-      toast.error("Couldn't continue with Google");
+    const { error } = await authClient.signIn.social({
+      provider: 'microsoft',
+      callbackURL: callbackUrl
+    });
+
+    if (error) {
+      toast.error(error.message || "Couldn't continue with Microsoft");
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
+
   return (
     <Card
       className={cn(
@@ -198,7 +212,9 @@ export function SignInCard({
                   {errorMessage}
                   {unverifiedEmail && (
                     <Link
-                      href={`${routes.dashboard.auth.verifyEmail.Index}?email=${encodeURIComponent(unverifiedEmail)}`}
+                      href={`${
+                        routes.dashboard.auth.verifyEmail.Index
+                      }?email=${encodeURIComponent(unverifiedEmail)}`}
                       className={cn(
                         buttonVariants({ variant: 'link' }),
                         'ml-0.5 h-fit gap-0.5 px-0.5 py-0 text-foreground underline'

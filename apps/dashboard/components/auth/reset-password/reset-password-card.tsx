@@ -1,10 +1,13 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertCircleIcon, LockIcon } from 'lucide-react';
 import { type SubmitHandler } from 'react-hook-form';
 
+import { authClient } from '@workspace/auth/client';
+import { routes } from '@workspace/routes';
 import { Alert, AlertDescription } from '@workspace/ui/components/alert';
 import { Button } from '@workspace/ui/components/button';
 import {
@@ -25,7 +28,6 @@ import {
 import { InputPassword } from '@workspace/ui/components/input-password';
 import { cn } from '@workspace/ui/lib/utils';
 
-import { resetPassword } from '~/actions/auth/reset-password';
 import { PasswordFormMessage } from '~/components/auth/password-form-message';
 import { useZodForm } from '~/hooks/use-zod-form';
 import {
@@ -44,6 +46,7 @@ export function ResetPasswordCard({
   className,
   ...other
 }: ResetPasswordCardProps): React.JSX.Element {
+  const router = useRouter();
   const [errorMessage, setErrorMessage] = React.useState<string>();
   const methods = useZodForm({
     schema: resetPasswordSchema,
@@ -59,9 +62,15 @@ export function ResetPasswordCard({
     if (!canSubmit) {
       return;
     }
-    const result = await resetPassword(values);
-    if (result?.serverError || result?.validationErrors) {
-      setErrorMessage("Couldn't reset password.");
+    const { error } = await authClient.resetPassword({
+      newPassword: values.password,
+      token: values.requestId
+    });
+
+    if (error) {
+      setErrorMessage(error.message || "Couldn't reset password.");
+    } else {
+      router.push(routes.dashboard.auth.SignIn);
     }
   };
   return (

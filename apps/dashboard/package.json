@@ -45,8 +45,8 @@
     "nuqs": "2.8.1",
     "otplib": "12.0.1",
     "qrcode": "1.5.4",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-hook-form": "7.67.0",
     "react-is": "19.2.3",
     "recharts": "3.5.1",
@@ -61,6 +61,7 @@
   "devDependencies": {
     "@aws-sdk/client-s3": "3.826.0",
     "@next/bundle-analyzer": "16.0.10",
+    "@tailwindcss/postcss": "4.1.17",
     "@types/file-saver": "2.0.7",
     "@types/markdown-it": "14.1.2",
     "@types/node": "22.15.30",
@@ -71,7 +72,9 @@
     "@types/turndown": "5.0.6",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/prettier-config": "workspace:*",
-    "@workspace/typescript-config": "workspace:*"
+    "@workspace/typescript-config": "workspace:*",
+    "postcss": "8.5.6",
+    "tailwindcss": "4.1.17"
   },
   "prettier": "@workspace/prettier-config"
 }

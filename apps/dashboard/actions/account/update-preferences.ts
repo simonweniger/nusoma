@@ -19,5 +19,6 @@ export const updatePreferences = authActionClient
       .where(eq(userTable.id, ctx.session.user.id));
 
     updateTag(
-      Caching.createUserTag(UserCacheKey.Preferences, ctx.session.user.id));
+      Caching.createUserTag(UserCacheKey.Preferences, ctx.session.user.id)
+    );
   });

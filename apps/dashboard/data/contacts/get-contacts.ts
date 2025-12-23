@@ -59,7 +59,9 @@ function mapRecords(option: RecordsOption): ContactRecord | undefined {
   return undefined;
 }
 
-async function getContactsData(params: SearchParams): Promise<GetContactsResult> {
+async function getContactsData(
+  params: SearchParams
+): Promise<GetContactsResult> {
   'use cache';
   cacheLife('default');
   cacheTag(
@@ -132,7 +134,9 @@ async function getContactsData(params: SearchParams): Promise<GetContactsResult>
       .groupBy(contactTable.id)
       .limit(params.pageSize)
       .offset(params.pageIndex * params.pageSize)
-      .orderBy(getOrderBy(params.sortBy, params.sortDirection as SortDirection)),
+      .orderBy(
+        getOrderBy(params.sortBy, params.sortDirection as SortDirection)
+      ),
     db
       .select({ count: count() })
       .from(contactTable)
@@ -182,7 +186,9 @@ function getOrderBy(sortBy: string, sortDirection: SortDirection) {
   }
 }
 
-export async function getContacts(input: GetContactsSchema): Promise<GetContactsResult> {
+export async function getContacts(
+  input: GetContactsSchema
+): Promise<GetContactsResult> {
   const ctx = await getAuthOrganizationContext();
 
   const result = getContactsSchema.safeParse(input);

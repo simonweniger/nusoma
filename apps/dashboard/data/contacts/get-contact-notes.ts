@@ -57,10 +57,7 @@ async function getContactNotesData(
     })
     .from(contactNoteTable)
     .innerJoin(userTable, eq(contactNoteTable.userId, userTable.id))
-    .innerJoin(
-      contactTable,
-      eq(contactNoteTable.contactId, contactTable.id)
-    )
+    .innerJoin(contactTable, eq(contactNoteTable.contactId, contactTable.id))
     .where(
       and(
         eq(contactTable.organizationId, organizationId),

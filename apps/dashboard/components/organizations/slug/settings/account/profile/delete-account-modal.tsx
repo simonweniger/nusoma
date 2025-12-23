@@ -6,6 +6,7 @@ import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
 import { AlertCircleIcon } from 'lucide-react';
 import { FormProvider, type SubmitHandler } from 'react-hook-form';
 
+import { authClient } from '@workspace/auth/client';
 import { replaceOrgSlug, routes } from '@workspace/routes';
 import { Alert, AlertDescription } from '@workspace/ui/components/alert';
 import {
@@ -38,7 +39,6 @@ import { MediaQueries } from '@workspace/ui/lib/media-queries';
 import { cn } from '@workspace/ui/lib/utils';
 
 import { deleteAccount } from '~/actions/account/delete-account';
-import { signOut } from '~/actions/auth/sign-out';
 import { useEnhancedModal } from '~/hooks/use-enhanced-modal';
 import { useZodForm } from '~/hooks/use-zod-form';
 import {
@@ -79,8 +79,8 @@ export const DeleteAccountModal = NiceModal.create<DeleteAccountModalProps>(
         if (!result.serverError && !result.validationErrors) {
           toast.error('Account deleted');
           modal.handleClose();
-          const result = await signOut({ redirect: false });
-          if (!result?.serverError && !result?.validationErrors) {
+          const { error } = await authClient.signOut();
+          if (!error) {
             router.push(routes.dashboard.auth.SignIn);
           } else {
             toast.error("Couldn't sign out");

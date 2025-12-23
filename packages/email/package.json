@@ -22,8 +22,8 @@
     "@workspace/common": "workspace:*",
     "nodemailer": "7.0.11",
     "postmark": "4.0.5",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-email": "5.0.5",
     "resend": "6.5.2",
     "zod": "4.1.13"

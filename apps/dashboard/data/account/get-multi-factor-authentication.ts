@@ -14,7 +14,9 @@ async function getMultiFactorAuthenticationData(
 ): Promise<MultiFactorAuthenticationDto> {
   'use cache';
   cacheLife('default');
-  cacheTag(Caching.createUserTag(UserCacheKey.MultiFactorAuthentication, userId));
+  cacheTag(
+    Caching.createUserTag(UserCacheKey.MultiFactorAuthentication, userId)
+  );
 
   const [authenticatorApp] = await db
     .select({

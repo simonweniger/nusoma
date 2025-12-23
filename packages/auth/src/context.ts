@@ -16,7 +16,7 @@ import {
 } from '@workspace/database/schema';
 import { routes } from '@workspace/routes';
 
-import { dedupedAuth, signOut } from '.';
+import { dedupedAuth } from '.';
 
 const dedupedGetActiveOrganization = cache(async function () {
   // Read organization slug from the HTTP header
@@ -138,24 +138,24 @@ const dedupedGetUserInfo = cache(async function (userId: string) {
   if (!userInfo) {
     // Should not happen, but if it does let's sign out the user.
     // One possible scenario is if someone is fiddling with the database while a user is still logged in.
-    return signOut({ redirectTo: routes.dashboard.auth.SignIn });
+    return redirect(routes.dashboard.auth.SignIn);
   }
 
   return userInfo;
 });
 
 export async function getAuthContext() {
-  const session = await dedupedAuth();
-  if (!checkSession(session)) {
+  const sessionData = await dedupedAuth();
+  if (!checkSession(sessionData)) {
     return redirect(getRedirectToSignIn());
   }
 
-  const userInfo = await dedupedGetUserInfo(session.user.id);
+  const userInfo = await dedupedGetUserInfo(sessionData.user.id);
 
   const enrichedSession = {
-    ...session,
+    ...sessionData.session,
     user: {
-      ...session.user,
+      ...sessionData.user,
       ...userInfo
     }
   };
@@ -164,13 +164,13 @@ export async function getAuthContext() {
 }
 
 export async function getAuthOrganizationContext() {
-  const session = await dedupedAuth();
-  if (!checkSession(session)) {
+  const sessionData = await dedupedAuth();
+  if (!checkSession(sessionData)) {
     return redirect(getRedirectToSignIn());
   }
 
   const activeOrganization = await dedupedGetActiveOrganization();
-  const userInfo = await dedupedGetUserInfo(session.user.id);
+  const userInfo = await dedupedGetUserInfo(sessionData.user.id);
 
   if (
     !userInfo.memberships.some((m) => m.organizationId == activeOrganization.id)
@@ -180,9 +180,9 @@ export async function getAuthOrganizationContext() {
   }
 
   const enrichedSession = {
-    ...session,
+    ...sessionData.session,
     user: {
-      ...session.user,
+      ...sessionData.user,
       ...userInfo
     }
   };

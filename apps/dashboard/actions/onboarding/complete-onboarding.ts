@@ -100,7 +100,8 @@ export const completeOnboarding = authActionClient
           organizationId,
           parsedInput.organizationStep.name,
           ctx.session.user.name,
-          ctx.session.user.email
+          ctx.session.user.email,
+          userId
         );
       }
 
@@ -139,12 +140,14 @@ export const completeOnboarding = authActionClient
         Caching.createOrganizationTag(
           OrganizationCacheKey.Members,
           membership.organization.id
-        ));
+        )
+      );
       updateTag(
         Caching.createOrganizationTag(
           OrganizationCacheKey.Invitations,
           membership.organization.id
-        ));
+        )
+      );
     }
 
     let redirect: string = routes.dashboard.organizations.Index;
@@ -330,7 +333,8 @@ async function handleInviteTeamStep(
   organizationId: string,
   organizationName: string,
   userName: string,
-  userEmail: string
+  userEmail: string,
+  userId: string
 ): Promise<void> {
   if (!step || !step.invitations) {
     return;
@@ -353,7 +357,8 @@ async function handleInviteTeamStep(
       const newInvitation = await createInvitation(
         invitationItem.email,
         invitationItem.role,
-        organizationId
+        organizationId,
+        userId
       );
       await sendInvitationRequest({
         email: newInvitation.email,

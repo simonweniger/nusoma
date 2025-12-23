@@ -26,5 +26,6 @@ export const updateTransactionalEmails = authActionClient
       Caching.createUserTag(
         UserCacheKey.TransactionalEmails,
         ctx.session.user.id
-      ));
+      )
+    );
   });

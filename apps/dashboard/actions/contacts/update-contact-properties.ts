@@ -46,13 +46,15 @@ export const updateContactProperties = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.Contacts,
         ctx.organization.id
-      ));
+      )
+    );
     updateTag(
       Caching.createOrganizationTag(
         OrganizationCacheKey.Contact,
         ctx.organization.id,
         parsedInput.id
-      ));
+      )
+    );
 
     for (const membership of ctx.organization.memberships) {
       updateTag(
@@ -60,6 +62,7 @@ export const updateContactProperties = authOrganizationActionClient
           OrganizationCacheKey.Favorites,
           ctx.organization.id,
           membership.userId
-        ));
+        )
+      );
     }
   });

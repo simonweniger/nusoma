@@ -22,5 +22,6 @@ export const updateMarketingEmails = authActionClient
       .where(eq(userTable.id, ctx.session.user.id));
 
     updateTag(
-      Caching.createUserTag(UserCacheKey.MarketingEmails, ctx.session.user.id));
+      Caching.createUserTag(UserCacheKey.MarketingEmails, ctx.session.user.id)
+    );
   });

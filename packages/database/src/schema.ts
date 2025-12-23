@@ -15,7 +15,7 @@ import {
   uuid,
   varchar
 } from 'drizzle-orm/pg-core';
-import type { AdapterAccountType } from 'next-auth/adapters';
+
 
 // Custom Types
 export const bytea = customType<{
@@ -482,6 +482,14 @@ export const invitationTable = pgTable(
     status: invitationStatusEnum('status')
       .default(InvitationStatus.PENDING)
       .notNull(),
+    inviterId: uuid('inviterId')
+      .notNull()
+      .references(() => userTable.id, {
+        onDelete: 'cascade',
+        onUpdate: 'cascade'
+      }),
+    expiresAt: timestamp('expiresAt', { precision: 3, mode: 'date' }).notNull(),
+    metadata: text('metadata'),
     lastSentAt: timestamp('lastSentAt', { precision: 3, mode: 'date' }),
     createdAt: timestamp('createdAt', { precision: 3, mode: 'date' })
       .defaultNow()
@@ -524,16 +532,16 @@ export const accountTable = pgTable(
     userId: uuid('userId')
       .notNull()
       .references(() => userTable.id, { onDelete: 'cascade' }),
-    type: text('type').$type<AdapterAccountType>().notNull(),
-    provider: text('provider').notNull(),
-    providerAccountId: text('providerAccountId').notNull(),
-    refresh_token: text('refresh_token'),
-    access_token: text('access_token'),
-    expires_at: integer('expires_at'),
-    token_type: text('token_type'),
+    accountId: text('accountId').notNull(),
+    providerId: text('providerId').notNull(),
+    refreshToken: text('refreshToken'),
+    accessToken: text('accessToken'),
+    accessTokenExpiresAt: timestamp('accessTokenExpiresAt', { mode: 'date' }),
+    refreshTokenExpiresAt: timestamp('refreshTokenExpiresAt', { mode: 'date' }),
     scope: text('scope'),
-    id_token: text('id_token'),
-    session_state: text('session_state'),
+    idToken: text('idToken'),
+    password: text('password'),
+    metadata: text('metadata'),
     createdAt: timestamp('createdAt', { precision: 3, mode: 'date' })
       .defaultNow()
       .notNull(),
@@ -543,10 +551,10 @@ export const accountTable = pgTable(
       .$onUpdate(() => new Date())
   },
   (table) => [
-    uniqueIndex('IX_account_provider_providerAccountId_unique').using(
+    uniqueIndex('IX_account_providerId_accountId_unique').using(
       'btree',
-      table.provider.asc().nullsLast().op('text_ops'),
-      table.providerAccountId.asc().nullsLast().op('text_ops')
+      table.providerId.asc().nullsLast().op('text_ops'),
+      table.accountId.asc().nullsLast().op('text_ops')
     ),
     index('IX_account_userId').using(
       'btree',
@@ -674,9 +682,9 @@ export const userTable = pgTable(
     id: uuid('id')
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    email: text('email').unique(),
-    emailVerified: timestamp('emailVerified', { precision: 3, mode: 'date' }),
-    password: varchar('password', { length: 60 }),
+    email: text('email').unique().notNull(),
+    emailVerified: boolean('emailVerified').notNull().default(false),
+    password: text('password'),
     lastLogin: timestamp('lastLogin', { precision: 3, mode: 'date' }),
     locale: varchar('locale', { length: 8 }).default('en-US').notNull(),
     completedOnboarding: boolean('completedOnboarding')
@@ -688,6 +696,13 @@ export const userTable = pgTable(
     enabledInboxNotifications: boolean('enabledInboxNotifications')
       .default(false)
       .notNull(),
+    twoFactorEnabled: boolean('twoFactorEnabled').default(false),
+    activeOrganizationId: uuid('activeOrganizationId').references(
+      () => organizationTable.id,
+      {
+        onDelete: 'set null'
+      }
+    ),
     enabledNewsletter: boolean('enabledNewsletter').default(false).notNull(),
     enabledProductUpdates: boolean('enabledProductUpdates')
       .default(false)
@@ -721,11 +736,14 @@ export const userTable = pgTable(
 export const sessionTable = pgTable(
   'session',
   {
-    sessionToken: text('sessionToken').primaryKey(),
+    token: text('token').primaryKey(),
     userId: uuid('userId')
       .notNull()
       .references(() => userTable.id, { onDelete: 'cascade' }),
-    expires: timestamp('expires', { mode: 'date' }).notNull(),
+    expiresAt: timestamp('expiresAt', { mode: 'date' }).notNull(),
+    ipAddress: text('ipAddress'),
+    userAgent: text('userAgent'),
+    metadata: text('metadata'),
     createdAt: timestamp('createdAt', { precision: 3, mode: 'date' })
       .defaultNow()
       .notNull(),
@@ -742,18 +760,26 @@ export const sessionTable = pgTable(
   ]
 );
 
-export const verificationTokenTable = pgTable(
-  'verificationToken',
+export const verificationTable = pgTable(
+  'verification',
   {
+    id: uuid('id').primaryKey().notNull().defaultRandom(),
     identifier: text('identifier').notNull(),
-    token: text('token').notNull(),
-    expires: timestamp('expires', { precision: 3, mode: 'date' }).notNull()
+    value: text('value').notNull(),
+    expiresAt: timestamp('expiresAt', { precision: 3, mode: 'date' }).notNull(),
+    createdAt: timestamp('createdAt', { precision: 3, mode: 'date' })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updatedAt', { precision: 3, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date())
   },
   (table) => [
-    uniqueIndex('IX_verificationToken_identifier_unique').using(
+    uniqueIndex('IX_verification_identifier_unique').using(
       'btree',
       table.identifier.asc().nullsLast().op('text_ops'),
-      table.token.asc().nullsLast().op('text_ops')
+      table.value.asc().nullsLast().op('text_ops')
     )
   ]
 );
@@ -878,7 +904,8 @@ export const membershipTable = pgTable(
     isOwner: boolean('isOwner').default(false).notNull(),
     createdAt: timestamp('createdAt', { precision: 3, mode: 'date' })
       .defaultNow()
-      .notNull()
+      .notNull(),
+    metadata: text('metadata')
   },
   (table) => [
     uniqueIndex('IX_membership_organizationId_userId_unique').using(
@@ -943,7 +970,15 @@ export const organizationTable = pgTable(
     billingCountry: varchar('billingCountry', { length: 3 }),
     billingPostalCode: varchar('billingPostalCode', { length: 16 }),
     billingCity: varchar('billingCity', { length: 255 }),
-    billingState: varchar('billingState', { length: 255 })
+    billingState: varchar('billingState', { length: 255 }),
+    createdAt: timestamp('createdAt', { precision: 3, mode: 'date' })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updatedAt', { precision: 3, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    metadata: text('metadata')
   },
   (table) => [
     index('IX_organization_billingCustomerId').using(
@@ -972,11 +1007,11 @@ export const subscriptionTable = pgTable('subscription', {
   createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
-    index('IX_subscription_organizationId').using(
-      'btree',
-      table.organizationId.asc().nullsLast().op('uuid_ops')
-    )
-  ]);
+  index('IX_subscription_organizationId').using(
+    'btree',
+    table.organizationId.asc().nullsLast().op('uuid_ops')
+  )
+]);
 
 export const subscriptionItemTable = pgTable('subscriptionItem', {
   id: text('id').primaryKey(),
@@ -990,11 +1025,11 @@ export const subscriptionItemTable = pgTable('subscriptionItem', {
   type: text('type'),
   model: text('model'),
 }, (table) => [
-    index('IX_subscriptionItem_subscriptionId').using(
-      'btree',
-      table.subscriptionId.asc().nullsLast()
-    )
-  ]);
+  index('IX_subscriptionItem_subscriptionId').using(
+    'btree',
+    table.subscriptionId.asc().nullsLast()
+  )
+]);
 
 export const orderTable = pgTable('order', {
   id: text('id').primaryKey(),
@@ -1006,7 +1041,7 @@ export const orderTable = pgTable('order', {
   createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
 },
-(table) => [
+  (table) => [
     index('IX_order_organizationId').using(
       'btree',
       table.organizationId.asc().nullsLast().op('uuid_ops')
@@ -1023,7 +1058,7 @@ export const orderItemTable = pgTable('orderItem', {
   type: text('type'),
   model: text('model'),
 },
-(table) => [
+  (table) => [
     index('IX_orderItem_orderId').using(
       'btree',
       table.orderId.asc().nullsLast()

@@ -60,13 +60,15 @@ export const updatePersonalDetails = authActionClient
     });
 
     updateTag(
-      Caching.createUserTag(UserCacheKey.PersonalDetails, ctx.session.user.id));
+      Caching.createUserTag(UserCacheKey.PersonalDetails, ctx.session.user.id)
+    );
 
     for (const membership of ctx.session.user.memberships) {
       updateTag(
         Caching.createOrganizationTag(
           OrganizationCacheKey.Members,
           membership.organizationId
-        ));
+        )
+      );
     }
   });

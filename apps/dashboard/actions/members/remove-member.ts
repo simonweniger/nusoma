@@ -7,11 +7,7 @@ import { isOrganizationAdmin } from '@workspace/auth/permissions';
 import { adjustSeats } from '@workspace/billing/seats';
 import { ForbiddenError, NotFoundError } from '@workspace/common/errors';
 import { and, db, eq } from '@workspace/database/client';
-import {
-  membershipTable,
-  userTable,
-  verificationTokenTable
-} from '@workspace/database/schema';
+import { membershipTable, userTable } from '@workspace/database/schema';
 import { routes } from '@workspace/routes';
 
 import { authOrganizationActionClient } from '~/actions/safe-action';
@@ -61,10 +57,6 @@ export const removeMember = authOrganizationActionClient
 
     await db.transaction(async (tx) => {
       await tx
-        .delete(verificationTokenTable)
-        .where(eq(verificationTokenTable.identifier, membership.user.email!));
-
-      await tx
         .delete(membershipTable)
         .where(eq(membershipTable.id, membership.id));
     });
@@ -73,11 +65,13 @@ export const removeMember = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.Members,
         ctx.organization.id
-      ));
+      )
+    );
 
     updateTag(Caching.createUserTag(UserCacheKey.Profile, parsedInput.id));
     updateTag(
-      Caching.createUserTag(UserCacheKey.Organizations, parsedInput.id));
+      Caching.createUserTag(UserCacheKey.Organizations, parsedInput.id)
+    );
 
     try {
       await adjustSeats(ctx.organization.id);

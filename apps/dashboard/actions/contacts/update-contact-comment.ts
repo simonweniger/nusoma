@@ -44,5 +44,6 @@ export const updateContactComment = authOrganizationActionClient
         OrganizationCacheKey.ContactTimelineEvents,
         ctx.organization.id,
         comment.contactId
-      ));
+      )
+    );
   });

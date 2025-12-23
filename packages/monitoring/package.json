@@ -15,8 +15,8 @@
     "@sentry/nextjs": "10.27.0",
     "@t3-oss/env-nextjs": "0.13.8",
     "import-in-the-middle": "1.14.0",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "zod": "4.1.13"
   },
   "devDependencies": {

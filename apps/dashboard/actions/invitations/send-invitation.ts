@@ -40,14 +40,16 @@ export const sendInvitation = authOrganizationActionClient
     const invitation = await createInvitation(
       parsedInput.email,
       parsedInput.role,
-      ctx.organization.id
+      ctx.organization.id,
+      ctx.session.user.id
     );
 
     updateTag(
       Caching.createOrganizationTag(
         OrganizationCacheKey.Invitations,
         ctx.organization.id
-      ));
+      )
+    );
 
     await sendInvitationRequest({
       email: parsedInput.email,
