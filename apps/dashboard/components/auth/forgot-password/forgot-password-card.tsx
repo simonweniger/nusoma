@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AlertCircleIcon, MailIcon } from 'lucide-react';
 import { type SubmitHandler } from 'react-hook-form';
 
+import { authClient } from '@workspace/auth/client';
 import { routes } from '@workspace/routes';
 import { Alert, AlertDescription } from '@workspace/ui/components/alert';
 import { Button } from '@workspace/ui/components/button';
@@ -29,7 +30,6 @@ import {
 import { InputWithAdornments } from '@workspace/ui/components/input-with-adornments';
 import { cn } from '@workspace/ui/lib/utils';
 
-import { sendResetPasswordInstructions } from '~/actions/auth/send-reset-password-instructions';
 import { useZodForm } from '~/hooks/use-zod-form';
 import {
   sendResetPasswordInstructionsSchema,
@@ -56,14 +56,21 @@ export function ForgotPasswordCard({
     if (!canSubmit) {
       return;
     }
-    const result = await sendResetPasswordInstructions(values);
-    if (!result?.serverError && !result?.validationErrors) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (authClient as any).forgetPassword({
+      email: values.email,
+      redirectTo:
+        window.location.origin +
+        routes.dashboard.auth.resetPassword.Index.replace('[requestId]', '')
+    });
+
+    if (!error) {
       setErrorMessage(undefined);
       router.replace(
         `${routes.dashboard.auth.forgetPassword.Success}?email=${values.email}`
       );
     } else {
-      setErrorMessage("Couldn't request password change");
+      setErrorMessage(error.message || "Couldn't request password change");
     }
   };
   return (

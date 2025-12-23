@@ -39,5 +39,6 @@ export const deleteContactTask = authOrganizationActionClient
         OrganizationCacheKey.ContactTasks,
         ctx.organization.id,
         contactTask.contactId
-      ));
+      )
+    );
   });

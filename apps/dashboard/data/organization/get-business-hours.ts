@@ -37,9 +37,7 @@ async function getBusinessHoursData(
     .where(eq(workHoursTable.organizationId, organizationId));
 
   if (!workHours.length) {
-    throw new NotFoundError(
-      'Organization not found or no business hours set'
-    );
+    throw new NotFoundError('Organization not found or no business hours set');
   }
 
   const businessHours: WorkHoursDto[] = workHours.reduce(

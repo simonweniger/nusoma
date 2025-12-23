@@ -48,9 +48,7 @@ async function getLeadGenerationDataCached(
       (acc, { record, createdAt }) => {
         const date = format(createdAt, 'yyyy-MM-dd');
         acc[date] = acc[date] || { date, people: 0, companies: 0 };
-        acc[date][
-          record === ContactRecord.PERSON ? 'people' : 'companies'
-        ]++;
+        acc[date][record === ContactRecord.PERSON ? 'people' : 'companies']++;
 
         return acc;
       },

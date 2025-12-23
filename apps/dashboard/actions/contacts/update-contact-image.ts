@@ -75,13 +75,15 @@ export const updateContactImage = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.Contacts,
         ctx.organization.id
-      ));
+      )
+    );
     updateTag(
       Caching.createOrganizationTag(
         OrganizationCacheKey.Contact,
         ctx.organization.id,
         parsedInput.id
-      ));
+      )
+    );
 
     for (const membership of ctx.organization.memberships) {
       updateTag(
@@ -89,6 +91,7 @@ export const updateContactImage = authOrganizationActionClient
           OrganizationCacheKey.Favorites,
           ctx.organization.id,
           membership.userId
-        ));
+        )
+      );
     }
   });

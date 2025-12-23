@@ -27,20 +27,17 @@ class SentryMonitoringProvider implements MonitoringProvider {
   public async register(): Promise<void> {
     try {
       if (typeof window !== 'undefined') {
-        const { initializeSentryBrowserClient } = await import(
-          './sentry.client.config'
-        );
+        const { initializeSentryBrowserClient } =
+          await import('./sentry.client.config');
         initializeSentryBrowserClient();
       } else {
         if (process.env.NEXT_RUNTIME === 'edge') {
-          const { initializeSentryEdgeClient } = await import(
-            './sentry.edge.config'
-          );
+          const { initializeSentryEdgeClient } =
+            await import('./sentry.edge.config');
           initializeSentryEdgeClient();
         } else {
-          const { initializeSentryServerClient } = await import(
-            './sentry.server.config'
-          );
+          const { initializeSentryServerClient } =
+            await import('./sentry.server.config');
           initializeSentryServerClient();
         }
       }

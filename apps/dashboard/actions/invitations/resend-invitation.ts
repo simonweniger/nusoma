@@ -54,5 +54,6 @@ export const resendInvitation = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.Invitations,
         ctx.organization.id
-      ));
+      )
+    );
   });

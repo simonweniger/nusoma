@@ -4,6 +4,7 @@ import * as React from 'react';
 import { EyeIcon, LockIcon } from 'lucide-react';
 import { type SubmitHandler } from 'react-hook-form';
 
+import { authClient } from '@workspace/auth/client';
 import { Alert, AlertDescription } from '@workspace/ui/components/alert';
 import { Button } from '@workspace/ui/components/button';
 import {
@@ -25,12 +26,10 @@ import { InputWithAdornments } from '@workspace/ui/components/input-with-adornme
 import { Separator } from '@workspace/ui/components/separator';
 import { toast } from '@workspace/ui/components/sonner';
 
-import { changePassword } from '~/actions/account/change-password';
 import { PasswordFormMessage } from '~/components/auth/password-form-message';
 import { useZodForm } from '~/hooks/use-zod-form';
 import {
   changePasswordSchema,
-  type ChangePasswordField,
   type ChangePasswordSchema
 } from '~/schemas/account/change-password-schema';
 
@@ -60,8 +59,12 @@ export function ChangePasswordCard({
     if (!canSubmit) {
       return;
     }
-    const result = await changePassword(values);
-    if (!result?.serverError && !result?.validationErrors) {
+    const { error } = await authClient.changePassword({
+      newPassword: values.newPassword,
+      currentPassword: values.currentPassword || ''
+    });
+
+    if (!error) {
       toast.success(hasPasswordSet ? 'Password changed!' : 'Password set!');
       setErrorMessage('');
       methods.reset({
@@ -71,32 +74,9 @@ export function ChangePasswordCard({
         verifyPassword: ''
       });
     } else {
-      let errorMessage: string | undefined;
-
-      if (result?.validationErrors) {
-        const fieldsToCheck: ChangePasswordField[] = [
-          'currentPassword',
-          'newPassword',
-          'verifyPassword'
-        ];
-
-        for (const field of fieldsToCheck) {
-          errorMessage = result.validationErrors[field]?._errors?.[0];
-          if (errorMessage) {
-            break;
-          }
-        }
-      }
-
-      if (errorMessage) {
-        setErrorMessage(errorMessage);
-      } else {
-        toast.error(
-          hasPasswordSet
-            ? "Couldn't change password. Please try again."
-            : "Couldn't set password. Please try again."
-        );
-      }
+      setErrorMessage(
+        error.message || "Couldn't change password. Please try again."
+      );
     }
   };
 

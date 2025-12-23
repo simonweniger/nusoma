@@ -46,7 +46,8 @@ export async function checkIfCanInvite(
 export async function createInvitation(
   email: string,
   role: Role,
-  organizationId: string
+  organizationId: string,
+  inviterId: string
 ) {
   return await db.transaction(async (tx) => {
     // revoke old invitations
@@ -67,6 +68,8 @@ export async function createInvitation(
         email: email,
         role: role,
         organizationId: organizationId,
+        inviterId: inviterId,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
         lastSentAt: new Date()
       })
       .returning();

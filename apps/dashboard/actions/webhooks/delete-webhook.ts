@@ -35,5 +35,6 @@ export const deleteWebhook = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.Webhooks,
         ctx.organization.id
-      ));
+      )
+    );
   });

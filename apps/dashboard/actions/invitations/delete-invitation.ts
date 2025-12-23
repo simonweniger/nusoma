@@ -37,5 +37,6 @@ export const deleteInvitation = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.Invitations,
         ctx.organization.id
-      ));
+      )
+    );
   });

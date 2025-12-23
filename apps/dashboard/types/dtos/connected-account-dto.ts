@@ -1,7 +1,7 @@
-import { OAuthProvider } from '@workspace/auth/providers.types';
+import { OAuthProviderType } from '~/types/auth';
 
 export type ConnectedAccountDto = {
-  id: OAuthProvider;
+  id: OAuthProviderType;
   name: string;
   type: string;
   linked: boolean;

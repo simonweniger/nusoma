@@ -5,10 +5,6 @@ import Link from 'next/link';
 import { AlertCircleIcon, ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
 
 import { AuthErrorCode } from '@workspace/auth/errors';
-import {
-  submitRecoveryCodeSchema,
-  type SubmitRecoveryCodeSchema
-} from '@workspace/auth/schemas';
 import { routes } from '@workspace/routes';
 import { Alert, AlertDescription } from '@workspace/ui/components/alert';
 import { Button, buttonVariants } from '@workspace/ui/components/button';
@@ -35,6 +31,10 @@ import { cn } from '@workspace/ui/lib/utils';
 import { submitRecoveryCode } from '~/actions/auth/submit-recovery-code';
 import { useZodForm } from '~/hooks/use-zod-form';
 import { authErrorLabels } from '~/lib/labels';
+import {
+  submitRecoveryCodeSchema,
+  type SubmitRecoveryCodeSchema
+} from '~/schemas/auth/submit-recovery-code-schema';
 
 export type RecoveryCodeCardProps = CardProps & {
   token: string;
@@ -165,7 +165,9 @@ export function RecoveryCodeCard({
       <Separator />
       <CardFooter className="flex justify-center py-2">
         <Link
-          href={`${routes.dashboard.auth.Totp}?token=${encodeURIComponent(token)}&expiry=${encodeURIComponent(expiry)}`}
+          href={`${routes.dashboard.auth.Totp}?token=${encodeURIComponent(
+            token
+          )}&expiry=${encodeURIComponent(expiry)}`}
           className={cn(
             buttonVariants({ variant: 'link', size: 'default' }),
             'text-muted-foreground hover:text-primary hover:no-underline'

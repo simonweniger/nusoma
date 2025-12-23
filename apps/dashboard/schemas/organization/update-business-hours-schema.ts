@@ -22,38 +22,37 @@ export const updateBusinessHoursSchema = z.object({
         dayOfWeek: z.enum(DayOfWeek),
         timeSlots: z.array(
           z.object({
-            id: z.uuid('Id is invalid.')
-                            .trim()
+            id: z
+              .uuid('Id is invalid.')
+              .trim()
               .min(1, 'Id is required.')
               .max(36, 'Maximum 36 characters allowed.'),
-            start: z.iso.datetime()
-              .transform((iso) => {
-                const date = parse(
-                  iso,
-                  "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
-                  new Date()
-                );
-                const baseDate = new Date(0);
-                const newDate = setMinutes(
-                  setHours(baseDate, date.getUTCHours()),
-                  date.getUTCMinutes()
-                );
-                return format(newDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-              }),
-            end: z.iso.datetime()
-              .transform((iso) => {
-                const date = parse(
-                  iso,
-                  "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
-                  new Date()
-                );
-                const baseDate = new Date(0);
-                const newDate = setMinutes(
-                  setHours(baseDate, date.getUTCHours()),
-                  date.getUTCMinutes()
-                );
-                return format(newDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-              })
+            start: z.iso.datetime().transform((iso) => {
+              const date = parse(
+                iso,
+                "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
+                new Date()
+              );
+              const baseDate = new Date(0);
+              const newDate = setMinutes(
+                setHours(baseDate, date.getUTCHours()),
+                date.getUTCMinutes()
+              );
+              return format(newDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            }),
+            end: z.iso.datetime().transform((iso) => {
+              const date = parse(
+                iso,
+                "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
+                new Date()
+              );
+              const baseDate = new Date(0);
+              const newDate = setMinutes(
+                setHours(baseDate, date.getUTCHours()),
+                date.getUTCMinutes()
+              );
+              return format(newDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            })
           })
         )
       })

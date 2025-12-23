@@ -2,7 +2,11 @@ import * as React from 'react';
 import Link from 'next/link';
 
 import { routes } from '@workspace/routes';
-import { Alert } from '@workspace/ui/components/alert';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle
+} from '@workspace/ui/components/alert';
 import { buttonVariants } from '@workspace/ui/components/button';
 import {
   Card,
@@ -53,8 +57,11 @@ export function SignInToAcceptCard({
             variant="info"
             className="mt-4"
           >
-            You are currently logged in with a different account. Sign out and
-            log in with the correct account to accept the invitation.
+            <AlertTitle className="font-semibold">OH NO!</AlertTitle>
+            <AlertDescription className="text-sm font-normal">
+              You are currently logged in with a different account. Sign out and
+              log in with the correct account to accept the invitation.
+            </AlertDescription>
           </Alert>
         )}
       </CardContent>

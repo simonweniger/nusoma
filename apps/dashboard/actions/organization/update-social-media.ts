@@ -37,5 +37,6 @@ export const updateSocialMedia = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.SocialMedia,
         ctx.organization.id
-      ));
+      )
+    );
   });

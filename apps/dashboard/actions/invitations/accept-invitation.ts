@@ -81,14 +81,17 @@ export const acceptInvitation = authActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.Members,
         invitation.organizationId
-      ));
+      )
+    );
     updateTag(
       Caching.createOrganizationTag(
         OrganizationCacheKey.Invitations,
         invitation.organizationId
-      ));
+      )
+    );
     updateTag(
-      Caching.createUserTag(UserCacheKey.Organizations, ctx.session.user.id));
+      Caching.createUserTag(UserCacheKey.Organizations, ctx.session.user.id)
+    );
 
     return redirect(
       replaceOrgSlug(

@@ -41,5 +41,6 @@ export const deleteContactNote = authOrganizationActionClient
         OrganizationCacheKey.ContactNotes,
         ctx.organization.id,
         contactNote.contactId
-      ));
+      )
+    );
   });

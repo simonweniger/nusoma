@@ -1,41 +1,95 @@
-import { cache } from 'react';
-import NextAuth, { type NextAuthConfig } from 'next-auth';
-import { encode } from 'next-auth/jwt';
+import { headers } from 'next/headers';
+import { checkout, polar, portal } from '@polar-sh/better-auth';
+import { Polar } from '@polar-sh/sdk';
+import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { toNextJsHandler } from 'better-auth/next-js';
+import { organization, twoFactor } from 'better-auth/plugins';
 
-import { baseUrl, getPathname, routes } from '@workspace/routes';
+import { db } from '@workspace/database/client';
+import * as schema from '@workspace/database/schema';
+import { sendVerifyEmailAddressEmail } from '@workspace/email/send-verify-email-address-email';
+
+import { baseUrl } from '@workspace/routes';
 
 import { keys } from '../keys';
-import { adapter } from './adapter';
-import { callbacks } from './callbacks';
-import { events } from './events';
-import { providers } from './providers';
-import { session } from './session';
 
-export const authConfig = {
-  adapter,
-  providers,
-  secret: keys().AUTH_SECRET,
-  session,
-  pages: {
-    signIn: getPathname(routes.dashboard.auth.SignIn, baseUrl.Dashboard),
-    signOut: getPathname(routes.dashboard.auth.SignIn, baseUrl.Dashboard), // Don't need a sign out page
-    error: getPathname(routes.dashboard.auth.Error, baseUrl.Dashboard), // Error code passed in query string as ?error=ERROR_CODE
-    newUser: getPathname(routes.dashboard.onboarding.Index, baseUrl.Dashboard)
+export const auth = betterAuth({
+  baseURL: baseUrl.Dashboard,
+  database: drizzleAdapter(db, {
+    provider: 'pg',
+    schema: {
+      user: schema.userTable,
+      session: schema.sessionTable,
+      account: schema.accountTable,
+      verification: schema.verificationTable,
+      organization: schema.organizationTable,
+      member: schema.membershipTable,
+      invitation: schema.invitationTable
+    }
+  }),
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: true
   },
-  callbacks,
-  events,
-  jwt: {
-    maxAge: session.maxAge,
-    // Required line to encode credentials sessions
-    async encode(arg) {
-      return (arg.token?.sessionId as string) ?? encode(arg);
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    async sendVerificationEmail({
+      user,
+      url,
+      token
+    }: {
+      user: { email: string; name: string };
+      url: string;
+      token: string;
+    }) {
+      await sendVerifyEmailAddressEmail({
+        recipient: user.email,
+        name: user.name,
+        otp: token,
+        verificationLink: url
+      });
     }
   },
-  trustHost: true
-} satisfies NextAuthConfig;
+  socialProviders: {
+    google: {
+      clientId: keys().AUTH_GOOGLE_CLIENT_ID!,
+      clientSecret: keys().AUTH_GOOGLE_CLIENT_SECRET!
+    },
+    microsoft: {
+      clientId: keys().AUTH_MICROSOFT_ENTRA_ID_CLIENT_ID!,
+      clientSecret: keys().AUTH_MICROSOFT_ENTRA_ID_CLIENT_SECRET!
+    }
+  },
+  plugins: [
+    twoFactor(),
+    organization(),
+    polar({
+      client: new Polar({
+        accessToken: keys().POLAR_ACCESS_TOKEN!
+      }),
+      use: [checkout(), portal()]
+    })
+  ],
+  advanced: {
+    database: {
+      generateId: 'uuid'
+    }
+  }
+});
 
-// All those actions need to be called server-side
-export const { handlers, signIn, signOut, auth } = NextAuth(authConfig);
+export const handlers = toNextJsHandler(auth);
 
-// Deduplicated server-side auth call
-export const dedupedAuth = cache(auth);
+// Helper to get session server-side, compatible with NextAuth's auth() / dedupedAuth() usage
+// Returns { user, session } or null
+export const dedupedAuth = async () => {
+  const sessionData = await auth.api.getSession({
+    headers: await headers()
+  });
+  return sessionData;
+};
+
+// Aliases for compatibility if needed, though signatures differ
+export const signIn = auth.api.signInEmail;
+export const signOut = auth.api.signOut;

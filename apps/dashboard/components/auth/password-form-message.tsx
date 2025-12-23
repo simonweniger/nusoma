@@ -2,10 +2,11 @@ import * as React from 'react';
 import { CircleCheck, XCircleIcon } from 'lucide-react';
 
 import { MINIMUM_PASSWORD_LENGTH } from '@workspace/auth/constants';
-import { passwordValidator } from '@workspace/auth/password';
 import type { Maybe } from '@workspace/common/maybe';
 import { useFormField } from '@workspace/ui/components/form';
 import { cn } from '@workspace/ui/lib/utils';
+
+import { passwordValidator } from '~/lib/password';
 
 export type PasswordFormMessageProps = {
   password: Maybe<string>;

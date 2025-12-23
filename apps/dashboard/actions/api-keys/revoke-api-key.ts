@@ -35,5 +35,6 @@ export const revokeApiKey = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.ApiKeys,
         ctx.organization.id
-      ));
+      )
+    );
   });

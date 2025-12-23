@@ -40,9 +40,9 @@ export const deleteOrganization = authOrganizationActionClient
 
     for (const membership of ctx.organization.memberships) {
       updateTag(
-        Caching.createUserTag(UserCacheKey.Organizations, membership.userId));
-      updateTag(
-        Caching.createUserTag(UserCacheKey.Profile, membership.userId));
+        Caching.createUserTag(UserCacheKey.Organizations, membership.userId)
+      );
+      updateTag(Caching.createUserTag(UserCacheKey.Profile, membership.userId));
     }
 
     if (ctx.organization.billingCustomerId) {

@@ -89,7 +89,9 @@ export function BentoAnalyticsCard({
                 content={
                   <ChartTooltipContent
                     className="w-[150px]"
-                    labelFormatter={(_, payload) => (payload[0] as { payload: { name: string } }).payload.name}
+                    labelFormatter={(_, payload) =>
+                      (payload[0] as { payload: { name: string } }).payload.name
+                    }
                     formatter={(value) => (
                       <>
                         <strong>{String(value)}</strong> Leads

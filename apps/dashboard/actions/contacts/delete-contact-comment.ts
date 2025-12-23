@@ -44,6 +44,7 @@ export const deleteContactComment = authOrganizationActionClient
           OrganizationCacheKey.ContactTimelineEvents,
           ctx.organization.id,
           comment[0].contactId
-        ));
+        )
+      );
     }
   });

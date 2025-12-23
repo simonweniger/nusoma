@@ -10,7 +10,9 @@ import { userTable } from '@workspace/database/schema';
 import { Caching, UserCacheKey } from '~/data/caching';
 import type { PersonalDetailsDto } from '~/types/dtos/personal-details-dto';
 
-async function getPersonalDetailsData(userId: string): Promise<PersonalDetailsDto> {
+async function getPersonalDetailsData(
+  userId: string
+): Promise<PersonalDetailsDto> {
   'use cache';
   cacheLife('default');
   cacheTag(Caching.createUserTag(UserCacheKey.PersonalDetails, userId));

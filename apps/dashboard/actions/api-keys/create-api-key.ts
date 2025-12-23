@@ -31,7 +31,8 @@ export const createApiKey = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.ApiKeys,
         ctx.organization.id
-      ));
+      )
+    );
 
     return { apiKey: unhashedKey };
   });

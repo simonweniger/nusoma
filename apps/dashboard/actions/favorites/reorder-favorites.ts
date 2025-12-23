@@ -44,6 +44,7 @@ export const reorderFavorites = authOrganizationActionClient
           OrganizationCacheKey.Favorites,
           ctx.organization.id,
           ctx.session.user.id
-        ));
+        )
+      );
     }
   });

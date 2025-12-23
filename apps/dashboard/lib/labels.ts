@@ -1,5 +1,4 @@
 import { AuthErrorCode } from '@workspace/auth/errors';
-import { Provider } from '@workspace/auth/providers.types';
 import {
   ContactRecord,
   ContactStage,
@@ -7,6 +6,8 @@ import {
   Role,
   WebhookTrigger
 } from '@workspace/database/schema';
+
+import { Provider } from '~/types/auth';
 
 export const contactStageLabel: Record<ContactStage, string> = {
   [ContactStage.LEAD]: 'Lead',

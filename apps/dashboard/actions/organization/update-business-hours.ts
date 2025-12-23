@@ -60,5 +60,6 @@ export const updateBusinessHours = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.BusinessHours,
         ctx.organization.id
-      ));
+      )
+    );
   });

@@ -24,5 +24,6 @@ export const addContactComment = authOrganizationActionClient
         OrganizationCacheKey.ContactTimelineEvents,
         ctx.organization.id,
         parsedInput.contactId
-      ));
+      )
+    );
   });

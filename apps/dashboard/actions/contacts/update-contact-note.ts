@@ -41,5 +41,6 @@ export const updateContactNote = authOrganizationActionClient
         OrganizationCacheKey.ContactNotes,
         ctx.organization.id,
         parsedInput.id
-      ));
+      )
+    );
   });

@@ -1,5 +1,5 @@
 import { and, arrayContains, db, eq } from '@workspace/database/client';
-import { webhook, type WebhookTrigger } from '@workspace/database/schema';
+import { webhookTable, type WebhookTrigger } from '@workspace/database/schema';
 
 import { sendPayload } from './send-payload';
 
@@ -13,19 +13,19 @@ export async function callWebhooks<T>(
 ) {
   const webhooks = await db
     .select({
-      id: webhook.id,
-      url: webhook.url,
-      triggers: webhook.triggers,
-      secret: webhook.secret
+      id: webhookTable.id,
+      url: webhookTable.url,
+      triggers: webhookTable.triggers,
+      secret: webhookTable.secret
     })
-    .from(webhook)
+    .from(webhookTable)
     .where(
       and(
-        eq(webhook.organizationId, organizationId),
-        arrayContains(webhook.triggers, [trigger])
+        eq(webhookTable.organizationId, organizationId),
+        arrayContains(webhookTable.triggers, [trigger])
       )
     )
-    .orderBy(webhook.createdAt);
+    .orderBy(webhookTable.createdAt);
 
   for (const webhook of webhooks) {
     let retryCount = 0;

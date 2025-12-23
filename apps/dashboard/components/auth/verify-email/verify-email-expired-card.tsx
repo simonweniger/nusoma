@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 
+import { authClient } from '@workspace/auth/client';
 import { Button } from '@workspace/ui/components/button';
 import {
   Card,
@@ -13,8 +14,6 @@ import {
 } from '@workspace/ui/components/card';
 import { toast } from '@workspace/ui/components/sonner';
 import { cn } from '@workspace/ui/lib/utils';
-
-import { resendEmailConfirmation } from '~/actions/auth/resend-email-confirmation';
 
 export type VerifyEmailExpiredCardProps = CardProps & {
   email: string;
@@ -29,8 +28,8 @@ export function VerifyEmailExpiredCard({
     React.useState<boolean>(false);
   const handleResendEmailVerification = async (): Promise<void> => {
     setIsResendingEmailVerification(true);
-    const result = await resendEmailConfirmation({ email });
-    if (!result?.serverError && !result?.validationErrors) {
+    const { error } = await authClient.sendVerificationEmail({ email });
+    if (!error) {
       toast.success('Email verification resent');
     } else {
       toast.error("Couldn't resend verification");

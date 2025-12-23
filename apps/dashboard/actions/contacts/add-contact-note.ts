@@ -24,5 +24,6 @@ export const addContactNote = authOrganizationActionClient
         OrganizationCacheKey.ContactNotes,
         ctx.organization.id,
         parsedInput.contactId
-      ));
+      )
+    );
   });

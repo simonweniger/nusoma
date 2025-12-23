@@ -32,12 +32,14 @@ export const removeFavorite = authOrganizationActionClient
         OrganizationCacheKey.Favorites,
         ctx.organization.id,
         ctx.session.user.id
-      ));
+      )
+    );
 
     updateTag(
       Caching.createUserTag(
         UserCacheKey.ContactIsInFavorites,
         ctx.session.user.id,
         parsedInput.contactId
-      ));
+      )
+    );
   });

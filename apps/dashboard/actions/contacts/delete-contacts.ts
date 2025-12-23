@@ -35,11 +35,13 @@ export const deleteContacts = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.Contacts,
         organizationId
-      ));
+      )
+    );
 
     for (const id of parsedInput.ids) {
       updateTag(
-        Caching.createOrganizationTag(OrganizationCacheKey.Contact, id));
+        Caching.createOrganizationTag(OrganizationCacheKey.Contact, id)
+      );
     }
 
     for (const membership of ctx.organization.memberships) {
@@ -48,6 +50,7 @@ export const deleteContacts = authOrganizationActionClient
           OrganizationCacheKey.Favorites,
           organizationId,
           membership.userId
-        ));
+        )
+      );
     }
   });

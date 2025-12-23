@@ -3,6 +3,7 @@
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
 import { type SubmitHandler } from 'react-hook-form';
 
+import { authClient } from '@workspace/auth/client';
 import { Button } from '@workspace/ui/components/button';
 import {
   Dialog,
@@ -34,8 +35,6 @@ import { useMediaQuery } from '@workspace/ui/hooks/use-media-query';
 import { MediaQueries } from '@workspace/ui/lib/media-queries';
 import { cn } from '@workspace/ui/lib/utils';
 
-import { checkIfEmailIsAvailable } from '~/actions/account/check-if-email-is-available';
-import { requestEmailChange } from '~/actions/account/request-email-change';
 import { useEnhancedModal } from '~/hooks/use-enhanced-modal';
 import { useZodForm } from '~/hooks/use-zod-form';
 import {
@@ -63,36 +62,27 @@ export const ChangeEmailModal = NiceModal.create<ChangeEmailModalProps>(
     const canSubmit =
       !methods.formState.isSubmitting &&
       (!methods.formState.isSubmitted || methods.formState.isDirty);
+
     const onSubmit: SubmitHandler<RequestEmailChangeSchema> = async (
       values
     ) => {
       if (!canSubmit) {
         return;
       }
-      const checkResult = await checkIfEmailIsAvailable({
-        email: values.email
+      const { error } = await authClient.changeEmail({
+        newEmail: values.email
       });
-      if (
-        checkResult &&
-        !checkResult.serverError &&
-        !checkResult.validationErrors &&
-        checkResult.data
-      ) {
-        if (checkResult.data.isAvailable) {
-          const result = await requestEmailChange(values);
-          if (!result?.serverError && !result?.validationErrors) {
-            toast.success('Change request sent');
-            modal.hide();
-          } else {
-            toast.error("Couldn't send request");
-          }
-        } else {
+      if (!error) {
+        toast.success('Change request sent');
+        modal.hide();
+      } else {
+        if (error.code === 'USER_ALREADY_EXISTS') {
           methods.setError('email', {
             message: 'Email address is already taken.'
           });
+        } else {
+          toast.error(error.message || "Couldn't send request");
         }
-      } else {
-        toast.error("Couldn't check availability");
       }
     };
     const renderForm = (

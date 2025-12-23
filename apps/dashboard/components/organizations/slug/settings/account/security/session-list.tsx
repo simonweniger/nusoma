@@ -4,11 +4,11 @@ import * as React from 'react';
 import { format, isBefore } from 'date-fns';
 import { MonitorIcon } from 'lucide-react';
 
+import { authClient } from '@workspace/auth/client';
 import { Button } from '@workspace/ui/components/button';
 import { toast } from '@workspace/ui/components/sonner';
 import { cn } from '@workspace/ui/lib/utils';
 
-import { signOutSession } from '~/actions/account/sign-out-session';
 import type { SessionDto } from '~/types/dtos/session-dto';
 
 export type SessionListProps = React.HtmlHTMLAttributes<HTMLUListElement> & {
@@ -46,9 +46,13 @@ function SessionListItem({
   ...other
 }: SessionListItemProps): React.JSX.Element {
   const handleSignOutSession = async () => {
-    const result = await signOutSession({ sessionToken: session.id });
-    if (!result?.serverError && !result?.validationErrors) {
+    const { error } = await authClient.revokeSession({ token: session.id });
+    if (!error) {
       toast.success('Session signed out');
+      // Ideally refresh the sessions list here.
+      // Typically router.refresh() if using server components to fetch data.
+      // But adding router import here might be needed.
+      window.location.reload();
     } else {
       toast.error("Couldn't sign out session");
     }

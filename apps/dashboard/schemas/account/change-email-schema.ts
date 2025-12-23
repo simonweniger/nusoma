@@ -3,7 +3,8 @@ import { z } from 'zod';
 export const changeEmailSchema = z.object({
   id: z
     .string({
-        error: (issue) => issue.input === undefined ? 'Id is required.' : 'Id must be a string.'
+      error: (issue) =>
+        issue.input === undefined ? 'Id is required.' : 'Id must be a string.'
     })
     .trim()
     .min(1, 'Id is required.')

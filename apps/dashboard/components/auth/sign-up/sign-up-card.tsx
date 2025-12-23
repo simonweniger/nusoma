@@ -2,9 +2,11 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { AlertCircleIcon, LockIcon, MailIcon, UserIcon } from 'lucide-react';
 import { type SubmitHandler } from 'react-hook-form';
 
+import { authClient } from '@workspace/auth/client';
 import { routes } from '@workspace/routes';
 import { Alert, AlertDescription } from '@workspace/ui/components/alert';
 import {
@@ -31,11 +33,9 @@ import {
 } from '@workspace/ui/components/form';
 import { InputPassword } from '@workspace/ui/components/input-password';
 import { InputWithAdornments } from '@workspace/ui/components/input-with-adornments';
+import { toast } from '@workspace/ui/components/sonner';
 import { cn } from '@workspace/ui/lib/utils';
 
-import { continueWithGoogle } from '~/actions/auth/continue-with-google';
-import { continueWithMicrosoft } from '~/actions/auth/continue-with-microsoft';
-import { signUp } from '~/actions/auth/sign-up';
 import { OrContinueWith } from '~/components/auth/or-continue-with';
 import { PasswordFormMessage } from '~/components/auth/password-form-message';
 import { useZodForm } from '~/hooks/use-zod-form';
@@ -45,6 +45,7 @@ export function SignUpCard({
   className,
   ...other
 }: CardProps): React.JSX.Element {
+  const router = useRouter();
   const [errorMessage, setErrorMessage] = React.useState<string>();
   const methods = useZodForm({
     schema: signUpSchema,
@@ -57,27 +58,45 @@ export function SignUpCard({
   });
   const password = methods.watch('password');
   const onSubmit: SubmitHandler<SignUpSchema> = async (values) => {
-    const result = await signUp(values);
-    if (result?.serverError || result?.validationErrors) {
-      if (result.validationErrors?.email?._errors?.[0]) {
-        setErrorMessage(result.validationErrors?.email?._errors?.[0]);
-      } else {
-        setErrorMessage('An error occured during sign up.');
-      }
+    setErrorMessage(undefined);
+    const { error } = await authClient.signUp.email({
+      email: values.email,
+      password: values.password,
+      name: values.name,
+      callbackURL: routes.dashboard.organizations.Index
+    });
+
+    if (error) {
+      setErrorMessage(error.message || 'An error occurred during sign up.');
+    } else {
+      router.push(
+        `${routes.dashboard.auth.verifyEmail.Index}?email=${values.email}`
+      );
     }
   };
+
   const handleSignInWithGoogle = async (): Promise<void> => {
-    const result = await continueWithGoogle();
-    if (result?.serverError || result?.validationErrors) {
-      setErrorMessage('An error occured during Google sign up.');
+    const { error } = await authClient.signIn.social({
+      provider: 'google',
+      callbackURL: routes.dashboard.organizations.Index
+    });
+    if (error) {
+      toast.error(error.message || 'An error occurred during Google sign up.');
     }
   };
+
   const handleSignInWithMicrosoft = async (): Promise<void> => {
-    const result = await continueWithMicrosoft();
-    if (result?.serverError || result?.validationErrors) {
-      setErrorMessage('An error occured during Microsoft sign up.');
+    const { error } = await authClient.signIn.social({
+      provider: 'microsoft',
+      callbackURL: routes.dashboard.organizations.Index
+    });
+    if (error) {
+      toast.error(
+        error.message || 'An error occurred during Microsoft sign up.'
+      );
     }
   };
+
   return (
     <Card
       className={cn(

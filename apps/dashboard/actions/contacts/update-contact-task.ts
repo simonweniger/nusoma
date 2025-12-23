@@ -45,5 +45,6 @@ export const updateContactTask = authOrganizationActionClient
         OrganizationCacheKey.ContactTasks,
         ctx.organization.id,
         contactTask.contactId
-      ));
+      )
+    );
   });

@@ -36,5 +36,6 @@ export const addContactPageVisit = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.ContactPageVisits,
         ctx.organization.id
-      ));
+      )
+    );
   });

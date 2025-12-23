@@ -6,7 +6,8 @@ export const updateOrganizationLogoSchema = z.object({
   action: z.enum(FileUploadAction),
   logo: z
     .string({
-        error: (issue) => issue.input === undefined ? undefined : 'Logo must be a string.'
+      error: (issue) =>
+        issue.input === undefined ? undefined : 'Logo must be a string.'
     })
     .optional()
     .or(z.literal(''))

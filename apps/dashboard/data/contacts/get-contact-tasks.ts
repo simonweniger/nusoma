@@ -39,10 +39,7 @@ async function getContactTasksData(
       createdAt: contactTaskTable.createdAt
     })
     .from(contactTaskTable)
-    .innerJoin(
-      contactTable,
-      eq(contactTaskTable.contactId, contactTable.id)
-    )
+    .innerJoin(contactTable, eq(contactTaskTable.contactId, contactTable.id))
     .where(
       and(
         eq(contactTable.organizationId, organizationId),

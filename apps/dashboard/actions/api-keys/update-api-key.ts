@@ -44,5 +44,6 @@ export const updateApiKey = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.ApiKeys,
         ctx.organization.id
-      ));
+      )
+    );
   });

@@ -23,7 +23,8 @@ export const updateOrganizationSlug = authOrganizationActionClient
 
       for (const membership of ctx.organization.memberships) {
         updateTag(
-          Caching.createUserTag(UserCacheKey.Organizations, membership.userId));
+          Caching.createUserTag(UserCacheKey.Organizations, membership.userId)
+        );
       }
 
       redirect(

@@ -26,5 +26,6 @@ export const addContactTask = authOrganizationActionClient
         OrganizationCacheKey.ContactTasks,
         ctx.organization.id,
         parsedInput.contactId
-      ));
+      )
+    );
   });

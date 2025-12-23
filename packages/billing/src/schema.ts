@@ -41,54 +41,54 @@ const priceSchema = z
     (data) => data.type !== PriceType.OneTime || data.interval === undefined,
     {
       path: ['type', 'interval'],
-        error: 'One-time prices must not have an interval'
+      error: 'One-time prices must not have an interval'
     }
   )
   .refine(
     (data) => data.type !== PriceType.Recurring || data.interval !== undefined,
     {
       path: ['type', 'interval'],
-        error: 'Recurring prices must have an interval'
+      error: 'Recurring prices must have an interval'
     }
   )
   .refine(
     (data) => data.type !== PriceType.OneTime || data.model === PriceModel.Flat,
     {
       path: ['type', 'model'],
-        error: 'One-time prices must have a flat price model'
+      error: 'One-time prices must have a flat price model'
     }
   )
   .refine(
     (data) => data.model !== PriceModel.Metered || data.meter !== undefined,
     {
       path: ['model', 'meter'],
-        error: 'Metered price models must have a meter'
+      error: 'Metered price models must have a meter'
     }
   )
   .refine((data) => data.model !== PriceModel.Metered || data.cost === 0, {
     path: ['model', 'cost'],
-      error: 'Metered prices must have a cost of 0. Please add a different price for a flat fee (Stripe)'
-});
+    error:
+      'Metered prices must have a cost of 0. Please add a different price for a flat fee (Stripe)'
+  });
 
 const planSchema = z.object({
   id: z.string().min(1),
   displayIntervals: z.array(z.enum(PriceInterval)),
   trialDays: z.number().positive().optional(),
-  prices: z.tuple([priceSchema], priceSchema)
-    .refine(
-      (prices) => {
-        const models = prices.map((price) => price.model);
-        const perSeat = models.filter(
-          (model) => model === PriceModel.PerSeat
-        ).length;
-        const flat = models.filter((type) => type === PriceModel.Flat).length;
-        return perSeat <= 1 && flat <= 1;
-      },
-      {
-        path: ['prices'],
-          error: 'Plans can only have one per-seat and one flat price'
+  prices: z.tuple([priceSchema], priceSchema).refine(
+    (prices) => {
+      const models = prices.map((price) => price.model);
+      const perSeat = models.filter(
+        (model) => model === PriceModel.PerSeat
+      ).length;
+      const flat = models.filter((type) => type === PriceModel.Flat).length;
+      return perSeat <= 1 && flat <= 1;
+    },
+    {
+      path: ['prices'],
+      error: 'Plans can only have one per-seat and one flat price'
     }
-    )
+  )
 });
 
 const productSchema = z.object({
@@ -102,25 +102,25 @@ const productSchema = z.object({
   isFree: z.boolean().optional(),
   isEnterprise: z.boolean().optional(),
   features: z.array(z.string()),
-  plans: z.tuple([planSchema], planSchema)
-    .refine(
-      (plans) => {
-        const counts = new Map<string, number>();
-        for (const plan of plans) {
-          for (const interval of plan.displayIntervals) {
-            counts.set(interval, (counts.get(interval) ?? 0) + 1);
-            if (counts.get(interval)! > 1) {
-              return false;
-            }
+  plans: z.tuple([planSchema], planSchema).refine(
+    (plans) => {
+      const counts = new Map<string, number>();
+      for (const plan of plans) {
+        for (const interval of plan.displayIntervals) {
+          counts.set(interval, (counts.get(interval) ?? 0) + 1);
+          if (counts.get(interval)! > 1) {
+            return false;
           }
         }
-        return true;
-      },
-      {
-        path: ['plans'],
-          error: "Each displayInterval (e.g. 'Month', 'Year') can appear in at most one plan."
+      }
+      return true;
+    },
+    {
+      path: ['plans'],
+      error:
+        "Each displayInterval (e.g. 'Month', 'Year') can appear in at most one plan."
     }
-    )
+  )
 });
 
 const billingConfigSchema = z
@@ -136,7 +136,7 @@ const billingConfigSchema = z
     },
     {
       path: ['products'],
-        error: 'Price IDs must be unique'
+      error: 'Price IDs must be unique'
     }
   );
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import NiceModal from '@ebay/nice-modal-react';
 import { MoreHorizontalIcon } from 'lucide-react';
 
+import { authClient } from '@workspace/auth/client';
 import { replaceOrgSlug, routes } from '@workspace/routes';
 import {
   Avatar,
@@ -28,10 +29,8 @@ import {
   SidebarMenuItem,
   type SidebarGroupProps
 } from '@workspace/ui/components/sidebar';
-import { toast } from '@workspace/ui/components/sonner';
 import { ThemeSwitcher } from '@workspace/ui/components/theme-switcher';
 
-import { signOut } from '~/actions/auth/sign-out';
 import { CommandMenu } from '~/components/organizations/slug/command-menu';
 import { useActiveOrganization } from '~/hooks/use-active-organization';
 import { getInitials } from '~/lib/formatters';
@@ -113,10 +112,13 @@ export function NavUser({
     NiceModal.show(CommandMenu);
   };
   const handleSignOut = async (): Promise<void> => {
-    const result = await signOut({ redirect: true });
-    if (result?.serverError || result?.validationErrors) {
-      toast.error("Couldn't sign out");
-    }
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push(routes.dashboard.auth.SignIn);
+        }
+      }
+    });
   };
 
   React.useEffect(() => {

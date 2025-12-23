@@ -60,10 +60,12 @@ export const updateOrganizationLogo = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.OrganizationLogo,
         ctx.organization.id
-      ));
+      )
+    );
 
     for (const membership of ctx.organization.memberships) {
       updateTag(
-        Caching.createUserTag(UserCacheKey.Organizations, membership.userId));
+        Caching.createUserTag(UserCacheKey.Organizations, membership.userId)
+      );
     }
   });

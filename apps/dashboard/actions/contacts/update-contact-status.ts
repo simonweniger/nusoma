@@ -40,11 +40,13 @@ export const updateContactStage = authOrganizationActionClient
       Caching.createOrganizationTag(
         OrganizationCacheKey.Contacts,
         ctx.organization.id
-      ));
+      )
+    );
     updateTag(
       Caching.createOrganizationTag(
         OrganizationCacheKey.Contact,
         ctx.organization.id,
         parsedInput.id
-      ));
+      )
+    );
   });
