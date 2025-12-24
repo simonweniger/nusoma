@@ -9,7 +9,6 @@ import { organization, twoFactor } from 'better-auth/plugins';
 import { db } from '@workspace/database/client';
 import * as schema from '@workspace/database/schema';
 import { sendVerifyEmailAddressEmail } from '@workspace/email/send-verify-email-address-email';
-
 import { baseUrl } from '@workspace/routes';
 
 import { keys } from '../keys';

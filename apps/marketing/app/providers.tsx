@@ -1,6 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 import { AnalyticsProvider } from '@workspace/analytics/hooks/use-analytics';
 import { TooltipProvider } from '@workspace/ui/components/tooltip';
@@ -11,6 +13,8 @@ export function Providers({
 }: React.PropsWithChildren): React.JSX.Element {
   return (
     <AnalyticsProvider>
+      <SpeedInsights />
+      <VercelAnalytics />
       <ThemeProvider
         attribute="class"
         defaultTheme="system"

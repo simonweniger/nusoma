@@ -11,7 +11,7 @@ export const keys = () =>
 
       // PostHog
       NEXT_PUBLIC_ANALYTICS_POSTHOG_KEY: z.string().optional(),
-      NEXT_PUBLIC_ANALYTICS_POSTHOG_HOST: z.string().optional(),
+      NEXT_PUBLIC_ANALYTICS_POSTHOG_HOST: z.string().optional()
     },
     runtimeEnv: {
       // Google Analytics
@@ -26,6 +26,6 @@ export const keys = () =>
       NEXT_PUBLIC_ANALYTICS_POSTHOG_KEY:
         process.env.NEXT_PUBLIC_ANALYTICS_POSTHOG_KEY,
       NEXT_PUBLIC_ANALYTICS_POSTHOG_HOST:
-        process.env.NEXT_PUBLIC_ANALYTICS_POSTHOG_HOST,
+        process.env.NEXT_PUBLIC_ANALYTICS_POSTHOG_HOST
     }
   });

@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import NiceModal from '@ebay/nice-modal-react';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 import { AnalyticsProvider } from '@workspace/analytics/hooks/use-analytics';
@@ -14,6 +16,8 @@ export function Providers({
 }: React.PropsWithChildren): React.JSX.Element {
   return (
     <MonitoringProvider>
+      <SpeedInsights />
+      <VercelAnalytics />
       <AnalyticsProvider>
         <NuqsAdapter>
           <ThemeProvider
