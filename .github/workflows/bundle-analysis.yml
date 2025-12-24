@@ -2,9 +2,9 @@ name: Next.js Bundle Analysis
 
 on:
     pull_request:
-        branches: [main, dev, production]
+        branches: [main]
     push:
-        branches: [main, dev, production]
+        branches: [main]
     workflow_dispatch:
 
 defaults:
