@@ -19,9 +19,11 @@
     "syncpack:list": "bunx syncpack list-mismatches",
     "syncpack:fix": "bunx syncpack fix-mismatches",
     "preinstall": "bun run --filter @tooling/requirements-check requirements",
-    "postinstall": "manypkg fix"
+    "postinstall": "manypkg fix",
+    "changeset": "changeset"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.8",
     "@ianvs/prettier-plugin-sort-imports": "4.7.0",
     "@manypkg/cli": "0.25.1",
     "@turbo/gen": "2.6.1",

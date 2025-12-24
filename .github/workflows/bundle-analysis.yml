@@ -1,0 +1,67 @@
+name: Next.js Bundle Analysis
+
+on:
+    pull_request:
+        branches: [main, dev, production]
+    push:
+        branches: [main, dev, production]
+    workflow_dispatch:
+
+defaults:
+    run:
+        shell: bash
+
+jobs:
+    analyze:
+        name: Analyze Bundles
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            pull-requests: write
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - name: Install dependencies
+              run: bun install --frozen-lockfile
+
+            - name: Restore next build
+              uses: actions/cache@v4
+              id: restore-build-cache
+              with:
+                  path: |
+                      apps/dashboard/.next/cache
+                      apps/marketing/.next/cache
+                  key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-${{ hashFiles('apps/dashboard/**/*.js', 'apps/dashboard/**/*.ts', 'apps/dashboard/**/*.tsx', 'apps/marketing/**/*.js', 'apps/marketing/**/*.ts', 'apps/marketing/**/*.tsx') }}
+
+            - name: Analyze dashboard
+              run: |
+                  cd apps/dashboard
+                  bun run analyze
+                  mv .next/analyze/client.json .next/analyze/dashboard-client.json
+
+            - name: Analyze marketing
+              run: |
+                  cd apps/marketing
+                  bun run analyze
+                  mv .next/analyze/client.json .next/analyze/marketing-client.json
+
+            - name: Upload dashboard analysis
+              uses: actions/upload-artifact@v4
+              with:
+                  name: dashboard-bundle-analysis
+                  path: apps/dashboard/.next/analyze/dashboard-client.json
+
+            - name: Upload marketing analysis
+              uses: actions/upload-artifact@v4
+              with:
+                  name: marketing-bundle-analysis
+                  path: apps/marketing/.next/analyze/marketing-client.json
+
+            # Note: For the actual PR comment, you would typically use an action like 'pie-dao/nextjs-bundle-analysis'
+            # But it requires a specific structure. For now, this baseline ensures we HAVE the data in CI.

@@ -19,7 +19,3 @@ Tracks events and page views to Google Analytics which is the industry standard.
 # PostHog
 
 Tracks events and page views to PostHog which is a cheap, developer-focused powerhouse.
-
-# Umami
-
-Tracks events and page views to Umami which is Aa simple, fast, privacy-focused alternative to GA.

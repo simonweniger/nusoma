@@ -12,11 +12,6 @@ export const keys = () =>
       // PostHog
       NEXT_PUBLIC_ANALYTICS_POSTHOG_KEY: z.string().optional(),
       NEXT_PUBLIC_ANALYTICS_POSTHOG_HOST: z.string().optional(),
-
-      // Umami
-      NEXT_PUBLIC_ANALYTICS_UMAMI_HOST: z.string().optional(),
-      NEXT_PUBLIC_ANALYTICS_UMAMI_WEBSITE_ID: z.string().optional(),
-      NEXT_PUBLIC_ANALYTICS_UMAMI_DISABLE_LOCALHOST_TRACKING: z.coerce.boolean()
     },
     runtimeEnv: {
       // Google Analytics
@@ -32,13 +27,5 @@ export const keys = () =>
         process.env.NEXT_PUBLIC_ANALYTICS_POSTHOG_KEY,
       NEXT_PUBLIC_ANALYTICS_POSTHOG_HOST:
         process.env.NEXT_PUBLIC_ANALYTICS_POSTHOG_HOST,
-
-      // Umami
-      NEXT_PUBLIC_ANALYTICS_UMAMI_HOST:
-        process.env.NEXT_PUBLIC_ANALYTICS_UMAMI_HOST,
-      NEXT_PUBLIC_ANALYTICS_UMAMI_WEBSITE_ID:
-        process.env.NEXT_PUBLIC_ANALYTICS_UMAMI_WEBSITE_ID,
-      NEXT_PUBLIC_ANALYTICS_UMAMI_DISABLE_LOCALHOST_TRACKING:
-        process.env.NEXT_PUBLIC_ANALYTICS_UMAMI_DISABLE_LOCALHOST_TRACKING
     }
   });
