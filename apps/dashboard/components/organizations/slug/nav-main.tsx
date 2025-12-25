@@ -30,9 +30,9 @@ export function NavMain(props: SidebarGroupProps): React.JSX.Element {
           return (
             <SidebarMenuItem key={index}>
               <SidebarMenuButton
-                asChild
                 isActive={isActive}
                 tooltip={item.title}
+                asChild
               >
                 <Link
                   href={item.disabled ? '~/' : item.href}

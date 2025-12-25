@@ -22,12 +22,12 @@ import {
   DrawerTitle
 } from '@workspace/ui/components/drawer';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { Input } from '@workspace/ui/components/input';
 import { toast } from '@workspace/ui/components/sonner';
@@ -146,7 +146,7 @@ export const ChangeEmailModal = NiceModal.create<ChangeEmailModalProps>(
       </>
     );
     return (
-      <FormProvider {...methods}>
+      <Form {...methods}>
         {mdUp ? (
           <Dialog open={modal.visible}>
             <DialogContent
@@ -183,7 +183,7 @@ export const ChangeEmailModal = NiceModal.create<ChangeEmailModalProps>(
             </DrawerContent>
           </Drawer>
         )}
-      </FormProvider>
+      </Form>
     );
   }
 );

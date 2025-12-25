@@ -20,7 +20,7 @@ import {
   DrawerHeader,
   DrawerTitle
 } from '@workspace/ui/components/drawer';
-import { FormProvider } from '@workspace/ui/components/form';
+import { Form } from '@workspace/ui/components/form';
 import { toast } from '@workspace/ui/components/sonner';
 import { useMediaQuery } from '@workspace/ui/hooks/use-media-query';
 import { MediaQueries } from '@workspace/ui/lib/media-queries';
@@ -100,7 +100,7 @@ export const DeleteWebhookModal = NiceModal.create<DeleteWebhookModalProps>(
       </>
     );
     return (
-      <FormProvider {...methods}>
+      <Form {...methods}>
         {mdUp ? (
           <AlertDialog open={modal.visible}>
             <AlertDialogContent
@@ -133,7 +133,7 @@ export const DeleteWebhookModal = NiceModal.create<DeleteWebhookModalProps>(
             </DrawerContent>
           </Drawer>
         )}
-      </FormProvider>
+      </Form>
     );
   }
 );

@@ -71,25 +71,27 @@ export function OrganizationSwitcher({
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu onOpenChange={handleOpenChange}>
-          <DropdownMenuTrigger asChild>
-            <SidebarMenuButton className="w-full px-1.5 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-1.5!">
-              <Avatar className="aspect-square size-6 rounded-md">
-                <AvatarImage
-                  className="rounded-md"
-                  src={activeOrganization.logo}
-                />
-                <AvatarFallback className="flex size-6 items-center justify-center rounded-md border border-neutral-200 bg-neutral-100 font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900">
-                  {activeOrganization.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-1 flex-row items-center gap-1 overflow-hidden">
-                <span className="truncate text-sm font-semibold leading-tight">
-                  {activeOrganization.name}
-                </span>
-                <ChevronsUpDownIcon className="ml-auto size-4 shrink-0 text-muted-foreground" />
-              </div>
-            </SidebarMenuButton>
-          </DropdownMenuTrigger>
+          <DropdownMenuTrigger
+            render={
+              <SidebarMenuButton className="w-full px-1.5 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-1.5!">
+                <Avatar className="aspect-square size-6 rounded-md">
+                  <AvatarImage
+                    className="rounded-md"
+                    src={activeOrganization.logo}
+                  />
+                  <AvatarFallback className="flex size-6 items-center justify-center rounded-md border border-neutral-200 bg-neutral-100 font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900">
+                    {activeOrganization.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-1 flex-row items-center gap-1 overflow-hidden">
+                  <span className="truncate text-sm font-semibold leading-tight">
+                    {activeOrganization.name}
+                  </span>
+                  <ChevronsUpDownIcon className="ml-auto size-4 shrink-0 text-muted-foreground" />
+                </div>
+              </SidebarMenuButton>
+            }
+          />
           <DropdownMenuContent
             className="w-56 min-w-56 rounded-lg"
             align="center"
@@ -113,95 +115,95 @@ export function OrganizationSwitcher({
                 {filteredOrganizations.map((organization) => (
                   <DropdownMenuItem
                     key={organization.id}
-                    asChild
                     className="cursor-pointer gap-2 p-2"
-                  >
-                    <Link
-                      href={replaceOrgSlug(
-                        routes.dashboard.organizations.slug.Home,
-                        organization.slug
-                      )}
-                      onClick={handleCloseSidebar}
-                    >
-                      <Avatar className="aspect-square size-4 rounded-xs">
-                        <AvatarImage
-                          className="rounded-xs"
-                          src={organization.logo}
-                        />
-                        <AvatarFallback className="flex size-4 items-center justify-center rounded-xs border border-neutral-200 bg-neutral-100 text-xs font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900">
-                          {organization.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      {organization.name}
-                      {activeOrganization.id === organization.id && (
-                        <div className="ml-auto flex size-4 items-center justify-center rounded-full bg-blue-500 text-primary-foreground">
-                          <CheckIcon className="text-current size-3 shrink-0" />
-                        </div>
-                      )}
-                    </Link>
-                  </DropdownMenuItem>
+                    render={
+                      <Link
+                        href={replaceOrgSlug(
+                          routes.dashboard.organizations.slug.Home,
+                          organization.slug
+                        )}
+                        onClick={handleCloseSidebar}
+                      >
+                        <Avatar className="aspect-square size-4 rounded-xs">
+                          <AvatarImage
+                            className="rounded-xs"
+                            src={organization.logo}
+                          />
+                          <AvatarFallback className="flex size-4 items-center justify-center rounded-xs border border-neutral-200 bg-neutral-100 text-xs font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900">
+                            {organization.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        {organization.name}
+                        {activeOrganization.id === organization.id && (
+                          <div className="ml-auto flex size-4 items-center justify-center rounded-full bg-blue-500 text-primary-foreground">
+                            <CheckIcon className="text-current size-3 shrink-0" />
+                          </div>
+                        )}
+                      </Link>
+                    }
+                  />
                 ))}
               </ScrollArea>
             )}
 
             <DropdownMenuItem
-              asChild
               className="cursor-pointer gap-2 p-2"
-            >
-              <Link
-                href={routes.dashboard.organizations.Index}
-                className="text-muted-foreground"
-                onClick={handleCloseSidebar}
-              >
-                <MoreHorizontalIcon className="size-4 shrink-0" />
-                All organizations
-              </Link>
-            </DropdownMenuItem>
+              render={
+                <Link
+                  href={routes.dashboard.organizations.Index}
+                  className="text-muted-foreground"
+                  onClick={handleCloseSidebar}
+                >
+                  <MoreHorizontalIcon className="size-4 shrink-0" />
+                  All organizations
+                </Link>
+              }
+            />
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              asChild
               className="cursor-pointer gap-2 p-2"
-            >
-              <Link
-                href={replaceOrgSlug(
-                  routes.dashboard.organizations.slug.settings.account.Index,
-                  activeOrganization.slug
-                )}
-                onClick={handleCloseSidebar}
-              >
-                <UserIcon className="size-4 shrink-0 text-muted-foreground" />
-                Account settings
-              </Link>
-            </DropdownMenuItem>
+              render={
+                <Link
+                  href={replaceOrgSlug(
+                    routes.dashboard.organizations.slug.settings.account.Index,
+                    activeOrganization.slug
+                  )}
+                  onClick={handleCloseSidebar}
+                >
+                  <UserIcon className="size-4 shrink-0 text-muted-foreground" />
+                  Account settings
+                </Link>
+              }
+            />
             <DropdownMenuItem
-              asChild
               className="cursor-pointer gap-2 p-2"
-            >
-              <Link
-                href={replaceOrgSlug(
-                  routes.dashboard.organizations.slug.settings.organization
-                    .Index,
-                  activeOrganization.slug
-                )}
-                onClick={handleCloseSidebar}
-              >
-                <SettingsIcon className="size-4 shrink-0 text-muted-foreground" />
-                Organization settings
-              </Link>
-            </DropdownMenuItem>
+              render={
+                <Link
+                  href={replaceOrgSlug(
+                    routes.dashboard.organizations.slug.settings.organization
+                      .Index,
+                    activeOrganization.slug
+                  )}
+                  onClick={handleCloseSidebar}
+                >
+                  <SettingsIcon className="size-4 shrink-0 text-muted-foreground" />
+                  Organization settings
+                </Link>
+              }
+            />
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              asChild
               className="cursor-pointer gap-2 p-2"
-            >
-              <Link
-                href={routes.dashboard.onboarding.Organization}
-                onClick={handleCloseSidebar}
-              >
-                <PlusIcon className="size-4 shrink-0 text-muted-foreground" />
-                Add organization
-              </Link>
-            </DropdownMenuItem>
+              render={
+                <Link
+                  href={routes.dashboard.onboarding.Organization}
+                  onClick={handleCloseSidebar}
+                >
+                  <PlusIcon className="size-4 shrink-0 text-muted-foreground" />
+                  Add organization
+                </Link>
+              }
+            />
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

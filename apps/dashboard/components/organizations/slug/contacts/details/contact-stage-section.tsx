@@ -5,11 +5,11 @@ import { type SubmitHandler } from 'react-hook-form';
 
 import { ContactStage } from '@workspace/database/schema';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import {
   Select,
@@ -57,7 +57,7 @@ export function ContactStageSection({
     }
   };
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <section {...others}>
         <form onSubmit={methods.handleSubmit(onSubmit)}>
           <div className="flex h-14 flex-row items-center p-6">
@@ -112,6 +112,6 @@ export function ContactStageSection({
           </div>
         </form>
       </section>
-    </FormProvider>
+    </Form>
   );
 }

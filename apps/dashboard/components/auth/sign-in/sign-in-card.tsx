@@ -28,16 +28,17 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { InputPassword } from '@workspace/ui/components/input-password';
 import { InputWithAdornments } from '@workspace/ui/components/input-with-adornments';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { cn } from '@workspace/ui/lib/utils';
 
 import { OrContinueWith } from '~/components/auth/or-continue-with';
@@ -136,10 +137,7 @@ export function SignInCard({
 
   return (
     <Card
-      className={cn(
-        'w-full px-4 py-8 border-transparent dark:border-border',
-        className
-      )}
+      className={cn('w-full border-transparent dark:border-border', className)}
       {...other}
     >
       <CardHeader>
@@ -151,7 +149,7 @@ export function SignInCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <FormProvider {...methods}>
+        <Form {...methods}>
           <form
             className="flex flex-col gap-4"
             onSubmit={methods.handleSubmit(onSubmit)}
@@ -232,13 +230,19 @@ export function SignInCard({
               variant="default"
               className="w-full relative"
               disabled={!canSubmit}
-              loading={methods.formState.isSubmitting}
               onClick={methods.handleSubmit(onSubmit)}
             >
-              Sign in
+              {methods.formState.isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <Spinner size="small" />
+                  <span>Signing in...</span>
+                </div>
+              ) : (
+                <span>Sign in</span>
+              )}
             </Button>
           </form>
-        </FormProvider>
+        </Form>
         <OrContinueWith />
         <div className="flex gap-4">
           <Button
@@ -269,7 +273,7 @@ export function SignInCard({
           </Button>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-center gap-1 text-sm text-muted-foreground">
+      <CardFooter className="flex items-center justify-center gap-2">
         <span>Don't have an account?</span>
         <Link
           href={routes.dashboard.auth.SignUp}

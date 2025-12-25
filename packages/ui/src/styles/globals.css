@@ -1,10 +1,10 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
+
 @source "../../../../apps/**/*.{ts,tsx}";
 @source "../../../../packages/**/*.{ts,tsx}";
 @source "../../src/components/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
-
-@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -34,7 +34,7 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.625rem;
-  --sidebar: oklch(1 0 0);
+  --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
@@ -63,7 +63,7 @@
   --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.439 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -80,6 +80,8 @@
 }
 
 @theme inline {
+  --font-sans: 'Geist', 'Geist Fallback';
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -128,14 +130,17 @@
     from {
       height: 0;
     }
+
     to {
       height: var(--radix-accordion-content-height);
     }
   }
+
   @keyframes accordion-up {
     from {
       height: var(--radix-accordion-content-height);
     }
+
     to {
       height: 0;
     }
@@ -145,30 +150,37 @@
     from {
       transform: translateX(0);
     }
+
     to {
       transform: translateX(calc(-100% - var(--gap)));
     }
   }
+
   @keyframes marquee-vertical {
     from {
       transform: translateY(0);
     }
+
     to {
       transform: translateY(calc(-100% - var(--gap)));
     }
   }
+
   @keyframes fadeIn {
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
   }
+
   @keyframes slideIn {
     0% {
       transform: translateX(-100%);
     }
+
     100% {
       transform: translateX(0);
     }
@@ -177,12 +189,14 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border/80 outline-ring/50;
   }
+
   html {
     @apply scroll-smooth;
-    @apply border-border outline-ring/50;
+    @apply border-border/80 outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground box-border overscroll-none;
     /* font-feature-settings: "rlig" 1, "calt" 1; */
@@ -194,11 +208,14 @@
 
 @layer utilities {
   .min-h-screen {
-    min-height: 100vh; /* Fallback */
+    min-height: 100vh;
+    /* Fallback */
     min-height: 100dvh;
   }
+
   .h-screen {
-    height: 100vh; /* Fallback */
+    height: 100vh;
+    /* Fallback */
     height: 100dvh;
   }
 }
@@ -207,7 +224,8 @@
   margin-inline: auto;
   padding-inline: 1rem;
   max-width: 1400px;
-  @media (width >= theme(--breakpoint-sm)) {
+
+  @media (width >=theme(--breakpoint-sm)) {
     padding-inline: 2rem;
   }
 }
@@ -225,11 +243,9 @@ input[type='number'] {
 }
 
 .bg-diagonal-lines {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    var(--background),
-    var(--border) 1px,
-    var(--background) 1px,
-    var(--background) 8px
-  );
+  background-image: repeating-linear-gradient(-45deg,
+      var(--background),
+      var(--border) 1px,
+      var(--background) 1px,
+      var(--background) 8px);
 }

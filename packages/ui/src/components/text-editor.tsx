@@ -241,16 +241,18 @@ function ToolbarPlugin(): React.JSX.Element {
     >
       {supportedBlockTypes.has(blockType) && (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-            >
-              {blockTypeToBlockName[blockType as keyof BlockType]}
-              <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
-            </Button>
-          </DropdownMenuTrigger>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+              >
+                {blockTypeToBlockName[blockType as keyof BlockType]}
+                <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
+              </Button>
+            }
+          />
           <DropdownMenuContent align="end">
             {Object.keys(blockTypeToBlockName).map((key) => {
               const handleFormatBlock = (): void => {

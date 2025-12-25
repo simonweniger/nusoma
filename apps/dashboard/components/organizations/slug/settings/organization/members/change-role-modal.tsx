@@ -22,12 +22,12 @@ import {
   DrawerTitle
 } from '@workspace/ui/components/drawer';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import {
   Select,
@@ -155,7 +155,7 @@ export const ChangeRoleModal = NiceModal.create<ChangeRoleModalProps>(
       </>
     );
     return (
-      <FormProvider {...methods}>
+      <Form {...methods}>
         {mdUp ? (
           <Dialog open={modal.visible}>
             <DialogContent
@@ -188,7 +188,7 @@ export const ChangeRoleModal = NiceModal.create<ChangeRoleModalProps>(
             </DrawerContent>
           </Drawer>
         )}
-      </FormProvider>
+      </Form>
     );
   }
 );

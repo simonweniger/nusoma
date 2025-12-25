@@ -24,12 +24,12 @@ import {
   DrawerTitle
 } from '@workspace/ui/components/drawer';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { Input } from '@workspace/ui/components/input';
 import {
@@ -212,7 +212,7 @@ export const EditApiKeyModal = NiceModal.create<EditApiKeyModalProps>(
       </>
     );
     return (
-      <FormProvider {...methods}>
+      <Form {...methods}>
         {mdUp ? (
           <Dialog open={modal.visible}>
             <DialogContent
@@ -249,7 +249,7 @@ export const EditApiKeyModal = NiceModal.create<EditApiKeyModalProps>(
             </DrawerContent>
           </Drawer>
         )}
-      </FormProvider>
+      </Form>
     );
   }
 );

@@ -13,10 +13,10 @@ import { Card, type CardProps } from '@workspace/ui/components/card';
 import { Checkbox } from '@workspace/ui/components/checkbox';
 import { EmojiPopover } from '@workspace/ui/components/emoji-popover';
 import {
+  Form,
   FormControl,
   FormField,
-  FormItem,
-  FormProvider
+  FormItem
 } from '@workspace/ui/components/form';
 import { Input } from '@workspace/ui/components/input';
 import { Label } from '@workspace/ui/components/label';
@@ -95,7 +95,7 @@ export function ContactTimelineAddComment({
         </AvatarFallback>
       </Avatar>
       <div className="flex flex-auto flex-col gap-2">
-        <FormProvider {...methods}>
+        <Form {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)}>
             <Card
               className={cn('rounded-lg p-0 gap-0', className)}
@@ -139,7 +139,7 @@ export function ContactTimelineAddComment({
               </div>
             </Card>
           </form>
-        </FormProvider>
+        </Form>
         <div className="flex items-center justify-end">
           <div className="flex flex-row items-center gap-1.5 p-1">
             <Checkbox

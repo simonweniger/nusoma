@@ -11,13 +11,13 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import {
+  Form,
   FormControl,
   FormDescription,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { RadioCardItem, RadioCards } from '@workspace/ui/components/radio-card';
 import {
@@ -27,8 +27,8 @@ import {
   SelectTrigger,
   SelectValue
 } from '@workspace/ui/components/select';
-import { Separator } from '@workspace/ui/components/separator';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { useMounted } from '@workspace/ui/hooks/use-mounted';
 import { useTheme, type Theme } from '@workspace/ui/hooks/use-theme';
 
@@ -73,7 +73,7 @@ export function PreferencesCard({
     }
   };
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <Card {...other}>
         <CardContent>
           <form
@@ -158,21 +158,21 @@ export function PreferencesCard({
             />
           </form>
         </CardContent>
-        <Separator />
         <CardFooter className="flex w-full justify-end">
           <Button
             type="button"
             variant="default"
             size="default"
             disabled={!canSubmit}
-            loading={methods.formState.isSubmitting}
             onClick={methods.handleSubmit(onSubmit)}
           >
-            Save
+            {methods.formState.isSubmitting
+              ? <Spinner className="mr-2 h-4 w-4" /> + 'Saving...'
+              : 'Save'}
           </Button>
         </CardFooter>
       </Card>
-    </FormProvider>
+    </Form>
   );
 }
 

@@ -24,12 +24,12 @@ import {
   DrawerTitle
 } from '@workspace/ui/components/drawer';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { Input } from '@workspace/ui/components/input';
 import { toast } from '@workspace/ui/components/sonner';
@@ -149,7 +149,7 @@ export const DeleteOrganizationModal =
       </>
     );
     return (
-      <FormProvider {...methods}>
+      <Form {...methods}>
         {mdUp ? (
           <AlertDialog open={modal.visible}>
             <AlertDialogContent
@@ -182,6 +182,6 @@ export const DeleteOrganizationModal =
             </DrawerContent>
           </Drawer>
         )}
-      </FormProvider>
+      </Form>
     );
   });

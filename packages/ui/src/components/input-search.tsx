@@ -31,7 +31,7 @@ export const InputSearch = ({
   ...props
 }: InputSearchProps): React.JSX.Element => {
   const [innerValue, setInnerValue] = React.useState(value || '');
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
     setInnerValue(value || '');
@@ -88,7 +88,6 @@ export const InputSearch = ({
       endAdornment={
         alwaysShowClearButton || innerValue ? (
           <Button
-            type="button"
             variant="ghost"
             size="icon"
             className="-mr-2.5 flex size-8"

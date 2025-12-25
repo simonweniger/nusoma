@@ -29,7 +29,7 @@ function InputColor({
   ...other
 }: InputColorProps): React.JSX.Element {
   const [inputValue, setInputValue] = React.useState(value);
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
     setInputValue(value);

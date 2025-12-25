@@ -14,12 +14,12 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { InputPassword } from '@workspace/ui/components/input-password';
 import { InputWithAdornments } from '@workspace/ui/components/input-with-adornments';
@@ -81,7 +81,7 @@ export function ChangePasswordCard({
   };
 
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <Card {...other}>
         <CardContent>
           <form
@@ -198,6 +198,6 @@ export function ChangePasswordCard({
           </Button>
         </CardFooter>
       </Card>
-    </FormProvider>
+    </Form>
   );
 }

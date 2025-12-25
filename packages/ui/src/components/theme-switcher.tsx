@@ -48,10 +48,8 @@ export function ThemeSwitcher(): React.JSX.Element {
             className="flex size-6 cursor-pointer items-center justify-center rounded-full text-muted-foreground peer-checked:bg-accent peer-checked:text-foreground"
             aria-label={`${label} theme`}
           >
-            <Tooltip delayDuration={600}>
-              <TooltipTrigger asChild>
-                <Icon className="size-4 shrink-0" />
-              </TooltipTrigger>
+            <Tooltip>
+              <TooltipTrigger render={<Icon className="size-4 shrink-0" />} />
               <TooltipContent>{label}</TooltipContent>
             </Tooltip>
           </label>

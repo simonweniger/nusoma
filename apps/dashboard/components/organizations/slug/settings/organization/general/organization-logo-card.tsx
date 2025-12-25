@@ -12,7 +12,7 @@ import {
   CardContent,
   type CardProps
 } from '@workspace/ui/components/card';
-import { FormProvider } from '@workspace/ui/components/form';
+import { Form } from '@workspace/ui/components/form';
 import { ImageDropzone } from '@workspace/ui/components/image-dropzone';
 import { toast } from '@workspace/ui/components/sonner';
 import {
@@ -97,7 +97,7 @@ export function OrganizationLogoCard({
     }
   };
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <Card {...props}>
         <CardContent>
           <form
@@ -144,6 +144,6 @@ export function OrganizationLogoCard({
           </form>
         </CardContent>
       </Card>
-    </FormProvider>
+    </Form>
   );
 }

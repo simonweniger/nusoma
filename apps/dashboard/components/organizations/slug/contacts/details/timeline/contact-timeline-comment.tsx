@@ -20,11 +20,11 @@ import {
   DropdownMenuTrigger
 } from '@workspace/ui/components/dropdown-menu';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { Input } from '@workspace/ui/components/input';
 import { toast } from '@workspace/ui/components/sonner';
@@ -142,7 +142,7 @@ export function ContactTimelineComment({
         <div className="flex flex-auto flex-row rounded-lg border p-4">
           <div className="flex-1 px-2">
             {isEditing ? (
-              <FormProvider {...form}>
+              <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                   <div className="flex flex-col gap-2">
                     <FormField
@@ -182,7 +182,7 @@ export function ContactTimelineComment({
                     </div>
                   </div>
                 </form>
-              </FormProvider>
+              </Form>
             ) : (
               <p className="whitespace-pre-line text-sm">{event.text}</p>
             )}

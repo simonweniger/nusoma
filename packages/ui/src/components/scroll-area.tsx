@@ -1,31 +1,26 @@
 'use client';
 
 import * as React from 'react';
-import { ScrollArea as ScrollAreaPrimitive } from 'radix-ui';
+import { ScrollArea as ScrollAreaPrimitive } from '@base-ui/react/scroll-area';
 
 import {
   useMediaQuery,
   type UseMediaQueryOptions
-} from '@workspace/ui/hooks/use-media-query';
-
+} from '../hooks/use-media-query';
 import { cn } from '../lib/utils';
 
-export type ScrollAreaElement = React.ComponentRef<
-  typeof ScrollAreaPrimitive.Root
->;
-export type ScrollAreaProps = React.ComponentPropsWithoutRef<
-  typeof ScrollAreaPrimitive.Root
-> & {
+export type ScrollAreaProps = ScrollAreaPrimitive.Root.Props & {
   verticalScrollBar?: boolean;
   horizontalScrollBar?: boolean;
 };
+
 function ScrollArea({
   verticalScrollBar = true,
   horizontalScrollBar = false,
   className,
   children,
   ...props
-}: ScrollAreaProps): React.JSX.Element {
+}: ScrollAreaProps) {
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
@@ -45,45 +40,38 @@ function ScrollArea({
   );
 }
 
-export type ScrollBarElement = React.ComponentRef<
-  typeof ScrollAreaPrimitive.ScrollAreaScrollbar
->;
-export type ScrollBarProps = React.ComponentPropsWithoutRef<
-  typeof ScrollAreaPrimitive.ScrollAreaScrollbar
->;
+export type ScrollBarProps = ScrollAreaPrimitive.Scrollbar.Props;
+
 function ScrollBar({
   className,
   orientation = 'vertical',
   ...props
-}: ScrollBarProps): React.JSX.Element {
+}: ScrollBarProps) {
   return (
-    <ScrollAreaPrimitive.ScrollAreaScrollbar
+    <ScrollAreaPrimitive.Scrollbar
       data-slot="scroll-area-scrollbar"
+      data-orientation={orientation}
       orientation={orientation}
       className={cn(
-        'flex touch-none p-px transition-colors select-none',
-        orientation === 'vertical' &&
-          'h-full w-2.5 border-l border-l-transparent',
-        orientation === 'horizontal' &&
-          'h-2.5 flex-col border-t border-t-transparent',
+        'data-horizontal:h-2.5 data-horizontal:flex-col data-horizontal:border-t data-horizontal:border-t-transparent data-vertical:h-full data-vertical:w-2.5 data-vertical:border-l data-vertical:border-l-transparent flex touch-none p-px transition-colors select-none',
         className
       )}
       {...props}
     >
-      <ScrollAreaPrimitive.ScrollAreaThumb
+      <ScrollAreaPrimitive.Thumb
         data-slot="scroll-area-thumb"
-        className="bg-border relative flex-1 rounded-full"
+        className="rounded-full bg-border relative flex-1"
       />
-    </ScrollAreaPrimitive.ScrollAreaScrollbar>
+    </ScrollAreaPrimitive.Scrollbar>
   );
 }
 
-export type ResponsiveScrollAreaElement = HTMLDivElement;
 export type ResponsiveScrollAreaProps = ScrollAreaProps & {
   breakpoint: string;
   mediaQueryOptions?: UseMediaQueryOptions;
   fallbackProps?: React.HTMLAttributes<HTMLDivElement>;
 };
+
 function ResponsiveScrollArea({
   breakpoint,
   mediaQueryOptions,
@@ -93,8 +81,9 @@ function ResponsiveScrollArea({
   className,
   children,
   ...scrollAreaProps
-}: ResponsiveScrollAreaProps): React.JSX.Element {
+}: ResponsiveScrollAreaProps) {
   const isMatched = useMediaQuery(breakpoint, mediaQueryOptions);
+
   if (isMatched) {
     return (
       <ScrollArea
@@ -107,9 +96,10 @@ function ResponsiveScrollArea({
       </ScrollArea>
     );
   }
+
   return (
     <div
-      className={className}
+      className={typeof className === 'string' ? className : undefined}
       {...fallbackProps}
     >
       {children}

@@ -13,13 +13,13 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import {
+  Form,
   FormControl,
   FormDescription,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { Input } from '@workspace/ui/components/input';
 import { Separator } from '@workspace/ui/components/separator';
@@ -80,7 +80,7 @@ export function OrganizationSlugCard({
     }
   };
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <Card {...other}>
         <CardContent>
           <form
@@ -129,7 +129,7 @@ export function OrganizationSlugCard({
           </Button>
         </CardFooter>
       </Card>
-    </FormProvider>
+    </Form>
   );
 }
 

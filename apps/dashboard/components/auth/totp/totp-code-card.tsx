@@ -23,11 +23,11 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import {
   InputOTP,
@@ -112,7 +112,7 @@ export function TotpCodeCard({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <FormProvider {...methods}>
+        <Form {...methods}>
           <form
             className="flex flex-col gap-4"
             onSubmit={methods.handleSubmit(onSubmit)}
@@ -184,7 +184,7 @@ export function TotpCodeCard({
               Submit
             </Button>
           </form>
-        </FormProvider>
+        </Form>
       </CardContent>
       <Separator />
       <CardFooter className="flex justify-center py-2">

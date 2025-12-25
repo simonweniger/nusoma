@@ -21,11 +21,11 @@ import {
   DrawerTitle
 } from '@workspace/ui/components/drawer';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { toast } from '@workspace/ui/components/sonner';
 import { TextEditor } from '@workspace/ui/components/text-editor';
@@ -127,7 +127,7 @@ export const EditContactNoteModal = NiceModal.create<EditContactNoteModalProps>(
       </>
     );
     return (
-      <FormProvider {...methods}>
+      <Form {...methods}>
         {mdUp ? (
           <Dialog open={modal.visible}>
             <DialogContent
@@ -164,7 +164,7 @@ export const EditContactNoteModal = NiceModal.create<EditContactNoteModalProps>(
             </DrawerContent>
           </Drawer>
         )}
-      </FormProvider>
+      </Form>
     );
   }
 );

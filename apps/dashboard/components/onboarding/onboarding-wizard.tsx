@@ -6,7 +6,7 @@ import { type SubmitHandler } from 'react-hook-form';
 
 import { Role } from '@workspace/database/schema';
 import { routes } from '@workspace/routes';
-import { FormProvider } from '@workspace/ui/components/form';
+import { Form } from '@workspace/ui/components/form';
 import { toast } from '@workspace/ui/components/sonner';
 import { useTheme, type Theme } from '@workspace/ui/hooks/use-theme';
 import { cn } from '@workspace/ui/lib/utils';
@@ -165,7 +165,7 @@ export function OnboardingWizard({
     handleScrollToTop();
   };
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <form
         onSubmit={methods.handleSubmit(onSubmit)}
         className={cn(
@@ -192,6 +192,6 @@ export function OnboardingWizard({
           handleNext={handleNext}
         />
       </form>
-    </FormProvider>
+    </Form>
   );
 }

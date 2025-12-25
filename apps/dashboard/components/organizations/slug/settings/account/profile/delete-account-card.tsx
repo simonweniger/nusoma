@@ -38,7 +38,6 @@ export function DeleteAccountCard({
           permanently removed from our servers.
         </p>
       </CardContent>
-      <Separator />
       <CardFooter className="flex w-full justify-end">
         <Button
           type="button"

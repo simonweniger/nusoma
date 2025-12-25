@@ -11,7 +11,7 @@ import {
   TrashIcon,
   UploadIcon
 } from 'lucide-react';
-import { FormProvider, type SubmitHandler } from 'react-hook-form';
+import { Form, type SubmitHandler } from 'react-hook-form';
 
 import { ContactRecord } from '@workspace/database/schema';
 import { Avatar, AvatarFallback } from '@workspace/ui/components/avatar';
@@ -198,7 +198,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
     }
   };
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <form
         className="space-y-2 px-6 pb-6"
         onSubmit={methods.handleSubmit(onSubmit)}
@@ -405,7 +405,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
           />
         </dl>
       </form>
-    </FormProvider>
+    </Form>
   );
 }
 

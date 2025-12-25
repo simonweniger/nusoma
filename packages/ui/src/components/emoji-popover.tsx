@@ -22,19 +22,23 @@ export function EmojiPopover({
 }: EmojiPopoverProps): React.JSX.Element {
   return (
     <Popover>
-      <Tooltip delayDuration={0}>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-8 rounded-full"
-            >
-              <SmileIcon className="size-5 shrink-0" />
-            </Button>
-          </PopoverTrigger>
-        </TooltipTrigger>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <PopoverTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 rounded-full"
+                >
+                  <SmileIcon className="size-5 shrink-0" />
+                </Button>
+              }
+            />
+          }
+        />
         <TooltipContent>Add emoji</TooltipContent>
       </Tooltip>
       <PopoverContent className="w-fit border-0 p-0">

@@ -28,15 +28,15 @@ export function SettingsSidebar(): React.JSX.Element {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               tooltip="Back"
+              asChild
             >
               <Link
                 href={replaceOrgSlug(
                   routes.dashboard.organizations.slug.Home,
                   activeOrganization.slug
                 )}
-                className="h-10"
+                className="flex h-10 items-center gap-2"
               >
                 <ChevronLeftIcon className="size-4 shrink-0 text-muted-foreground" />
                 <span className="text-sm font-semibold">Settings</span>

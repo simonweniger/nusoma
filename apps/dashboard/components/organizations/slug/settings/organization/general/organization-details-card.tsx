@@ -11,12 +11,12 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { Input } from '@workspace/ui/components/input';
 import { Separator } from '@workspace/ui/components/separator';
@@ -64,7 +64,7 @@ export function OrganizationDetailsCard({
     }
   };
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <Card {...props}>
         <CardContent>
           <form
@@ -183,6 +183,6 @@ export function OrganizationDetailsCard({
           </Button>
         </CardFooter>
       </Card>
-    </FormProvider>
+    </Form>
   );
 }

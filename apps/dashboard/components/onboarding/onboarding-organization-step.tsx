@@ -108,17 +108,19 @@ export function OnboardingOrganizationStep({
             </ImageDropzone>
             {!!logo && (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="absolute bottom-[-12px] right-[-12px] z-10 rounded-full bg-background p-1"
-                    onClick={handleRemoveLogo}
-                  >
-                    <TrashIcon className="size-4 shrink-0" />
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="absolute bottom-[-12px] right-[-12px] z-10 rounded-full bg-background p-1"
+                      onClick={handleRemoveLogo}
+                    >
+                      <TrashIcon className="size-4 shrink-0" />
+                    </Button>
+                  }
+                />
                 <TooltipContent side="right">Remove logo</TooltipContent>
               </Tooltip>
             )}

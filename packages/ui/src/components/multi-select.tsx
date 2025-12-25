@@ -62,40 +62,42 @@ function MultiSelect({
       onOpenChange={setOpen}
       {...props}
     >
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            'w-full justify-between',
-            selected.length > 0 && 'h-auto',
-            className
-          )}
-        >
-          <div className="flex flex-wrap items-center gap-1">
-            {selected.length > 0 ? (
-              selected.map((item) => (
-                <Badge
-                  variant="secondary"
-                  key={item}
-                  className="mb-1 mr-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleUnselect(item);
-                  }}
-                >
-                  {options.find((o) => o.value === item)?.label}
-                  <XIcon className="ml-1 size-3 text-muted-foreground hover:text-foreground" />
-                </Badge>
-              ))
-            ) : (
-              <span className="text-muted-foreground">{placeholder}</span>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className={cn(
+              'w-full justify-between',
+              selected.length > 0 && 'h-auto',
+              className
             )}
-          </div>
-          <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
+          >
+            <div className="flex flex-wrap items-center gap-1">
+              {selected.length > 0 ? (
+                selected.map((item) => (
+                  <Badge
+                    variant="secondary"
+                    key={item}
+                    className="mb-1 mr-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUnselect(item);
+                    }}
+                  >
+                    {options.find((o) => o.value === item)?.label}
+                    <XIcon className="ml-1 size-3 text-muted-foreground hover:text-foreground" />
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-muted-foreground">{placeholder}</span>
+              )}
+            </div>
+            <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
+          </Button>
+        }
+      />
       <PopoverContent
         className="w-full p-0"
         align="start"

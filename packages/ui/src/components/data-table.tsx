@@ -163,22 +163,24 @@ function DataTableColumnHeader<TData, TValue>({
   return (
     <div className={cn('flex items-center space-x-2', className)}>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8 text-sm data-[state=open]:bg-accent"
-          >
-            <span>{title}</span>
-            {column.getIsSorted() === 'desc' ? (
-              <ArrowDownIcon className="size-4 shrink-0" />
-            ) : column.getIsSorted() === 'asc' ? (
-              <ArrowUpIcon className="size-4 shrink-0" />
-            ) : (
-              <ArrowUpDownIcon className="size-4 shrink-0" />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="sm"
+              className="-ml-3 h-8 text-sm data-[state=open]:bg-accent"
+            >
+              <span>{title}</span>
+              {column.getIsSorted() === 'desc' ? (
+                <ArrowDownIcon className="size-4 shrink-0" />
+              ) : column.getIsSorted() === 'asc' ? (
+                <ArrowUpIcon className="size-4 shrink-0" />
+              ) : (
+                <ArrowUpDownIcon className="size-4 shrink-0" />
+              )}
+            </Button>
+          }
+        />
         <DropdownMenuContent align="start">
           {column.getCanSort() && (
             <>
@@ -224,16 +226,18 @@ function DataTableColumnOptionsHeader<TData>({
 }: DataTableColumnOptionsHeaderProps<TData>) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          className="ml-auto mr-4 flex size-8 data-[state=open]:bg-muted"
-        >
-          <Settings2Icon className="size-4 shrink-0" />
-          <span className="sr-only">Column options</span>
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            className="ml-auto mr-4 flex size-8 data-[state=open]:bg-muted"
+          >
+            <Settings2Icon className="size-4 shrink-0" />
+            <span className="sr-only">Column options</span>
+          </Button>
+        }
+      />
       <DropdownMenuContent
         align="end"
         className="w-[150px]"
@@ -286,7 +290,7 @@ function DataTablePagination<TData>({
             >
               <SelectTrigger className="h-8 w-16">
                 <SelectValue
-                  placeholder={table.getState().pagination.pageSize}
+                  data-placeholder={table.getState().pagination.pageSize}
                 />
               </SelectTrigger>
               <SelectContent side="top">
@@ -401,52 +405,54 @@ function DataTableFilter({
   const selectedValues = new Set(selected);
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-9 border-dashed text-sm"
-        >
-          <PlusCircleIcon className="size-4 shrink-0" />
-          {title}
-          {selectedValues?.size > 0 && (
-            <>
-              <Separator
-                orientation="vertical"
-                className="mx-2 h-4"
-              />
-              <Badge
-                variant="secondary"
-                className="rounded-sm px-1 font-normal lg:hidden"
-              >
-                {selectedValues.size}
-              </Badge>
-              <div className="hidden space-x-1 lg:flex">
-                {selectedValues.size > 2 ? (
-                  <Badge
-                    variant="secondary"
-                    className="rounded-sm px-1 font-normal"
-                  >
-                    {selectedValues.size} selected
-                  </Badge>
-                ) : (
-                  options
-                    .filter((option) => selectedValues.has(option.value))
-                    .map((option) => (
-                      <Badge
-                        variant="secondary"
-                        key={option.value}
-                        className="rounded-sm px-1 font-normal"
-                      >
-                        {option.label}
-                      </Badge>
-                    ))
-                )}
-              </div>
-            </>
-          )}
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 border-dashed text-sm"
+          >
+            <PlusCircleIcon className="size-4 shrink-0" />
+            {title}
+            {selectedValues?.size > 0 && (
+              <>
+                <Separator
+                  orientation="vertical"
+                  className="mx-2 h-4"
+                />
+                <Badge
+                  variant="secondary"
+                  className="rounded-sm px-1 font-normal lg:hidden"
+                >
+                  {selectedValues.size}
+                </Badge>
+                <div className="hidden space-x-1 lg:flex">
+                  {selectedValues.size > 2 ? (
+                    <Badge
+                      variant="secondary"
+                      className="rounded-sm px-1 font-normal"
+                    >
+                      {selectedValues.size} selected
+                    </Badge>
+                  ) : (
+                    options
+                      .filter((option) => selectedValues.has(option.value))
+                      .map((option) => (
+                        <Badge
+                          variant="secondary"
+                          key={option.value}
+                          className="rounded-sm px-1 font-normal"
+                        >
+                          {option.label}
+                        </Badge>
+                      ))
+                  )}
+                </div>
+              </>
+            )}
+          </Button>
+        }
+      />
       <PopoverContent
         className="w-[200px] overflow-hidden p-0"
         align="start"

@@ -18,11 +18,11 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { Input } from '@workspace/ui/components/input';
 import { Separator } from '@workspace/ui/components/separator';
@@ -101,7 +101,7 @@ export function RecoveryCodeCard({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <FormProvider {...methods}>
+        <Form {...methods}>
           <form
             className="flex flex-col gap-4"
             onSubmit={methods.handleSubmit(onSubmit)}
@@ -160,7 +160,7 @@ export function RecoveryCodeCard({
               Submit
             </Button>
           </form>
-        </FormProvider>
+        </Form>
       </CardContent>
       <Separator />
       <CardFooter className="flex justify-center py-2">

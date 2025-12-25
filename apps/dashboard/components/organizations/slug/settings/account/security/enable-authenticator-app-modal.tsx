@@ -24,12 +24,12 @@ import {
   DrawerTitle
 } from '@workspace/ui/components/drawer';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import {
   InputOTP,
@@ -232,7 +232,7 @@ export const EnableAuthenticatorAppModal =
         </>
       );
       return (
-        <FormProvider {...methods}>
+        <Form {...methods}>
           {mdUp ? (
             <Dialog open={modal.visible}>
               <DialogContent
@@ -269,7 +269,7 @@ export const EnableAuthenticatorAppModal =
               </DrawerContent>
             </Drawer>
           )}
-        </FormProvider>
+        </Form>
       );
     }
   );

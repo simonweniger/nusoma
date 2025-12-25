@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
 import { AlertCircleIcon } from 'lucide-react';
-import { FormProvider, type SubmitHandler } from 'react-hook-form';
+import { Form, type SubmitHandler } from 'react-hook-form';
 
 import { authClient } from '@workspace/auth/client';
 import { replaceOrgSlug, routes } from '@workspace/routes';
@@ -167,7 +167,7 @@ export const DeleteAccountModal = NiceModal.create<DeleteAccountModalProps>(
       </>
     );
     return (
-      <FormProvider {...methods}>
+      <Form {...methods}>
         {mdUp ? (
           <AlertDialog open={modal.visible}>
             <AlertDialogContent
@@ -200,7 +200,7 @@ export const DeleteAccountModal = NiceModal.create<DeleteAccountModalProps>(
             </DrawerContent>
           </Drawer>
         )}
-      </FormProvider>
+      </Form>
     );
   }
 );

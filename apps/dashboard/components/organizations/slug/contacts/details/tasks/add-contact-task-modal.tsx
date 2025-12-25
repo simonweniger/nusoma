@@ -23,12 +23,12 @@ import {
   DrawerTitle
 } from '@workspace/ui/components/drawer';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { Input } from '@workspace/ui/components/input';
 import {
@@ -208,7 +208,7 @@ export const AddContactTaskModal = NiceModal.create<AddContactTaskModalProps>(
       </>
     );
     return (
-      <FormProvider {...methods}>
+      <Form {...methods}>
         {mdUp ? (
           <Dialog open={modal.visible}>
             <DialogContent
@@ -245,7 +245,7 @@ export const AddContactTaskModal = NiceModal.create<AddContactTaskModalProps>(
             </DrawerContent>
           </Drawer>
         )}
-      </FormProvider>
+      </Form>
     );
   }
 );

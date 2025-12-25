@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { ChevronsUpDownIcon } from 'lucide-react';
+import { ChevronsDownIcon, ChevronsUpDownIcon } from 'lucide-react';
 
 import { cn } from '../lib/utils';
 import { Button, type ButtonProps } from './button';
@@ -224,7 +224,6 @@ function getNumberValue(value: string): number {
   return Number(String(value).replace(/%/g, ''));
 }
 
-type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 function omit<T extends object, K extends keyof T>(
   obj: T,
   keys: K[]
@@ -517,7 +516,8 @@ const Alpha = ({
       style={{
         background:
           'url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==) left center',
-        ...{ width, height },
+        width,
+        height,
         ...style
       }}
       {...other}
@@ -992,7 +992,7 @@ const Chrome = ({
                 onChange={(_, value) => {
                   if (typeof value === 'string') {
                     handleChange(
-                      hexToHsva(/^#/.test(value) ? value : `#${value}`)
+                      hexToHsva(value.startsWith('#') ? value : `#${value}`)
                     );
                   }
                 }}
@@ -1042,21 +1042,25 @@ function ColorPicker({
       open={isOpen}
       onOpenChange={setIsOpen}
     >
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          className={cn('size-8 p-0', className)}
-          {...other}
-        >
-          <div
-            className="size-4 rounded-sm border"
-            style={{
-              backgroundColor: isValidHex(value) ? value : DEFAULT_COLOR
-            }}
-          />
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger
+        render={() => (
+          <Button
+            type="button"
+            variant="ghost"
+            className={cn('size-8 p-0', className)}
+            {...other}
+          >
+            <div
+              className="size-4 rounded-sm border"
+              style={{
+                backgroundColor: isValidHex(value) ? value : DEFAULT_COLOR
+              }}
+            />
+            {isOpen && <ChevronsUpDownIcon className="size-4 shrink-0" />}
+            {!isOpen && <ChevronsDownIcon className="size-4 shrink-0" />}
+          </Button>
+        )}
+      />
       <PopoverContent
         className="w-auto p-0"
         sideOffset={5}

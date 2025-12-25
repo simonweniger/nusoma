@@ -19,11 +19,11 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
-  FormProvider
+  FormLabel
 } from '@workspace/ui/components/form';
 import { InputPassword } from '@workspace/ui/components/input-password';
 import { cn } from '@workspace/ui/lib/utils';
@@ -74,7 +74,7 @@ export function ResetPasswordCard({
     }
   };
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <Card
         className={cn(
           'w-full px-4 py-8 border-transparent dark:border-border',
@@ -139,6 +139,6 @@ export function ResetPasswordCard({
           </form>
         </CardContent>
       </Card>
-    </FormProvider>
+    </Form>
   );
 }

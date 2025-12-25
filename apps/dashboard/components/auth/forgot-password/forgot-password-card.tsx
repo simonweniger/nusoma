@@ -20,12 +20,12 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { InputWithAdornments } from '@workspace/ui/components/input-with-adornments';
 import { cn } from '@workspace/ui/lib/utils';
@@ -91,7 +91,7 @@ export function ForgotPasswordCard({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <FormProvider {...methods}>
+        <Form {...methods}>
           <form
             onSubmit={methods.handleSubmit(onSubmit)}
             className="flex flex-col gap-4"
@@ -135,7 +135,7 @@ export function ForgotPasswordCard({
               Send instructions
             </Button>
           </form>
-        </FormProvider>
+        </Form>
       </CardContent>
       <CardFooter className="flex justify-center gap-1 text-sm text-muted-foreground">
         <span>Remembered your password?</span>

@@ -1,32 +1,27 @@
 import * as React from 'react';
-import { ChevronRight, MoreHorizontal } from 'lucide-react';
-import { Slot as SlotPrimitive } from 'radix-ui';
+import { mergeProps } from '@base-ui/react/merge-props';
+import { useRender } from '@base-ui/react/use-render';
+import { ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
 
 import { cn } from '../lib/utils';
 
-export type BreadcrumbElement = React.ComponentRef<'nav'>;
-export type BreadcrumbProps = React.ComponentPropsWithoutRef<'nav'>;
-function Breadcrumb(props: BreadcrumbProps): React.JSX.Element {
+function Breadcrumb({ className, ...props }: React.ComponentProps<'nav'>) {
   return (
     <nav
       aria-label="breadcrumb"
       data-slot="breadcrumb"
+      className={cn(className)}
       {...props}
     />
   );
 }
 
-export type BreadcrumbListElement = React.ComponentRef<'ol'>;
-export type BreadcrumbListProps = React.ComponentPropsWithoutRef<'ol'>;
-function BreadcrumbList({
-  className,
-  ...props
-}: BreadcrumbListProps): React.JSX.Element {
+function BreadcrumbList({ className, ...props }: React.ComponentProps<'ol'>) {
   return (
     <ol
       data-slot="breadcrumb-list"
       className={cn(
-        'text-muted-foreground flex flex-wrap items-center gap-1.5 text-sm break-words sm:gap-2.5',
+        'text-muted-foreground gap-1.5 text-sm flex flex-wrap items-center wrap-break-word',
         className
       )}
       {...props}
@@ -34,46 +29,37 @@ function BreadcrumbList({
   );
 }
 
-export type BreadcrumbItemElement = React.ComponentRef<'li'>;
-export type BreadcrumbItemProps = React.ComponentPropsWithoutRef<'li'>;
-function BreadcrumbItem({
-  className,
-  ...props
-}: BreadcrumbItemProps): React.JSX.Element {
+function BreadcrumbItem({ className, ...props }: React.ComponentProps<'li'>) {
   return (
     <li
       data-slot="breadcrumb-item"
-      className={cn('inline-flex items-center gap-1.5', className)}
+      className={cn('gap-1 inline-flex items-center', className)}
       {...props}
     />
   );
 }
 
-export type BreadcrumbLinkElement = React.ComponentRef<'a'>;
-export type BreadcrumbLinkProps = React.ComponentPropsWithoutRef<'a'> & {
-  asChild?: boolean;
-};
 function BreadcrumbLink({
-  asChild,
   className,
+  render,
   ...props
-}: BreadcrumbLinkProps): React.JSX.Element {
-  const Comp = asChild ? SlotPrimitive.Slot : 'a';
-  return (
-    <Comp
-      data-slot="breadcrumb-link"
-      className={cn('hover:text-foreground transition-colors', className)}
-      {...props}
-    />
-  );
+}: useRender.ComponentProps<'a'>) {
+  return useRender({
+    defaultTagName: 'a',
+    props: mergeProps<'a'>(
+      {
+        className: cn('hover:text-foreground transition-colors', className)
+      },
+      props
+    ),
+    render,
+    state: {
+      slot: 'breadcrumb-link'
+    }
+  });
 }
 
-export type BreadcrumbPageElement = React.ComponentRef<'span'>;
-export type BreadcrumbPageProps = React.ComponentPropsWithoutRef<'span'>;
-function BreadcrumbPage({
-  className,
-  ...props
-}: BreadcrumbPageProps): React.JSX.Element {
+function BreadcrumbPage({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     <span
       data-slot="breadcrumb-page"
@@ -86,13 +72,11 @@ function BreadcrumbPage({
   );
 }
 
-export type BreadcrumbSeparatorElement = React.ComponentRef<'li'>;
-export type BreadcrumbSeparatorProps = React.ComponentProps<'li'>;
 function BreadcrumbSeparator({
   children,
   className,
   ...props
-}: BreadcrumbSeparatorProps): React.JSX.Element {
+}: React.ComponentProps<'li'>) {
   return (
     <li
       data-slot="breadcrumb-separator"
@@ -101,26 +85,27 @@ function BreadcrumbSeparator({
       className={cn('[&>svg]:size-3.5', className)}
       {...props}
     >
-      {children ?? <ChevronRight />}
+      {children ?? <ChevronRightIcon />}
     </li>
   );
 }
 
-export type BreadcrumbEllipsisElement = React.ComponentRef<'span'>;
-export type BreadcrumbEllipsisProps = React.ComponentProps<'span'>;
 function BreadcrumbEllipsis({
   className,
   ...props
-}: BreadcrumbEllipsisProps): React.JSX.Element {
+}: React.ComponentProps<'span'>) {
   return (
     <span
       data-slot="breadcrumb-ellipsis"
       role="presentation"
       aria-hidden="true"
-      className={cn('flex size-9 items-center justify-center', className)}
+      className={cn(
+        'size-5 [&>svg]:size-4 flex items-center justify-center',
+        className
+      )}
       {...props}
     >
-      <MoreHorizontal className="size-4" />
+      <MoreHorizontalIcon />
       <span className="sr-only">More</span>
     </span>
   );

@@ -11,12 +11,12 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { Input } from '@workspace/ui/components/input';
 import { ScrollArea } from '@workspace/ui/components/scroll-area';
@@ -75,7 +75,7 @@ export function BillingAddressCard({
     }
   };
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <Card {...other}>
         <CardContent>
           <form
@@ -246,6 +246,6 @@ export function BillingAddressCard({
           </Button>
         </CardFooter>
       </Card>
-    </FormProvider>
+    </Form>
   );
 }

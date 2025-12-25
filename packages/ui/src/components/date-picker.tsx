@@ -34,20 +34,22 @@ function DatePicker({
 }: DatePickerProps): React.JSX.Element {
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant={variant || 'outline'}
-          className={cn(
-            'justify-start whitespace-nowrap text-left font-normal',
-            !date && 'text-muted-foreground',
-            className
-          )}
-          {...other}
-        >
-          <CalendarIcon className="mr-2 size-4 shrink-0" />
-          {date ? format(date, 'PPP') : <span>{placeholder}</span>}
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger
+        render={
+          <Button
+            variant={variant || 'outline'}
+            className={cn(
+              'justify-start whitespace-nowrap text-left font-normal',
+              !date && 'text-muted-foreground',
+              className
+            )}
+            {...other}
+          >
+            <CalendarIcon className="mr-2 size-4 shrink-0" />
+            {date ? format(date, 'PPP') : <span>{placeholder}</span>}
+          </Button>
+        }
+      />
       <PopoverContent
         align="center"
         className="flex w-auto flex-row gap-2 divide-x p-2"
@@ -100,31 +102,33 @@ function DateRangePicker({
       {...other}
     >
       <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            id="date"
-            variant={'outline'}
-            className={cn(
-              'w-[260px] justify-start text-left font-normal',
-              !dateRange && 'text-muted-foreground'
-            )}
-            disabled={disabled}
-          >
-            <CalendarIcon className="size-4 shrink-0" />
-            {dateRange?.from ? (
-              dateRange.to ? (
-                <>
-                  {format(dateRange.from, 'LLL dd, y')} -{' '}
-                  {format(dateRange.to, 'LLL dd, y')}
-                </>
+        <PopoverTrigger
+          render={
+            <Button
+              id="date"
+              variant={'outline'}
+              className={cn(
+                'w-[260px] justify-start text-left font-normal',
+                !dateRange && 'text-muted-foreground'
+              )}
+              disabled={disabled}
+            >
+              <CalendarIcon className="size-4 shrink-0" />
+              {dateRange?.from ? (
+                dateRange.to ? (
+                  <>
+                    {format(dateRange.from, 'LLL dd, y')} -{' '}
+                    {format(dateRange.to, 'LLL dd, y')}
+                  </>
+                ) : (
+                  format(dateRange.from, 'LLL dd, y')
+                )
               ) : (
-                format(dateRange.from, 'LLL dd, y')
-              )
-            ) : (
-              <span>Pick a date</span>
-            )}
-          </Button>
-        </PopoverTrigger>
+                <span>Pick a date</span>
+              )}
+            </Button>
+          }
+        />
         <PopoverContent
           className="w-auto p-0"
           align="end"

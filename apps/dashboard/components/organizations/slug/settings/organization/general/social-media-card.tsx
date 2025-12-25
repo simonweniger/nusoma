@@ -19,12 +19,12 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { InputWithAdornments } from '@workspace/ui/components/input-with-adornments';
 import { Separator } from '@workspace/ui/components/separator';
@@ -75,7 +75,7 @@ export function SocialMediaCard({
     }
   };
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <Card {...other}>
         <CardContent>
           <form
@@ -260,6 +260,6 @@ export function SocialMediaCard({
           </Button>
         </CardFooter>
       </Card>
-    </FormProvider>
+    </Form>
   );
 }

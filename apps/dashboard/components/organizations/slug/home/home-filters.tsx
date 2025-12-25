@@ -8,11 +8,7 @@ import {
   DateRangePicker,
   type DateRange
 } from '@workspace/ui/components/date-picker';
-import {
-  UnderlinedTabs,
-  UnderlinedTabsList,
-  UnderlinedTabsTrigger
-} from '@workspace/ui/components/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@workspace/ui/components/tabs';
 
 import { searchParams } from '~/components/organizations/slug/home/home-search-params';
 import { useTransitionContext } from '~/hooks/use-transition-context';
@@ -114,14 +110,15 @@ export function HomeFilters(): React.JSX.Element {
 
   return (
     <div className="flex flex-row items-center gap-4">
-      <UnderlinedTabs
+      <Tabs
         value={preset}
         onValueChange={handleValueChange}
         className="hidden sm:flex -ml-2"
+        variant="underline"
       >
-        <UnderlinedTabsList className="h-12 max-h-12 min-h-12 gap-x-2 border-none">
+        <TabsList className="h-12 max-h-12 min-h-12 gap-x-2 border-none">
           {Object.values(Preset).map((value) => (
-            <UnderlinedTabsTrigger
+            <TabsTrigger
               key={value}
               value={value}
               className="mx-0 border-t-4 border-t-transparent"
@@ -129,10 +126,10 @@ export function HomeFilters(): React.JSX.Element {
               <div className="rounded-md px-2 py-1 hover:bg-accent">
                 {value}
               </div>
-            </UnderlinedTabsTrigger>
+            </TabsTrigger>
           ))}
-        </UnderlinedTabsList>
-      </UnderlinedTabs>
+        </TabsList>
+      </Tabs>
       <DateRangePicker
         dateRange={dateRange}
         onDateRangeChange={handleDateRangeChange}

@@ -24,8 +24,10 @@ const InputSpinner = ({
   repeatInterval = 50,
   ariaValueText
 }: InputSpinnerProps) => {
-  const spinTimerRef = React.useRef<NodeJS.Timeout | null>(null);
-  const spinIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const spinTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const spinIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
 
   const startSpinning = React.useCallback(
     (direction: SpinDirection) => {

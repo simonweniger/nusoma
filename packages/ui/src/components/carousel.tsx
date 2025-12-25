@@ -1,26 +1,25 @@
 'use client';
 
 import * as React from 'react';
-import Autoplay from 'embla-carousel-autoplay';
 import useEmblaCarousel, {
   type UseEmblaCarouselType
 } from 'embla-carousel-react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 
+import { Button } from '../components/button';
 import { cn } from '../lib/utils';
-import { Button } from './button';
 
 type CarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
 type CarouselOptions = UseCarouselParameters[0];
 type CarouselPlugin = UseCarouselParameters[1];
 
-export type CarouselProps = {
+type CarouselProps = {
   opts?: CarouselOptions;
   plugins?: CarouselPlugin;
   orientation?: 'horizontal' | 'vertical';
   setApi?: (api: CarouselApi) => void;
-} & React.ComponentPropsWithoutRef<'div'>;
+};
 
 type CarouselContextProps = {
   carouselRef: ReturnType<typeof useEmblaCarousel>[0];
@@ -33,7 +32,7 @@ type CarouselContextProps = {
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null);
 
-function useCarousel(): CarouselContextProps {
+function useCarousel() {
   const context = React.useContext(CarouselContext);
 
   if (!context) {
@@ -43,7 +42,6 @@ function useCarousel(): CarouselContextProps {
   return context;
 }
 
-export type CarouselElement = React.ComponentRef<'div'>;
 function Carousel({
   orientation = 'horizontal',
   opts,
@@ -52,7 +50,7 @@ function Carousel({
   className,
   children,
   ...props
-}: CarouselProps): React.JSX.Element {
+}: React.ComponentProps<'div'> & CarouselProps) {
   const [carouselRef, api] = useEmblaCarousel(
     {
       ...opts,
@@ -134,13 +132,9 @@ function Carousel({
   );
 }
 
-export type CarouselContentElement = React.ComponentRef<'div'>;
-export type CarouselContentProps = React.ComponentPropsWithoutRef<'div'>;
-function CarouselContent({
-  className,
-  ...props
-}: CarouselContentProps): React.JSX.Element {
+function CarouselContent({ className, ...props }: React.ComponentProps<'div'>) {
   const { carouselRef, orientation } = useCarousel();
+
   return (
     <div
       ref={carouselRef}
@@ -159,13 +153,9 @@ function CarouselContent({
   );
 }
 
-export type CarouselItemElement = React.ComponentRef<'div'>;
-export type CarouselItemProps = React.ComponentPropsWithoutRef<'div'>;
-function CarouselItem({
-  className,
-  ...props
-}: CarouselItemProps): React.JSX.Element {
+function CarouselItem({ className, ...props }: React.ComponentProps<'div'>) {
   const { orientation } = useCarousel();
+
   return (
     <div
       role="group"
@@ -181,22 +171,21 @@ function CarouselItem({
   );
 }
 
-export type CarouselPreviousElement = React.ComponentRef<typeof Button>;
-export type CarouselPreviousProps = React.ComponentProps<typeof Button>;
 function CarouselPrevious({
   className,
   variant = 'outline',
-  size = 'icon',
+  size = 'icon-sm',
   ...props
-}: CarouselPreviousProps): React.JSX.Element {
+}: React.ComponentProps<typeof Button>) {
   const { orientation, scrollPrev, canScrollPrev } = useCarousel();
+
   return (
     <Button
       data-slot="carousel-previous"
       variant={variant}
       size={size}
       className={cn(
-        'absolute size-8 rounded-full',
+        'rounded-full absolute touch-manipulation',
         orientation === 'horizontal'
           ? 'top-1/2 -left-12 -translate-y-1/2'
           : '-top-12 left-1/2 -translate-x-1/2 rotate-90',
@@ -206,28 +195,27 @@ function CarouselPrevious({
       onClick={scrollPrev}
       {...props}
     >
-      <ArrowLeft />
+      <ChevronLeftIcon />
       <span className="sr-only">Previous slide</span>
     </Button>
   );
 }
 
-export type CarouselNextElement = React.ComponentRef<typeof Button>;
-export type CarouselNextProps = React.ComponentProps<typeof Button>;
 function CarouselNext({
   className,
   variant = 'outline',
-  size = 'icon',
+  size = 'icon-sm',
   ...props
-}: CarouselNextProps): React.JSX.Element {
+}: React.ComponentProps<typeof Button>) {
   const { orientation, scrollNext, canScrollNext } = useCarousel();
+
   return (
     <Button
       data-slot="carousel-next"
       variant={variant}
       size={size}
       className={cn(
-        'absolute size-8 rounded-full',
+        'rounded-full absolute touch-manipulation',
         orientation === 'horizontal'
           ? 'top-1/2 -right-12 -translate-y-1/2'
           : '-bottom-12 left-1/2 -translate-x-1/2 rotate-90',
@@ -237,18 +225,18 @@ function CarouselNext({
       onClick={scrollNext}
       {...props}
     >
-      <ArrowRight />
+      <ChevronRightIcon />
       <span className="sr-only">Next slide</span>
     </Button>
   );
 }
 
 export {
-  Autoplay,
   type CarouselApi,
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselPrevious,
-  CarouselNext
+  CarouselNext,
+  useCarousel
 };

@@ -4,10 +4,10 @@ import * as React from 'react';
 import { type SubmitHandler } from 'react-hook-form';
 
 import {
+  Form,
   FormControl,
   FormField,
-  FormItem,
-  FormProvider
+  FormItem
 } from '@workspace/ui/components/form';
 import { toast } from '@workspace/ui/components/sonner';
 import { TagInput } from '@workspace/ui/components/tag-input';
@@ -46,7 +46,7 @@ export function ContactTagsSection({
     }
   };
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <section {...other}>
         <form onSubmit={methods.handleSubmit(onSubmit)}>
           <div className="flex h-14 flex-row items-center p-6">
@@ -84,6 +84,6 @@ export function ContactTagsSection({
           </div>
         </form>
       </section>
-    </FormProvider>
+    </Form>
   );
 }

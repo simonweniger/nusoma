@@ -153,40 +153,43 @@ export function NavUser({
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <SidebarMenuButton className="group/navuser -ml-1.5 transition-none data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:rounded-full group-data-[collapsible=icon]:p-1!">
-                <Avatar className="size-7 rounded-full">
-                  <AvatarImage
-                    src={profile.image}
-                    alt={profile.name}
-                  />
-                  <AvatarFallback className="rounded-full text-xs group-hover/navuser:bg-neutral-200 dark:group-hover/navuser:bg-neutral-700">
-                    {getInitials(profile.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex w-full flex-col truncate text-left group-data-[minimized=true]:hidden">
-                  <span className="truncate text-sm font-semibold">
-                    {profile.name}
-                  </span>
-                </div>
-                <MoreHorizontalIcon className="h-8 text-muted-foreground group-data-[minimized=true]:hidden" />
-              </SidebarMenuButton>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+              render={
+                <SidebarMenuButton className="group/navuser transition-none data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:rounded-full group-data-[collapsible=icon]:p-1!">
+                  <Avatar className="size-7 rounded-full">
+                    <AvatarImage
+                      src={profile.image}
+                      alt={profile.name}
+                    />
+                    <AvatarFallback className="rounded-full text-xs group-hover/navuser:bg-neutral-200 dark:group-hover/navuser:bg-neutral-700">
+                      {getInitials(profile.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex w-full flex-col truncate text-left group-data-[minimized=true]:hidden">
+                    <span className="truncate text-sm font-semibold">
+                      {profile.name}
+                    </span>
+                  </div>
+                  <MoreHorizontalIcon className="h-8 text-muted-foreground group-data-[minimized=true]:hidden" />
+                </SidebarMenuButton>
+              }
+            />
             <DropdownMenuContent
               className="w-56"
               align="start"
-              forceMount
             >
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="truncate text-sm font-medium leading-none">
-                    {profile.name}
-                  </p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {profile.email}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="truncate text-sm font-medium leading-none">
+                      {profile.name}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {profile.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem

@@ -309,7 +309,7 @@ function SidebarProvider({
 
   return (
     <SidebarContext.Provider value={contextValue}>
-      <TooltipProvider delayDuration={0}>
+      <TooltipProvider>
         <div
           data-slot="sidebar-wrapper"
           style={
@@ -418,7 +418,7 @@ function Sidebar({
           variant === 'floating' || variant === 'inset'
             ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]'
             : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)',
-          'group-data-[dragging=true]:duration-0! group-data-[dragging=true]_*:!duration-0'
+          'group-data-[dragging=true]:duration-0! group-data-[dragging=true]_*:duration-0!'
         )}
       />
       <div
@@ -432,7 +432,7 @@ function Sidebar({
           variant === 'floating' || variant === 'inset'
             ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
             : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l',
-          'group-data-[dragging=true]:duration-0! group-data-[dragging=true]_*:!duration-0',
+          'group-data-[dragging=true]:duration-0! group-data-[dragging=true]_*:duration-0!',
           className
         )}
         {...props}
@@ -459,7 +459,6 @@ function SidebarTrigger({
   const { isMobile, open, toggleSidebar } = useSidebar();
   return (
     <Button
-      type="button"
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="ghost"
@@ -629,7 +628,7 @@ function SidebarFooter({
     <div
       data-slot="sidebar-footer"
       data-sidebar="footer"
-      className={cn('flex flex-col gap-2 p-3', className)}
+      className={cn('flex flex-col gap-2 p-2', className)}
       {...props}
     />
   );
@@ -680,7 +679,7 @@ function SidebarGroup({
     <div
       data-slot="sidebar-group"
       data-sidebar="group"
-      className={cn('relative flex w-full min-w-0 flex-col p-3', className)}
+      className={cn('relative flex w-full min-w-0 flex-col p-2', className)}
       {...props}
     />
   );

@@ -39,21 +39,20 @@ export function AppSidebar({
       <SidebarContent className="overflow-hidden">
         <ScrollArea
           verticalScrollBar
-          /* Overriding the hardcoded { disply:table } to get full flex height */
-          className="h-full [&>[data-radix-scroll-area-viewport]>div]:flex! [&>[data-radix-scroll-area-viewport]>div]:h-full [&>[data-radix-scroll-area-viewport]>div]:flex-col"
+          className="h-full"
         >
           <NavMain />
           <NavFavorites favorites={favorites} />
-          <NavSupport
-            profile={profile}
-            className="mt-auto pb-0"
-          />
         </ScrollArea>
       </SidebarContent>
-      <SidebarFooter className="h-14">
+      <SidebarFooter className="h-auto">
+        <NavSupport
+          profile={profile}
+          className="mt-auto pb-0"
+        />
         <NavUser
           profile={profile}
-          className="p-0"
+          //className="p-0"
         />
       </SidebarFooter>
       <SidebarRail />

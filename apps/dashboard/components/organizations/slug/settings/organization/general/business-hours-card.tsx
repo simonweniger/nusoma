@@ -19,7 +19,7 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import { Checkbox } from '@workspace/ui/components/checkbox';
-import { FormDescription, FormProvider } from '@workspace/ui/components/form';
+import { Form, FormDescription } from '@workspace/ui/components/form';
 import { Label } from '@workspace/ui/components/label';
 import {
   Popover,
@@ -91,7 +91,7 @@ export function BusinessHoursCard({
     }
   };
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <Card
         className={cn('pt-0 gap-0', className)}
         {...other}
@@ -113,7 +113,7 @@ export function BusinessHoursCard({
           </Button>
         </CardFooter>
       </Card>
-    </FormProvider>
+    </Form>
   );
 }
 

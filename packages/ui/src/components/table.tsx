@@ -1,20 +1,16 @@
+'use client';
+
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
 
-export type TableElement = HTMLTableElement;
-export type TableProps = React.HTMLAttributes<HTMLTableElement> & {
-  wrapperClassName?: React.HTMLAttributes<HTMLTableElement>['className'];
-};
-function Table({
-  className,
-  wrapperClassName,
-  ...props
-}: TableProps): React.JSX.Element {
+export type TableProps = React.ComponentProps<'table'>;
+
+function Table({ className, ...props }: TableProps) {
   return (
     <div
       data-slot="table-container"
-      className={cn('relative w-full overflow-auto', wrapperClassName)}
+      className="relative w-full overflow-x-auto"
     >
       <table
         data-slot="table"
@@ -25,30 +21,21 @@ function Table({
   );
 }
 
-export type TableHeaderElement = HTMLTableSectionElement;
-export type TableHeaderProps = React.HTMLAttributes<HTMLTableSectionElement>;
-function TableHeader({
-  className,
-  ...props
-}: TableHeaderProps): React.JSX.Element {
+function TableHeader({ className, ...props }: React.ComponentProps<'thead'>) {
   return (
     <thead
       data-slot="table-header"
-      className={cn('bg-background [&_tr]:border-b', className)}
+      className={cn('[&_tr]:border-b', className)}
       {...props}
     />
   );
 }
 
-export type TableBodyElement = HTMLTableSectionElement;
-export type TableBodyProps = React.HTMLAttributes<HTMLTableSectionElement> & {
+export interface TableBodyProps extends React.ComponentProps<'tbody'> {
   showLastRowBorder?: boolean;
-};
-function TableBody({
-  showLastRowBorder,
-  className,
-  ...props
-}: TableBodyProps): React.JSX.Element {
+}
+
+function TableBody({ className, showLastRowBorder, ...props }: TableBodyProps) {
   return (
     <tbody
       data-slot="table-body"
@@ -61,12 +48,7 @@ function TableBody({
   );
 }
 
-export type TableFooterElement = HTMLTableSectionElement;
-export type TableFooterProps = React.HTMLAttributes<HTMLTableSectionElement>;
-function TableFooter({
-  className,
-  ...props
-}: TableFooterProps): React.JSX.Element {
+function TableFooter({ className, ...props }: React.ComponentProps<'tfoot'>) {
   return (
     <tfoot
       data-slot="table-footer"
@@ -79,9 +61,7 @@ function TableFooter({
   );
 }
 
-export type TableRowElement = HTMLTableRowElement;
-export type TableRowProps = React.HTMLAttributes<HTMLTableRowElement>;
-function TableRow({ className, ...props }: TableRowProps): React.JSX.Element {
+function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
   return (
     <tr
       data-slot="table-row"
@@ -94,14 +74,12 @@ function TableRow({ className, ...props }: TableRowProps): React.JSX.Element {
   );
 }
 
-export type TableHeadElement = HTMLTableCellElement;
-export type TableHeadProps = React.ThHTMLAttributes<HTMLTableCellElement>;
-function TableHead({ className, ...props }: TableHeadProps): React.JSX.Element {
+function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
   return (
     <th
       data-slot="table-head"
       className={cn(
-        'text-muted-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+        'text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0',
         className
       )}
       {...props}
@@ -109,14 +87,12 @@ function TableHead({ className, ...props }: TableHeadProps): React.JSX.Element {
   );
 }
 
-export type TableCellElement = HTMLTableCellElement;
-export type TableCellProps = React.TdHTMLAttributes<HTMLTableCellElement>;
-function TableCell({ className, ...props }: TableCellProps): React.JSX.Element {
+function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
   return (
     <td
       data-slot="table-cell"
       className={cn(
-        'p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+        'p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0',
         className
       )}
       {...props}
@@ -124,12 +100,10 @@ function TableCell({ className, ...props }: TableCellProps): React.JSX.Element {
   );
 }
 
-export type TableCaptionElement = HTMLTableCaptionElement;
-export type TableCaptionProps = React.HTMLAttributes<HTMLTableCaptionElement>;
 function TableCaption({
   className,
   ...props
-}: TableCaptionProps): React.JSX.Element {
+}: React.ComponentProps<'caption'>) {
   return (
     <caption
       data-slot="table-caption"

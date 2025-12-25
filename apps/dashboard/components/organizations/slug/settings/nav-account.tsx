@@ -34,8 +34,8 @@ export function NavAccount(props: SidebarGroupProps): React.JSX.Element {
           return (
             <SidebarMenuItem key={index}>
               <SidebarMenuButton
-                asChild
                 isActive={isActive}
+                asChild
               >
                 <Link
                   href={item.disabled ? '~/' : item.href}
