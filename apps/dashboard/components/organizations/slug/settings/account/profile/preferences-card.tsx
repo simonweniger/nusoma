@@ -166,9 +166,8 @@ export function PreferencesCard({
             disabled={!canSubmit}
             onClick={methods.handleSubmit(onSubmit)}
           >
-            {methods.formState.isSubmitting
-              ? <Spinner className="mr-2 h-4 w-4" /> + 'Saving...'
-              : 'Save'}
+            {methods.formState.isSubmitting && <Spinner className="h-4 w-4" />}
+            {methods.formState.isSubmitting ? 'Saving...' : 'Save'}
           </Button>
         </CardFooter>
       </Card>
