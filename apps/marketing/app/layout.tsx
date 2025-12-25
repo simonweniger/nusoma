@@ -68,7 +68,7 @@ export default async function RootLayout({
         <Providers>
           <div>
             <Navbar />
-            {children}
+            <div className="root">{children}</div>
             <Footer />
             <CookieBanner />
           </div>

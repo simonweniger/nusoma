@@ -14,7 +14,6 @@ import {
   CollapsibleTrigger
 } from '@workspace/ui/components/collapsible';
 import { Logo } from '@workspace/ui/components/logo';
-import { Portal } from '@workspace/ui/components/portal';
 import { ThemeSwitcher } from '@workspace/ui/components/theme-switcher';
 import { RemoveScroll } from '@workspace/ui/lib/remove-scroll';
 import { cn } from '@workspace/ui/lib/utils';
@@ -96,18 +95,16 @@ export function MobileMenu({
         </Button>
       </div>
       {open && (
-        <Portal asChild>
-          <RemoveScroll
-            allowPinchZoom
-            enabled
-          >
-            {isDocs ? (
-              <DocsMobileMenu onLinkClicked={handleToggleMobileMenu} />
-            ) : (
-              <MainMobileMenu onLinkClicked={handleToggleMobileMenu} />
-            )}
-          </RemoveScroll>
-        </Portal>
+        <RemoveScroll
+          allowPinchZoom
+          enabled
+        >
+          {isDocs ? (
+            <DocsMobileMenu onLinkClicked={handleToggleMobileMenu} />
+          ) : (
+            <MainMobileMenu onLinkClicked={handleToggleMobileMenu} />
+          )}
+        </RemoveScroll>
       )}
     </>
   );

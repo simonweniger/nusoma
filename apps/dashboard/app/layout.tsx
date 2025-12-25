@@ -65,7 +65,7 @@ export default async function RootLayout({
       <body className={`${inter.className} size-full`}>
         <React.Suspense>
           <Providers>
-            {children}
+            <div className="root">{children}</div>
             <React.Suspense>
               <Toaster />
             </React.Suspense>
