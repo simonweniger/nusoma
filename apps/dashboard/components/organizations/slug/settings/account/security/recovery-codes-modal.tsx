@@ -95,12 +95,16 @@ export const RecoveryCodesModal = NiceModal.create<RecoveryCodesModalProps>(
     return (
       <>
         {mdUp ? (
-          <AlertDialog open={modal.visible}>
-            <AlertDialogContent
-              className="max-w-lg"
-              onClose={modal.handleClose}
-              onAnimationEndCapture={modal.handleAnimationEndCapture}
-            >
+          <AlertDialog
+            open={modal.visible}
+            onOpenChange={modal.handleClose}
+            onOpenChangeComplete={(open) => {
+              if (!open) {
+                modal.handleAnimationEndCapture();
+              }
+            }}
+          >
+            <AlertDialogContent className="max-w-lg">
               <AlertDialogHeader>
                 <AlertDialogTitle>{title}</AlertDialogTitle>
                 <AlertDialogDescription>{description}</AlertDialogDescription>

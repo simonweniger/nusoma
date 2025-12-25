@@ -130,10 +130,7 @@ export function PricingFAQ(): React.JSX.Element {
             </p>
           </div>
           <div className="mx-auto flex w-full max-w-xl flex-col">
-            <Accordion
-              type="single"
-              collapsible
-            >
+            <Accordion>
               {DATA.map((faq, index) => (
                 <AccordionItem
                   key={index}

@@ -14,12 +14,20 @@ function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   );
 }
 
-function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
+function PopoverTrigger({
+  asChild,
+  render,
+  children,
+  ...props
+}: PopoverPrimitive.Trigger.Props & { asChild?: boolean }) {
   return (
     <PopoverPrimitive.Trigger
       data-slot="popover-trigger"
+      render={asChild ? (children as React.ReactElement) : render}
       {...props}
-    />
+    >
+      {asChild ? undefined : children}
+    </PopoverPrimitive.Trigger>
   );
 }
 
@@ -90,8 +98,18 @@ function PopoverDescription({
   );
 }
 
+function PopoverClose({ ...props }: PopoverPrimitive.Close.Props) {
+  return (
+    <PopoverPrimitive.Close
+      data-slot="popover-close"
+      {...props}
+    />
+  );
+}
+
 export {
   Popover,
+  PopoverClose,
   PopoverContent,
   PopoverDescription,
   PopoverHeader,

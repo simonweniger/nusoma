@@ -22,6 +22,7 @@ import {
 } from '@workspace/ui/components/drawer';
 import { Form } from '@workspace/ui/components/form';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { useMediaQuery } from '@workspace/ui/hooks/use-media-query';
 import { MediaQueries } from '@workspace/ui/lib/media-queries';
 import { cn } from '@workspace/ui/lib/utils';
@@ -99,22 +100,28 @@ export const TransferOwnershipModal =
           type="button"
           variant="destructive"
           disabled={!canSubmit}
-          loading={methods.formState.isSubmitting}
           onClick={methods.handleSubmit(onSubmit)}
         >
-          Confirm transfer
+          {methods.formState.isSubmitting && <Spinner />}
+          {methods.formState.isSubmitting
+            ? 'Transferring...'
+            : 'Confirm transfer'}
         </Button>
       </>
     );
     return (
       <Form {...methods}>
         {mdUp ? (
-          <Dialog open={modal.visible}>
-            <DialogContent
-              className="max-w-sm"
-              onClose={modal.handleClose}
-              onAnimationEndCapture={modal.handleAnimationEndCapture}
-            >
+          <Dialog
+            open={modal.visible}
+            onOpenChange={modal.handleClose}
+            onOpenChangeComplete={(open) => {
+              if (!open) {
+                modal.handleAnimationEndCapture();
+              }
+            }}
+          >
+            <DialogContent className="max-w-sm">
               <DialogHeader>
                 <DialogTitle>{title}</DialogTitle>
                 <DialogDescription>{renderDescription}</DialogDescription>

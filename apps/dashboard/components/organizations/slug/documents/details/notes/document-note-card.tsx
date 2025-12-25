@@ -68,7 +68,7 @@ export function DocumentNoteCard({
           <p className="text-sm">{note.sender.name}</p>
         </div>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger>
             <Button
               type="button"
               variant="ghost"

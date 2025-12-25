@@ -208,7 +208,7 @@ function CheckoutButton({
     <Link
       href={
         product.isEnterprise
-          ? routes.marketing.Document
+          ? routes.marketing.Contact
           : routes.dashboard.auth.SignUp
       }
       className={cn(

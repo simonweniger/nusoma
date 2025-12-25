@@ -85,13 +85,13 @@ export const routes = {
     Api: `${baseUrl.Marketing}/api`,
     Blog: `${baseUrl.Marketing}/blog`,
     Careers: `${baseUrl.Marketing}/careers`,
-    Document: `${baseUrl.Marketing}/document`,
+    Contact: `${baseUrl.Marketing}/contact`,
     CookiePolicy: `${baseUrl.Marketing}/cookie-policy`,
     Docs: `${baseUrl.Marketing}/docs`,
     Index: `${baseUrl.Marketing}/`,
     Pricing: `${baseUrl.Marketing}/pricing`,
     PrivacyPolicy: `${baseUrl.Marketing}/privacy-policy`,
-    Roadmap: 'https://achromatic.canny.io',
+    Roadmap: 'https://nusoma.canny.io',
     Story: `${baseUrl.Marketing}/story`,
     TermsOfUse: `${baseUrl.Marketing}/terms-of-use`
   }
@@ -99,14 +99,14 @@ export const routes = {
 
 type ExtractSlugRoutes<T> =
   T extends Record<string, unknown>
-  ? {
-    [K in keyof T]: T[K] extends string
-    ? T[K] extends `${string}[slug]${string}`
-    ? T[K]
-    : never
-    : ExtractSlugRoutes<T[K]>;
-  }[keyof T]
-  : never;
+    ? {
+        [K in keyof T]: T[K] extends string
+          ? T[K] extends `${string}[slug]${string}`
+            ? T[K]
+            : never
+          : ExtractSlugRoutes<T[K]>;
+      }[keyof T]
+    : never;
 
 type OrganizationsSlugRoutes = ExtractSlugRoutes<
   typeof routes.dashboard.organizations.slug

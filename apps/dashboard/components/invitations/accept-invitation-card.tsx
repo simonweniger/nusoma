@@ -13,6 +13,7 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { cn } from '@workspace/ui/lib/utils';
 
 import { acceptInvitation } from '~/actions/invitations/accept-invitation';
@@ -89,10 +90,12 @@ export function AcceptInvitationCard({
           size="lg"
           className="w-full"
           disabled={!canSubmit}
-          loading={methods.formState.isSubmitting}
           onClick={methods.handleSubmit(onSubmit)}
         >
-          Accept invitation
+          {methods.formState.isSubmitting && <Spinner />}
+          {methods.formState.isSubmitting
+            ? 'Accepting invitation...'
+            : 'Accept invitation'}
         </Button>
       </CardFooter>
     </Card>

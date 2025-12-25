@@ -37,6 +37,7 @@ import {
 } from '@workspace/ui/components/select';
 import { Separator } from '@workspace/ui/components/separator';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 import {
   Tooltip,
   TooltipContent,
@@ -106,10 +107,10 @@ export function BusinessHoursCard({
             variant="default"
             size="default"
             disabled={!canSubmit}
-            loading={methods.formState.isSubmitting}
             onClick={methods.handleSubmit(onSubmit)}
           >
-            Save
+            {methods.formState.isSubmitting && <Spinner />}
+            {methods.formState.isSubmitting ? 'Saving...' : 'Save'}
           </Button>
         </CardFooter>
       </Card>
@@ -370,7 +371,7 @@ const TimeSelect = React.memo(
     return (
       <Select
         value={formattedValue}
-        onValueChange={onChange}
+        onValueChange={(val) => val && onChange(val)}
       >
         <SelectTrigger className="h-9 max-h-9 min-h-9 w-20 min-w-20 max-w-20">
           <SelectValue />

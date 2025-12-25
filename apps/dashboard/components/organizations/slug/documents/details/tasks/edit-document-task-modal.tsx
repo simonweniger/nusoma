@@ -39,6 +39,7 @@ import {
   SelectValue
 } from '@workspace/ui/components/select';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { Textarea } from '@workspace/ui/components/textarea';
 import { useMediaQuery } from '@workspace/ui/hooks/use-media-query';
 import { MediaQueries } from '@workspace/ui/lib/media-queries';
@@ -203,22 +204,26 @@ export const EditDocumentTaskModal =
           type="button"
           variant="default"
           disabled={!canSubmit}
-          loading={methods.formState.isSubmitting}
           onClick={methods.handleSubmit(onSubmit)}
         >
-          Save
+          {methods.formState.isSubmitting && <Spinner />}
+          {methods.formState.isSubmitting ? 'Saving...' : 'Save'}
         </Button>
       </>
     );
     return (
       <Form {...methods}>
         {mdUp ? (
-          <Dialog open={modal.visible}>
-            <DialogContent
-              className="max-w-md"
-              onClose={modal.handleClose}
-              onAnimationEndCapture={modal.handleAnimationEndCapture}
-            >
+          <Dialog
+            open={modal.visible}
+            onOpenChange={modal.handleClose}
+            onOpenChangeComplete={(open) => {
+              if (!open) {
+                modal.handleAnimationEndCapture();
+              }
+            }}
+          >
+            <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>{title}</DialogTitle>
                 <DialogDescription className="sr-only">

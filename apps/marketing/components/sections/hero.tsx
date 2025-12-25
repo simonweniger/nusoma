@@ -19,10 +19,10 @@ import { buttonVariants } from '@workspace/ui/components/button';
 import { ScrollArea, ScrollBar } from '@workspace/ui/components/scroll-area';
 import { Separator } from '@workspace/ui/components/separator';
 import {
-  UnderlinedTabs,
-  UnderlinedTabsContent,
-  UnderlinedTabsList,
-  UnderlinedTabsTrigger
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
 } from '@workspace/ui/components/tabs';
 import { cn } from '@workspace/ui/lib/utils';
 
@@ -211,45 +211,48 @@ function HeroIllustration(): React.JSX.Element {
       transition={{ delay: 0.6, duration: 0.4 }}
       className="relative mt-3 lg:mt-6"
     >
-      <UnderlinedTabs defaultValue="feature1">
+      <Tabs
+        defaultValue="feature1"
+        variant="underline"
+      >
         <ScrollArea className="max-w-screen lg:max-w-none">
-          <UnderlinedTabsList className="relative z-20 mb-6 flex h-fit flex-row flex-wrap justify-center md:flex-nowrap">
-            <UnderlinedTabsTrigger
+          <TabsList className="relative z-20 mb-6 flex h-fit flex-row flex-wrap justify-center md:flex-nowrap">
+            <TabsTrigger
               value="feature1"
               className="mx-1 px-2.5 sm:mx-2 sm:px-3"
             >
               <BoxIcon className="mr-2 size-4 shrink-0" />
               Feature 1
-            </UnderlinedTabsTrigger>
-            <UnderlinedTabsTrigger
+            </TabsTrigger>
+            <TabsTrigger
               value="feature2"
               className="mx-1 px-2.5 sm:mx-2 sm:px-3"
             >
               <PlayIcon className="mr-2 size-4 shrink-0" />
               Feature 2
-            </UnderlinedTabsTrigger>
-            <UnderlinedTabsTrigger
+            </TabsTrigger>
+            <TabsTrigger
               value="feature3"
               className="mx-1 px-2.5 sm:mx-2 sm:px-3"
             >
               <CircuitBoardIcon className="mr-2 size-4 shrink-0" />
               Feature 3
-            </UnderlinedTabsTrigger>
-            <UnderlinedTabsTrigger
+            </TabsTrigger>
+            <TabsTrigger
               value="feature4"
               className="mx-1 px-2.5 sm:mx-2 sm:px-3"
             >
               <LayoutIcon className="mr-2 size-4 shrink-0" />
               Feature 4
-            </UnderlinedTabsTrigger>
-            <UnderlinedTabsTrigger
+            </TabsTrigger>
+            <TabsTrigger
               value="feature5"
               className="mx-1 px-2.5 sm:mx-2 sm:px-3"
             >
               <FileBarChartIcon className="mr-2 size-4 shrink-0" />
               Feature 5
-            </UnderlinedTabsTrigger>
-          </UnderlinedTabsList>
+            </TabsTrigger>
+          </TabsList>
           <ScrollBar
             orientation="horizontal"
             className="invisible"
@@ -258,7 +261,7 @@ function HeroIllustration(): React.JSX.Element {
         <div className="relative mb-1 w-full rounded-xl dark:border-none dark:bg-background">
           <SupportiveDashedGridLines />
           <div className="relative z-20 bg-background">
-            <UnderlinedTabsContent value="feature1">
+            <TabsContent value="feature1">
               <Image
                 priority
                 quality={100}
@@ -277,8 +280,8 @@ function HeroIllustration(): React.JSX.Element {
                 alt="Feature 1 screenshot"
                 className="hidden rounded-xl border shadow dark:block"
               />
-            </UnderlinedTabsContent>
-            <UnderlinedTabsContent value="feature2">
+            </TabsContent>
+            <TabsContent value="feature2">
               <Image
                 quality={100}
                 src="/assets/hero/light-feature2.webp"
@@ -295,8 +298,8 @@ function HeroIllustration(): React.JSX.Element {
                 alt="Feature 2 screenshot"
                 className="hidden rounded-xl border shadow dark:block"
               />
-            </UnderlinedTabsContent>
-            <UnderlinedTabsContent value="feature3">
+            </TabsContent>
+            <TabsContent value="feature3">
               <Image
                 quality={100}
                 src="/assets/hero/light-feature3.webp"
@@ -313,8 +316,8 @@ function HeroIllustration(): React.JSX.Element {
                 alt="Feature 3 screenshot"
                 className="hidden rounded-xl border shadow dark:block"
               />
-            </UnderlinedTabsContent>
-            <UnderlinedTabsContent value="feature4">
+            </TabsContent>
+            <TabsContent value="feature4">
               <Image
                 quality={100}
                 src="/assets/hero/light-feature4.webp"
@@ -331,8 +334,8 @@ function HeroIllustration(): React.JSX.Element {
                 alt="Feature 4 screenshot"
                 className="hidden rounded-xl border shadow dark:block"
               />
-            </UnderlinedTabsContent>
-            <UnderlinedTabsContent value="feature5">
+            </TabsContent>
+            <TabsContent value="feature5">
               <Image
                 quality={100}
                 src="/assets/hero/light-feature5.webp"
@@ -349,10 +352,10 @@ function HeroIllustration(): React.JSX.Element {
                 alt="Feature 5 screenshot"
                 className="hidden rounded-xl border shadow dark:block"
               />
-            </UnderlinedTabsContent>
+            </TabsContent>
           </div>
         </div>
-      </UnderlinedTabs>
+      </Tabs>
     </motion.div>
   );
 }

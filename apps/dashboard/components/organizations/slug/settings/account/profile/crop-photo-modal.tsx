@@ -45,12 +45,16 @@ export const CropPhotoModal = NiceModal.create<CropPhotoModalProps>(
     };
 
     return (
-      <Dialog open={modal.visible}>
-        <DialogContent
-          className="max-w-lg"
-          onClose={modal.handleClose}
-          onAnimationEndCapture={modal.handleAnimationEndCapture}
-        >
+      <Dialog
+        open={modal.visible}
+        onOpenChange={modal.handleClose}
+        onOpenChangeComplete={(open) => {
+          if (!open) {
+            modal.handleAnimationEndCapture();
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg">
           <div className="space-y-4">
             <DialogHeader>
               <DialogTitle>{title}</DialogTitle>

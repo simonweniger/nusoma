@@ -24,6 +24,7 @@ import {
 } from '@workspace/ui/components/drawer';
 import { Form } from '@workspace/ui/components/form';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { useMediaQuery } from '@workspace/ui/hooks/use-media-query';
 import { MediaQueries } from '@workspace/ui/lib/media-queries';
 
@@ -118,22 +119,32 @@ export const RemoveMemberModal = NiceModal.create<RemoveMemberModalProps>(
           type="button"
           variant="destructive"
           disabled={!canSubmit}
-          loading={methods.formState.isSubmitting}
           onClick={methods.handleSubmit(onSubmit)}
         >
-          {isLeaving ? 'Yes, leave' : 'Yes, remove'}
+          {methods.formState.isSubmitting && <Spinner />}
+          {methods.formState.isSubmitting
+            ? isLeaving
+              ? 'Leaving...'
+              : 'Removing...'
+            : isLeaving
+              ? 'Yes, leave'
+              : 'Yes, remove'}
         </Button>
       </>
     );
     return (
       <Form {...methods}>
         {mdUp ? (
-          <AlertDialog open={modal.visible}>
-            <AlertDialogContent
-              className="max-w-sm"
-              onClose={modal.handleClose}
-              onAnimationEndCapture={modal.handleAnimationEndCapture}
-            >
+          <AlertDialog
+            open={modal.visible}
+            onOpenChange={modal.handleClose}
+            onOpenChangeComplete={(open) => {
+              if (!open) {
+                modal.handleAnimationEndCapture();
+              }
+            }}
+          >
+            <AlertDialogContent className="max-w-sm">
               <AlertDialogHeader>
                 <AlertDialogTitle>{title}</AlertDialogTitle>
                 <AlertDialogDescription>

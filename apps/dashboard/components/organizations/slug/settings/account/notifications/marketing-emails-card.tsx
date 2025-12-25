@@ -19,6 +19,7 @@ import {
 } from '@workspace/ui/components/form';
 import { Separator } from '@workspace/ui/components/separator';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { Switch } from '@workspace/ui/components/switch';
 
 import { updateMarketingEmails } from '~/actions/account/update-marketing-emails';
@@ -115,10 +116,10 @@ export function MarketingEmailsCard({
             variant="default"
             size="default"
             disabled={!canSubmit}
-            loading={methods.formState.isSubmitting}
             onClick={methods.handleSubmit(onSubmit)}
           >
-            Save
+            {methods.formState.isSubmitting && <Spinner />}
+            {methods.formState.isSubmitting ? 'Saving...' : 'Save'}
           </Button>
         </CardFooter>
       </Card>

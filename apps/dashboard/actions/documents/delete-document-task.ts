@@ -17,7 +17,10 @@ export const deleteDocumentTask = authOrganizationActionClient
     const [documentTask] = await db
       .select({ documentId: documentTaskTable.documentId })
       .from(documentTaskTable)
-      .innerJoin(documentTable, eq(documentTaskTable.documentId, documentTable.id))
+      .innerJoin(
+        documentTable,
+        eq(documentTaskTable.documentId, documentTable.id)
+      )
       .where(
         and(
           eq(documentTable.organizationId, ctx.organization.id),

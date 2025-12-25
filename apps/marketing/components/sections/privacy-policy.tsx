@@ -105,10 +105,7 @@ export function PrivacyPolicy(): React.JSX.Element {
           ))}
         </div>
 
-        <Accordion
-          type="single"
-          collapsible
-        >
+        <Accordion>
           {DATA_ACCORDION.map((item, index) => (
             <AccordionItem
               key={index}

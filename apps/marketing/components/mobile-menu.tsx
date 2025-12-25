@@ -14,7 +14,6 @@ import {
   CollapsibleTrigger
 } from '@workspace/ui/components/collapsible';
 import { Logo } from '@workspace/ui/components/logo';
-import { Portal } from '@workspace/ui/components/portal';
 import { ThemeSwitcher } from '@workspace/ui/components/theme-switcher';
 import { RemoveScroll } from '@workspace/ui/lib/remove-scroll';
 import { cn } from '@workspace/ui/lib/utils';
@@ -96,18 +95,16 @@ export function MobileMenu({
         </Button>
       </div>
       {open && (
-        <Portal asChild>
-          <RemoveScroll
-            allowPinchZoom
-            enabled
-          >
-            {isDocs ? (
-              <DocsMobileMenu onLinkClicked={handleToggleMobileMenu} />
-            ) : (
-              <MainMobileMenu onLinkClicked={handleToggleMobileMenu} />
-            )}
-          </RemoveScroll>
-        </Portal>
+        <RemoveScroll
+          allowPinchZoom
+          enabled
+        >
+          {isDocs ? (
+            <DocsMobileMenu onLinkClicked={handleToggleMobileMenu} />
+          ) : (
+            <MainMobileMenu onLinkClicked={handleToggleMobileMenu} />
+          )}
+        </RemoveScroll>
       )}
     </>
   );
@@ -168,22 +165,24 @@ function MainMobileMenu({
                     }))
                   }
                 >
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="flex h-9 w-full items-center justify-between px-4 text-left"
-                    >
-                      <span className="text-base font-medium">
-                        {item.title}
-                      </span>
-                      {expanded[item.title.toLowerCase()] ? (
-                        <ChevronUpIcon className="size-4" />
-                      ) : (
-                        <ChevronDownIcon className="size-4" />
-                      )}
-                    </Button>
-                  </CollapsibleTrigger>
+                  <CollapsibleTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="flex h-9 w-full items-center justify-between px-4 text-left"
+                      >
+                        <span className="text-base font-medium">
+                          {item.title}
+                        </span>
+                        {expanded[item.title.toLowerCase()] ? (
+                          <ChevronUpIcon className="size-4" />
+                        ) : (
+                          <ChevronDownIcon className="size-4" />
+                        )}
+                      </Button>
+                    }
+                  />
                   <CollapsibleContent>
                     <ul className="mt-2 pl-4">
                       {item.items.map((subItem) => (
@@ -277,23 +276,25 @@ function DocsMobileMenu({
                   }))
                 }
               >
-                <CollapsibleTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="flex h-9 w-full items-center justify-between px-4 text-left"
-                  >
-                    <div className="flex flex-row items-center gap-2 text-base font-medium">
-                      {item.icon}
-                      {item.title}
-                    </div>
-                    {expanded[item.title.toLowerCase()] ? (
-                      <ChevronUpIcon className="size-4" />
-                    ) : (
-                      <ChevronDownIcon className="size-4" />
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
+                <CollapsibleTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="flex h-9 w-full items-center justify-between px-4 text-left"
+                    >
+                      <div className="flex flex-row items-center gap-2 text-base font-medium">
+                        {item.icon}
+                        {item.title}
+                      </div>
+                      {expanded[item.title.toLowerCase()] ? (
+                        <ChevronUpIcon className="size-4" />
+                      ) : (
+                        <ChevronDownIcon className="size-4" />
+                      )}
+                    </Button>
+                  }
+                />
                 <CollapsibleContent>
                   <ul className="mt-2 pl-4">
                     {item.items.map((subItem) => (

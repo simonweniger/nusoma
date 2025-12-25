@@ -27,7 +27,8 @@ const FAVORITE_NAMES = ['Airbnb', 'Google', 'Microsoft'];
 
 type DocumentValues = typeof documentTable.$inferInsert;
 type DocumentImageValues = typeof documentImageTable.$inferInsert;
-type DocumentToDocumentTagValues = typeof documentToDocumentTagTable.$inferInsert;
+type DocumentToDocumentTagValues =
+  typeof documentToDocumentTagTable.$inferInsert;
 type DocumentActivityValues = typeof documentActivityTable.$inferInsert;
 type FavoriteValues = typeof favoriteTable.$inferInsert;
 
@@ -133,7 +134,9 @@ export async function addExampleData(
 
     await db.transaction(async (tx) => {
       // 1. Collect All Tags
-      const allTagsInBatch = new Set(batch.flatMap((document) => document.tags));
+      const allTagsInBatch = new Set(
+        batch.flatMap((document) => document.tags)
+      );
       const tagsMap = await getOrCreateTags(tx, Array.from(allTagsInBatch));
 
       // 2. Prepare Data for Batch Inserts

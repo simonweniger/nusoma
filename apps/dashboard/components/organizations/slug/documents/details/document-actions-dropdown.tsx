@@ -70,7 +70,7 @@ export function DocumentActionsDropdown({
   };
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger>
         <Button
           type="button"
           variant="ghost"

@@ -29,6 +29,7 @@ import {
 import { InputWithAdornments } from '@workspace/ui/components/input-with-adornments';
 import { Separator } from '@workspace/ui/components/separator';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 
 import { updateSocialMedia } from '~/actions/organization/update-social-media';
 import { useZodForm } from '~/hooks/use-zod-form';
@@ -253,10 +254,10 @@ export function SocialMediaCard({
             variant="default"
             size="default"
             disabled={!canSubmit}
-            loading={methods.formState.isSubmitting}
             onClick={methods.handleSubmit(onSubmit)}
           >
-            Save
+            {methods.formState.isSubmitting && <Spinner />}
+            {methods.formState.isSubmitting ? 'Saving...' : 'Save'}
           </Button>
         </CardFooter>
       </Card>

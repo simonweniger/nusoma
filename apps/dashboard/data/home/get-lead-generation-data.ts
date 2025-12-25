@@ -29,7 +29,10 @@ async function getLeadGenerationDataCached(
     )
   );
   cacheTag(
-    Caching.createOrganizationTag(OrganizationCacheKey.Documents, organizationId)
+    Caching.createOrganizationTag(
+      OrganizationCacheKey.Documents,
+      organizationId
+    )
   );
 
   const documents = await db

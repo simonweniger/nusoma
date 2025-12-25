@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
 
 import {
@@ -20,6 +21,7 @@ import {
   DrawerTitle
 } from '@workspace/ui/components/drawer';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { useMediaQuery } from '@workspace/ui/hooks/use-media-query';
 import { MediaQueries } from '@workspace/ui/lib/media-queries';
 
@@ -32,16 +34,19 @@ export const DisableAuthenticatorAppModal =
   NiceModal.create<DisableAuthenticatorAppModalProps>(() => {
     const modal = useEnhancedModal();
     const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
+    const [isLoading, setIsLoading] = React.useState(false);
     const title = 'Disable authenticator app?';
     const description =
       'The authenticator app will be disabled, are you sure you want to continue?';
     const handleSubmit = async () => {
+      setIsLoading(true);
       const result = await disableAuthenticatorApp();
       if (!result?.serverError && !result?.validationErrors) {
         toast.success('Authenticator app disabled');
         modal.handleClose();
       } else {
         toast.error("Couldn't disable authenticator app");
+        setIsLoading(false);
       }
     };
     const renderButtons = (
@@ -56,21 +61,27 @@ export const DisableAuthenticatorAppModal =
         <Button
           type="button"
           variant="destructive"
+          disabled={isLoading}
           onClick={handleSubmit}
         >
-          Yes, disable
+          {isLoading && <Spinner />}
+          {isLoading ? 'Disabling...' : 'Yes, disable'}
         </Button>
       </>
     );
     return (
       <>
         {mdUp ? (
-          <AlertDialog open={modal.visible}>
-            <AlertDialogContent
-              className="max-w-sm"
-              onClose={modal.handleClose}
-              onAnimationEndCapture={modal.handleAnimationEndCapture}
-            >
+          <AlertDialog
+            open={modal.visible}
+            onOpenChange={modal.handleClose}
+            onOpenChangeComplete={(open) => {
+              if (!open) {
+                modal.handleAnimationEndCapture();
+              }
+            }}
+          >
+            <AlertDialogContent className="max-w-sm">
               <AlertDialogHeader>
                 <AlertDialogTitle>{title}</AlertDialogTitle>
                 <AlertDialogDescription>{description}</AlertDialogDescription>

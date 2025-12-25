@@ -53,6 +53,7 @@
     "@content-collections/mdx": "0.2.2",
     "@content-collections/next": "0.2.9",
     "@next/bundle-analyzer": "16.0.10",
+    "@tailwindcss/postcss": "4.1.17",
     "@types/mdast": "4.0.4",
     "@types/node": "22.15.30",
     "@types/react": "19.1.8",
@@ -70,7 +71,8 @@
     "remark": "15.0.1",
     "remark-code-import": "1.2.0",
     "remark-gfm": "4.0.1",
-    "shiki": "3.17.0"
+    "shiki": "3.17.0",
+    "tailwindcss": "4.1.17"
   },
   "prettier": "@workspace/prettier-config"
 }

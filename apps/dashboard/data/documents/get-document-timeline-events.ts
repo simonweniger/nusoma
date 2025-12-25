@@ -45,7 +45,10 @@ async function getDocumentTimelineEventsData(
     )
   );
   cacheTag(
-    Caching.createOrganizationTag(OrganizationCacheKey.Documents, organizationId)
+    Caching.createOrganizationTag(
+      OrganizationCacheKey.Documents,
+      organizationId
+    )
   );
 
   const activities = await db
@@ -85,7 +88,10 @@ async function getDocumentTimelineEventsData(
       }
     })
     .from(documentCommentTable)
-    .innerJoin(documentTable, eq(documentCommentTable.documentId, documentTable.id))
+    .innerJoin(
+      documentTable,
+      eq(documentCommentTable.documentId, documentTable.id)
+    )
     .innerJoin(userTable, eq(userTable.id, documentCommentTable.userId))
     .where(
       and(
@@ -105,13 +111,13 @@ async function getDocumentTimelineEventsData(
   const actors =
     actorIds.length > 0
       ? await db
-        .select({
-          id: userTable.id,
-          name: userTable.name,
-          image: userTable.image
-        })
-        .from(userTable)
-        .where(inArray(userTable.id, actorIds))
+          .select({
+            id: userTable.id,
+            name: userTable.name,
+            image: userTable.image
+          })
+          .from(userTable)
+          .where(inArray(userTable.id, actorIds))
       : [];
 
   const mappedActivities: ActivityTimelineEventDto[] = activities.map(
