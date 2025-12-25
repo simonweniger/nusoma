@@ -114,7 +114,6 @@ export function NavFavorites({
 
   return (
     <Collapsible
-      asChild
       defaultOpen
       className="group/collapsible"
     >
@@ -123,9 +122,9 @@ export function NavFavorites({
           asChild
           className="group/label hover:bg-sidebar-accent group-data-[collapsible=icon]:mt-0"
         >
-          <CollapsibleTrigger className="cursor-pointer group-data-[collapsible=icon]:invisible">
+          <CollapsibleTrigger className="cursor-pointer group-data-[collapsible=icon]:invisible flex w-full items-center justify-between">
             <span className="text-sm text-muted-foreground">Favorites</span>
-            <ChevronRightIcon className="ml-auto hidden transition-transform duration-200 group-hover/label:inline group-data-[state=open]/collapsible:rotate-90 opacity-60" />
+            <ChevronRightIcon className="size-4 shrink-0 transition-transform duration-200 group-data-open/collapsible:rotate-90 opacity-60" />
           </CollapsibleTrigger>
         </SidebarGroupLabel>
         <CollapsibleContent>
@@ -198,32 +197,34 @@ function FavoriteSidebarMenuItem({
       {...other}
     >
       <Tooltip>
-        <TooltipTrigger asChild>
-          <Link
-            href={`${replaceOrgSlug(routes.dashboard.organizations.slug.Contacts, activeOrganization.slug)}/${favorite.contactId}`}
-            className={cn(
-              sidebarMenuButtonVariants({ variant: 'default' }),
-              'group/fav-item relative'
-            )}
-          >
-            <GripVerticalIcon className="pointer-events-none absolute -left-0.5 top-3 z-20 size-3! shrink-0 opacity-0 group-hover/fav-item:opacity-60" />
-            <ContactAvatar
-              record={favorite.record}
-              src={favorite.image}
-            />
-            <span className="backface-hidden ml-0.5 truncate text-sm font-normal will-change-transform">
-              {favorite.name}
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              className="-mr-1 ml-auto size-6 p-0 text-muted-foreground opacity-0 group-hover/fav-item:opacity-60 group-data-[collapsible=icon]:hidden"
-              onClick={handleRemoveFromFavorites}
+        <TooltipTrigger
+          render={
+            <Link
+              href={`${replaceOrgSlug(routes.dashboard.organizations.slug.Contacts, activeOrganization.slug)}/${favorite.contactId}`}
+              className={cn(
+                sidebarMenuButtonVariants({ variant: 'default' }),
+                'group/fav-item relative'
+              )}
             >
-              <StarOffIcon className="size-3.5 shrink-0" />
-            </Button>
-          </Link>
-        </TooltipTrigger>
+              <GripVerticalIcon className="pointer-events-none absolute -left-0.5 top-3 z-20 size-3! shrink-0 opacity-0 group-hover/fav-item:opacity-60" />
+              <ContactAvatar
+                record={favorite.record}
+                src={favorite.image}
+              />
+              <span className="backface-hidden ml-0.5 truncate text-sm font-normal will-change-transform">
+                {favorite.name}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                className="-mr-1 ml-auto size-6 p-0 text-muted-foreground opacity-0 group-hover/fav-item:opacity-60 group-data-[collapsible=icon]:hidden"
+                onClick={handleRemoveFromFavorites}
+              >
+                <StarOffIcon className="size-3.5 shrink-0" />
+              </Button>
+            </Link>
+          }
+        />
         <TooltipContent
           side="right"
           align="center"

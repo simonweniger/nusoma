@@ -1,10 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { Label as LabelPrimitive, Slot as SlotPrimitive } from 'radix-ui';
 import {
   Controller,
-  FormProvider as RhfFormProvider,
+  FormProvider,
   useFormContext,
   useFormState,
   type ControllerProps,
@@ -12,10 +11,10 @@ import {
   type FieldValues
 } from 'react-hook-form';
 
+import { Label } from '../components/label';
 import { cn } from '../lib/utils';
-import { Label } from './label';
 
-const FormProvider = RhfFormProvider;
+const Form = FormProvider;
 
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
@@ -28,16 +27,12 @@ const FormFieldContext = React.createContext<FormFieldContextValue>(
   {} as FormFieldContextValue
 );
 
-export type FormFieldProps<
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
-> = ControllerProps<TFieldValues, TName>;
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
->(
-  props: ControllerProps<TFieldValues, TName>
-) => {
+>({
+  ...props
+}: ControllerProps<TFieldValues, TName>) => {
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>
       <Controller {...props} />
@@ -51,10 +46,13 @@ const useFormField = () => {
   const { getFieldState } = useFormContext();
   const formState = useFormState({ name: fieldContext.name });
   const fieldState = getFieldState(fieldContext.name, formState);
+
   if (!fieldContext) {
     throw new Error('useFormField should be used within <FormField>');
   }
+
   const { id } = itemContext;
+
   return {
     id,
     name: fieldContext.name,
@@ -73,55 +71,58 @@ const FormItemContext = React.createContext<FormItemContextValue>(
   {} as FormItemContextValue
 );
 
-export type FormItemElement = HTMLDivElement;
-export type FormItemProps = React.ComponentProps<'div'>;
-function FormItem({ className, ...props }: FormItemProps) {
+function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
   const id = React.useId();
+
   return (
     <FormItemContext.Provider value={{ id }}>
       <div
         data-slot="form-item"
-        className={cn('grid gap-2', className)}
+        className={cn('group grid gap-2', className)}
         {...props}
       />
     </FormItemContext.Provider>
   );
 }
 
-export type FormLabelElement = React.ComponentRef<typeof LabelPrimitive.Root>;
-export type FormLabelProps = React.ComponentProps<
-  typeof LabelPrimitive.Root
-> & {
-  required?: boolean;
-};
 function FormLabel({
+  className,
   required,
   children,
-  className,
   ...props
-}: FormLabelProps) {
+}: React.ComponentProps<typeof Label> & { required?: boolean }) {
   const { error, formItemId } = useFormField();
+
   return (
     <Label
       data-slot="form-label"
       data-error={!!error}
-      className={cn('data-[error=true]:text-destructive', className)}
+      className={cn(
+        'relative w-fit data-[error=true]:text-destructive',
+        className
+      )}
       htmlFor={formItemId}
       {...props}
     >
       {children}
-      {required && <span className="align-top">*</span>}
+      {required && (
+        <span
+          className="text-destructive ml-0.5 inline-flex text-[10px] font-bold leading-none align-top"
+          aria-hidden="true"
+        >
+          *
+        </span>
+      )}
     </Label>
   );
 }
 
-export type FormControlElement = React.ComponentRef<typeof SlotPrimitive.Slot>;
-export type FormControlProps = React.ComponentProps<typeof SlotPrimitive.Slot>;
-function FormControl(props: FormControlProps) {
+function FormControl({ ...props }: React.ComponentProps<'div'>) {
   const { error, formItemId, formDescriptionId, formMessageId } =
     useFormField();
+
   return (
-    <SlotPrimitive.Slot
+    <div
       data-slot="form-control"
       id={formItemId}
       aria-describedby={
@@ -135,10 +136,9 @@ function FormControl(props: FormControlProps) {
   );
 }
 
-export type FormDescriptionElement = HTMLParagraphElement;
-export type FormDescriptionProps = React.ComponentProps<'p'>;
-function FormDescription({ className, ...props }: FormDescriptionProps) {
+function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
   const { formDescriptionId } = useFormField();
+
   return (
     <p
       data-slot="form-description"
@@ -149,14 +149,14 @@ function FormDescription({ className, ...props }: FormDescriptionProps) {
   );
 }
 
-export type FormMessageElement = HTMLParagraphElement;
-export type FormMessageProps = React.ComponentProps<'p'>;
-function FormMessage({ className, children, ...props }: FormMessageProps) {
+function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   const { error, formMessageId } = useFormField();
-  const body = error ? String(error?.message ?? '') : children;
+  const body = error ? String(error?.message ?? '') : props.children;
+
   if (!body) {
     return null;
   }
+
   return (
     <p
       data-slot="form-message"
@@ -171,7 +171,7 @@ function FormMessage({ className, children, ...props }: FormMessageProps) {
 
 export {
   useFormField,
-  FormProvider,
+  Form,
   FormItem,
   FormLabel,
   FormControl,

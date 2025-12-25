@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { FormProvider, type SubmitHandler } from 'react-hook-form';
+import { Form, type SubmitHandler } from 'react-hook-form';
 
 import { Button } from '@workspace/ui/components/button';
 import {
@@ -58,7 +58,7 @@ export function TransactionalEmailsCard({
     }
   };
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <Card {...other}>
         <CardContent>
           <form
@@ -156,6 +156,6 @@ export function TransactionalEmailsCard({
           </Button>
         </CardFooter>
       </Card>
-    </FormProvider>
+    </Form>
   );
 }

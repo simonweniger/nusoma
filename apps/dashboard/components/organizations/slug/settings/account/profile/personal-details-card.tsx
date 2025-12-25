@@ -14,18 +14,19 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-  FormProvider
+  FormMessage
 } from '@workspace/ui/components/form';
 import { ImageDropzone } from '@workspace/ui/components/image-dropzone';
 import { Input } from '@workspace/ui/components/input';
 import { InputWithAdornments } from '@workspace/ui/components/input-with-adornments';
 import { Separator } from '@workspace/ui/components/separator';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 import {
   Tooltip,
   TooltipContent,
@@ -114,7 +115,7 @@ export function PersonalDetailsCard({
     }
   };
   return (
-    <FormProvider {...methods}>
+    <Form {...methods}>
       <Card {...other}>
         <CardContent>
           <form
@@ -224,20 +225,20 @@ export function PersonalDetailsCard({
             </div>
           </form>
         </CardContent>
-        <Separator />
         <CardFooter className="flex w-full justify-end">
           <Button
             type="button"
             variant="default"
             size="default"
             disabled={!canSubmit}
-            loading={methods.formState.isSubmitting}
             onClick={methods.handleSubmit(onSubmit)}
           >
-            Save
+            {methods.formState.isSubmitting
+              ? <Spinner /> + 'Saving...'
+              : 'Save'}
           </Button>
         </CardFooter>
       </Card>
-    </FormProvider>
+    </Form>
   );
 }
