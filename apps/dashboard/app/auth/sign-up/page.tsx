@@ -35,7 +35,7 @@ export default function SignUpPage(): React.JSX.Element {
         . Need help?{' '}
         <Link
           prefetch={false}
-          href={routes.marketing.Contact}
+          href={routes.marketing.Document}
           className="text-foreground underline"
         >
           Get in touch

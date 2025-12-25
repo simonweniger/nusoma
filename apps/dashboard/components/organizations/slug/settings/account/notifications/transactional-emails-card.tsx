@@ -67,11 +67,11 @@ export function TransactionalEmailsCard({
           >
             <FormField
               control={methods.control}
-              name="enabledContactsNotifications"
+              name="enabledDocumentsNotifications"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between">
                   <div className="space-y-0.5">
-                    <FormLabel>Contacts</FormLabel>
+                    <FormLabel>Documents</FormLabel>
                     <FormDescription>
                       Someone on your team added or changed a lead.
                     </FormDescription>

@@ -2,7 +2,7 @@ import { type ActionType } from '@workspace/database/schema';
 
 export type ActivityTimelineEventDto = {
   id: string;
-  contactId: string;
+  documentId: string;
   type: 'activity';
   actionType: ActionType;
   metadata: unknown;
@@ -16,7 +16,7 @@ export type ActivityTimelineEventDto = {
 
 export type CommentTimelineEventDto = {
   id: string;
-  contactId: string;
+  documentId: string;
   type: 'comment';
   text: string;
   edited: boolean;

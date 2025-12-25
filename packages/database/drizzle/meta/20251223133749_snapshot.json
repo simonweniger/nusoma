@@ -136,12 +136,8 @@
           "name": "account_userId_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -247,12 +243,8 @@
           "name": "apiKey_organizationId_organization_id_fk",
           "tableFrom": "apiKey",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organizationId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organizationId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -342,12 +334,8 @@
           "name": "authenticatorApp_userId_user_id_fk",
           "tableFrom": "authenticatorApp",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -432,12 +420,8 @@
           "name": "changeEmailRequest_userId_user_id_fk",
           "tableFrom": "changeEmailRequest",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -448,8 +432,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.contactActivity": {
-      "name": "contactActivity",
+    "public.documentActivity": {
+      "name": "documentActivity",
       "schema": "",
       "columns": {
         "id": {
@@ -459,8 +443,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "contactId": {
-          "name": "contactId",
+        "documentId": {
+          "name": "documentId",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -500,11 +484,11 @@
         }
       },
       "indexes": {
-        "IX_contactActivity_contactId": {
-          "name": "IX_contactActivity_contactId",
+        "IX_documentActivity_documentId": {
+          "name": "IX_documentActivity_documentId",
           "columns": [
             {
-              "expression": "contactId",
+              "expression": "documentId",
               "isExpression": false,
               "asc": true,
               "nulls": "last",
@@ -516,8 +500,8 @@
           "method": "btree",
           "with": {}
         },
-        "IX_contactActivity_occurredAt": {
-          "name": "IX_contactActivity_occurredAt",
+        "IX_documentActivity_occurredAt": {
+          "name": "IX_documentActivity_occurredAt",
           "columns": [
             {
               "expression": "occurredAt",
@@ -534,16 +518,12 @@
         }
       },
       "foreignKeys": {
-        "contactActivity_contactId_contact_id_fk": {
-          "name": "contactActivity_contactId_contact_id_fk",
-          "tableFrom": "contactActivity",
-          "tableTo": "contact",
-          "columnsFrom": [
-            "contactId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+        "documentActivity_documentId_document_id_fk": {
+          "name": "documentActivity_documentId_document_id_fk",
+          "tableFrom": "documentActivity",
+          "tableTo": "document",
+          "columnsFrom": ["documentId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -554,8 +534,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.contactComment": {
-      "name": "contactComment",
+    "public.documentComment": {
+      "name": "documentComment",
       "schema": "",
       "columns": {
         "id": {
@@ -565,8 +545,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "contactId": {
-          "name": "contactId",
+        "documentId": {
+          "name": "documentId",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -599,11 +579,11 @@
         }
       },
       "indexes": {
-        "IX_contactComment_contactId": {
-          "name": "IX_contactComment_contactId",
+        "IX_documentComment_documentId": {
+          "name": "IX_documentComment_documentId",
           "columns": [
             {
-              "expression": "contactId",
+              "expression": "documentId",
               "isExpression": false,
               "asc": true,
               "nulls": "last",
@@ -615,8 +595,8 @@
           "method": "btree",
           "with": {}
         },
-        "IX_contactComment_userId": {
-          "name": "IX_contactComment_userId",
+        "IX_documentComment_userId": {
+          "name": "IX_documentComment_userId",
           "columns": [
             {
               "expression": "userId",
@@ -633,29 +613,21 @@
         }
       },
       "foreignKeys": {
-        "contactComment_contactId_contact_id_fk": {
-          "name": "contactComment_contactId_contact_id_fk",
-          "tableFrom": "contactComment",
-          "tableTo": "contact",
-          "columnsFrom": [
-            "contactId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+        "documentComment_documentId_document_id_fk": {
+          "name": "documentComment_documentId_document_id_fk",
+          "tableFrom": "documentComment",
+          "tableTo": "document",
+          "columnsFrom": ["documentId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         },
-        "contactComment_userId_user_id_fk": {
-          "name": "contactComment_userId_user_id_fk",
-          "tableFrom": "contactComment",
+        "documentComment_userId_user_id_fk": {
+          "name": "documentComment_userId_user_id_fk",
+          "tableFrom": "documentComment",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -666,8 +638,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.contactImage": {
-      "name": "contactImage",
+    "public.documentImage": {
+      "name": "documentImage",
       "schema": "",
       "columns": {
         "id": {
@@ -677,8 +649,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "contactId": {
-          "name": "contactId",
+        "documentId": {
+          "name": "documentId",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -703,11 +675,11 @@
         }
       },
       "indexes": {
-        "IX_contactImage_contactId": {
-          "name": "IX_contactImage_contactId",
+        "IX_documentImage_documentId": {
+          "name": "IX_documentImage_documentId",
           "columns": [
             {
-              "expression": "contactId",
+              "expression": "documentId",
               "isExpression": false,
               "asc": true,
               "nulls": "last",
@@ -721,16 +693,12 @@
         }
       },
       "foreignKeys": {
-        "contactImage_contactId_contact_id_fk": {
-          "name": "contactImage_contactId_contact_id_fk",
-          "tableFrom": "contactImage",
-          "tableTo": "contact",
-          "columnsFrom": [
-            "contactId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+        "documentImage_documentId_document_id_fk": {
+          "name": "documentImage_documentId_document_id_fk",
+          "tableFrom": "documentImage",
+          "tableTo": "document",
+          "columnsFrom": ["documentId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -741,8 +709,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.contactNote": {
-      "name": "contactNote",
+    "public.documentNote": {
+      "name": "documentNote",
       "schema": "",
       "columns": {
         "id": {
@@ -752,8 +720,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "contactId": {
-          "name": "contactId",
+        "documentId": {
+          "name": "documentId",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -786,11 +754,11 @@
         }
       },
       "indexes": {
-        "IX_contactNote_contactId": {
-          "name": "IX_contactNote_contactId",
+        "IX_documentNote_documentId": {
+          "name": "IX_documentNote_documentId",
           "columns": [
             {
-              "expression": "contactId",
+              "expression": "documentId",
               "isExpression": false,
               "asc": true,
               "nulls": "last",
@@ -802,8 +770,8 @@
           "method": "btree",
           "with": {}
         },
-        "IX_contactNote_userId": {
-          "name": "IX_contactNote_userId",
+        "IX_documentNote_userId": {
+          "name": "IX_documentNote_userId",
           "columns": [
             {
               "expression": "userId",
@@ -820,29 +788,21 @@
         }
       },
       "foreignKeys": {
-        "contactNote_contactId_contact_id_fk": {
-          "name": "contactNote_contactId_contact_id_fk",
-          "tableFrom": "contactNote",
-          "tableTo": "contact",
-          "columnsFrom": [
-            "contactId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+        "documentNote_documentId_document_id_fk": {
+          "name": "documentNote_documentId_document_id_fk",
+          "tableFrom": "documentNote",
+          "tableTo": "document",
+          "columnsFrom": ["documentId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         },
-        "contactNote_userId_user_id_fk": {
-          "name": "contactNote_userId_user_id_fk",
-          "tableFrom": "contactNote",
+        "documentNote_userId_user_id_fk": {
+          "name": "documentNote_userId_user_id_fk",
+          "tableFrom": "documentNote",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -853,8 +813,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.contactPageVisit": {
-      "name": "contactPageVisit",
+    "public.documentPageVisit": {
+      "name": "documentPageVisit",
       "schema": "",
       "columns": {
         "id": {
@@ -864,8 +824,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "contactId": {
-          "name": "contactId",
+        "documentId": {
+          "name": "documentId",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -885,11 +845,11 @@
         }
       },
       "indexes": {
-        "IX_contactPageVisit_contactId": {
-          "name": "IX_contactPageVisit_contactId",
+        "IX_documentPageVisit_documentId": {
+          "name": "IX_documentPageVisit_documentId",
           "columns": [
             {
-              "expression": "contactId",
+              "expression": "documentId",
               "isExpression": false,
               "asc": true,
               "nulls": "last",
@@ -901,8 +861,8 @@
           "method": "btree",
           "with": {}
         },
-        "IX_contactPageVisit_userId": {
-          "name": "IX_contactPageVisit_userId",
+        "IX_documentPageVisit_userId": {
+          "name": "IX_documentPageVisit_userId",
           "columns": [
             {
               "expression": "userId",
@@ -919,29 +879,21 @@
         }
       },
       "foreignKeys": {
-        "contactPageVisit_contactId_contact_id_fk": {
-          "name": "contactPageVisit_contactId_contact_id_fk",
-          "tableFrom": "contactPageVisit",
-          "tableTo": "contact",
-          "columnsFrom": [
-            "contactId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+        "documentPageVisit_documentId_document_id_fk": {
+          "name": "documentPageVisit_documentId_document_id_fk",
+          "tableFrom": "documentPageVisit",
+          "tableTo": "document",
+          "columnsFrom": ["documentId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         },
-        "contactPageVisit_userId_user_id_fk": {
-          "name": "contactPageVisit_userId_user_id_fk",
-          "tableFrom": "contactPageVisit",
+        "documentPageVisit_userId_user_id_fk": {
+          "name": "documentPageVisit_userId_user_id_fk",
+          "tableFrom": "documentPageVisit",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "cascade"
         }
@@ -952,8 +904,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.contact": {
-      "name": "contact",
+    "public.document": {
+      "name": "document",
       "schema": "",
       "columns": {
         "id": {
@@ -1009,7 +961,7 @@
         },
         "stage": {
           "name": "stage",
-          "type": "contactstage",
+          "type": "documentstage",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
@@ -1023,7 +975,7 @@
         },
         "record": {
           "name": "record",
-          "type": "contactrecord",
+          "type": "documentrecord",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
@@ -1031,8 +983,8 @@
         }
       },
       "indexes": {
-        "IX_contact_organizationId": {
-          "name": "IX_contact_organizationId",
+        "IX_document_organizationId": {
+          "name": "IX_document_organizationId",
           "columns": [
             {
               "expression": "organizationId",
@@ -1049,16 +1001,12 @@
         }
       },
       "foreignKeys": {
-        "contact_organizationId_organization_id_fk": {
-          "name": "contact_organizationId_organization_id_fk",
-          "tableFrom": "contact",
+        "document_organizationId_organization_id_fk": {
+          "name": "document_organizationId_organization_id_fk",
+          "tableFrom": "document",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organizationId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organizationId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -1069,8 +1017,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.contactTag": {
-      "name": "contactTag",
+    "public.documentTag": {
+      "name": "documentTag",
       "schema": "",
       "columns": {
         "id": {
@@ -1088,8 +1036,8 @@
         }
       },
       "indexes": {
-        "IX_contactTag_text_unique": {
-          "name": "IX_contactTag_text_unique",
+        "IX_documentTag_text_unique": {
+          "name": "IX_documentTag_text_unique",
           "columns": [
             {
               "expression": "text",
@@ -1112,8 +1060,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.contactTask": {
-      "name": "contactTask",
+    "public.documentTask": {
+      "name": "documentTask",
       "schema": "",
       "columns": {
         "id": {
@@ -1123,8 +1071,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "contactId": {
-          "name": "contactId",
+        "documentId": {
+          "name": "documentId",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -1143,7 +1091,7 @@
         },
         "status": {
           "name": "status",
-          "type": "contacttaskstatus",
+          "type": "documenttaskstatus",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
@@ -1171,11 +1119,11 @@
         }
       },
       "indexes": {
-        "IX_contactTask_contactId": {
-          "name": "IX_contactTask_contactId",
+        "IX_documentTask_documentId": {
+          "name": "IX_documentTask_documentId",
           "columns": [
             {
-              "expression": "contactId",
+              "expression": "documentId",
               "isExpression": false,
               "asc": true,
               "nulls": "last",
@@ -1189,16 +1137,12 @@
         }
       },
       "foreignKeys": {
-        "contactTask_contactId_contact_id_fk": {
-          "name": "contactTask_contactId_contact_id_fk",
-          "tableFrom": "contactTask",
-          "tableTo": "contact",
-          "columnsFrom": [
-            "contactId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+        "documentTask_documentId_document_id_fk": {
+          "name": "documentTask_documentId_document_id_fk",
+          "tableFrom": "documentTask",
+          "tableTo": "document",
+          "columnsFrom": ["documentId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -1209,18 +1153,18 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.contactToContactTag": {
-      "name": "contactToContactTag",
+    "public.documentToDocumentTag": {
+      "name": "documentToDocumentTag",
       "schema": "",
       "columns": {
-        "contactId": {
-          "name": "contactId",
+        "documentId": {
+          "name": "documentId",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "contactTagId": {
-          "name": "contactTagId",
+        "documentTagId": {
+          "name": "documentTagId",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -1228,29 +1172,21 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "contactToContactTag_contactId_contact_id_fk": {
-          "name": "contactToContactTag_contactId_contact_id_fk",
-          "tableFrom": "contactToContactTag",
-          "tableTo": "contact",
-          "columnsFrom": [
-            "contactId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+        "documentToDocumentTag_documentId_document_id_fk": {
+          "name": "documentToDocumentTag_documentId_document_id_fk",
+          "tableFrom": "documentToDocumentTag",
+          "tableTo": "document",
+          "columnsFrom": ["documentId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         },
-        "contactToContactTag_contactTagId_contactTag_id_fk": {
-          "name": "contactToContactTag_contactTagId_contactTag_id_fk",
-          "tableFrom": "contactToContactTag",
-          "tableTo": "contactTag",
-          "columnsFrom": [
-            "contactTagId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+        "documentToDocumentTag_documentTagId_documentTag_id_fk": {
+          "name": "documentToDocumentTag_documentTagId_documentTag_id_fk",
+          "tableFrom": "documentToDocumentTag",
+          "tableTo": "documentTag",
+          "columnsFrom": ["documentTagId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -1278,8 +1214,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "contactId": {
-          "name": "contactId",
+        "documentId": {
+          "name": "documentId",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -1293,11 +1229,11 @@
         }
       },
       "indexes": {
-        "IX_favorite_contactId": {
-          "name": "IX_favorite_contactId",
+        "IX_favorite_documentId": {
+          "name": "IX_favorite_documentId",
           "columns": [
             {
-              "expression": "contactId",
+              "expression": "documentId",
               "isExpression": false,
               "asc": true,
               "nulls": "last",
@@ -1331,25 +1267,17 @@
           "name": "favorite_userId_user_id_fk",
           "tableFrom": "favorite",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         },
-        "favorite_contactId_contact_id_fk": {
-          "name": "favorite_contactId_contact_id_fk",
+        "favorite_documentId_document_id_fk": {
+          "name": "favorite_documentId_document_id_fk",
           "tableFrom": "favorite",
-          "tableTo": "contact",
-          "columnsFrom": [
-            "contactId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "tableTo": "document",
+          "columnsFrom": ["documentId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -1451,12 +1379,8 @@
           "name": "feedback_organizationId_organization_id_fk",
           "tableFrom": "feedback",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organizationId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organizationId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         },
@@ -1464,12 +1388,8 @@
           "name": "feedback_userId_user_id_fk",
           "tableFrom": "feedback",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "cascade"
         }
@@ -1586,12 +1506,8 @@
           "name": "invitation_organizationId_organization_id_fk",
           "tableFrom": "invitation",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organizationId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organizationId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -1710,12 +1626,8 @@
           "name": "membership_organizationId_organization_id_fk",
           "tableFrom": "membership",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organizationId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organizationId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         },
@@ -1723,12 +1635,8 @@
           "name": "membership_userId_user_id_fk",
           "tableFrom": "membership",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -1825,12 +1733,8 @@
           "name": "notification_userId_user_id_fk",
           "tableFrom": "notification",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -2057,12 +1961,8 @@
           "name": "organizationLogo_organizationId_organization_id_fk",
           "tableFrom": "organizationLogo",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organizationId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organizationId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -2387,12 +2287,8 @@
           "name": "session_userId_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2663,12 +2559,8 @@
           "name": "userImage_userId_user_id_fk",
           "tableFrom": "userImage",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -2728,8 +2620,8 @@
           "notNull": true,
           "default": false
         },
-        "enabledContactsNotifications": {
-          "name": "enabledContactsNotifications",
+        "enabledDocumentsNotifications": {
+          "name": "enabledDocumentsNotifications",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
@@ -2836,9 +2728,7 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -2978,12 +2868,8 @@
           "name": "webhook_organizationId_organization_id_fk",
           "tableFrom": "webhook",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organizationId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organizationId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -3043,12 +2929,8 @@
           "name": "workHours_organizationId_organization_id_fk",
           "tableFrom": "workHours",
           "tableTo": "organization",
-          "columnsFrom": [
-            "organizationId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organizationId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -3112,12 +2994,8 @@
           "name": "workTimeSlot_workHoursId_workHours_id_fk",
           "tableFrom": "workTimeSlot",
           "tableTo": "workHours",
-          "columnsFrom": [
-            "workHoursId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["workHoursId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         }
@@ -3133,31 +3011,20 @@
     "public.actiontype": {
       "name": "actiontype",
       "schema": "public",
-      "values": [
-        "create",
-        "update",
-        "delete"
-      ]
+      "values": ["create", "update", "delete"]
     },
     "public.actortype": {
       "name": "actortype",
       "schema": "public",
-      "values": [
-        "system",
-        "member",
-        "api"
-      ]
+      "values": ["system", "member", "api"]
     },
-    "public.contactrecord": {
-      "name": "contactrecord",
+    "public.documentrecord": {
+      "name": "documentrecord",
       "schema": "public",
-      "values": [
-        "person",
-        "company"
-      ]
+      "values": ["person", "company"]
     },
-    "public.contactstage": {
-      "name": "contactstage",
+    "public.documentstage": {
+      "name": "documentstage",
       "schema": "public",
       "values": [
         "lead",
@@ -3169,13 +3036,10 @@
         "won"
       ]
     },
-    "public.contacttaskstatus": {
-      "name": "contacttaskstatus",
+    "public.documenttaskstatus": {
+      "name": "documenttaskstatus",
       "schema": "public",
-      "values": [
-        "open",
-        "completed"
-      ]
+      "values": ["open", "completed"]
     },
     "public.dayofweek": {
       "name": "dayofweek",
@@ -3193,37 +3057,22 @@
     "public.feedbackcategory": {
       "name": "feedbackcategory",
       "schema": "public",
-      "values": [
-        "suggestion",
-        "problem",
-        "question"
-      ]
+      "values": ["suggestion", "problem", "question"]
     },
     "public.invitationstatus": {
       "name": "invitationstatus",
       "schema": "public",
-      "values": [
-        "pending",
-        "accepted",
-        "revoked"
-      ]
+      "values": ["pending", "accepted", "revoked"]
     },
     "public.Role": {
       "name": "Role",
       "schema": "public",
-      "values": [
-        "member",
-        "admin"
-      ]
+      "values": ["member", "admin"]
     },
     "public.webhooktrigger": {
       "name": "webhooktrigger",
       "schema": "public",
-      "values": [
-        "contactCreated",
-        "contactUpdated",
-        "contactDeleted"
-      ]
+      "values": ["documentCreated", "documentUpdated", "documentDeleted"]
     }
   },
   "schemas": {},

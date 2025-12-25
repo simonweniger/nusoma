@@ -63,7 +63,7 @@ export function BentoCustomersCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="line-clamp-2 text-sm text-muted-foreground">
-          Organize your contact and resource data in one place.
+          Organize your document and resource data in one place.
         </p>
         <div className="space-y-2.5 rounded-lg border p-4 shadow-xs">
           <div className="flex items-center justify-between">

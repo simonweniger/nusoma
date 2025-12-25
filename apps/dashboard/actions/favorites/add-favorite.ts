@@ -20,7 +20,7 @@ export const addFavorite = authOrganizationActionClient
       .where(
         and(
           eq(favoriteTable.userId, ctx.session.user.id),
-          eq(favoriteTable.contactId, parsedInput.contactId)
+          eq(favoriteTable.documentId, parsedInput.documentId)
         )
       )
       .limit(1);
@@ -38,14 +38,14 @@ export const addFavorite = authOrganizationActionClient
         .where(
           and(
             eq(favoriteTable.userId, ctx.session.user.id),
-            eq(favoriteTable.contactId, parsedInput.contactId)
+            eq(favoriteTable.documentId, parsedInput.documentId)
           )
         );
 
       // Create a new favorite and set the order
       await tx.insert(favoriteTable).values({
         userId: ctx.session.user.id,
-        contactId: parsedInput.contactId,
+        documentId: parsedInput.documentId,
         order: (
           await db
             .select()
@@ -69,9 +69,9 @@ export const addFavorite = authOrganizationActionClient
 
     updateTag(
       Caching.createUserTag(
-        UserCacheKey.ContactIsInFavorites,
+        UserCacheKey.DocumentIsInFavorites,
         ctx.session.user.id,
-        parsedInput.contactId
+        parsedInput.documentId
       )
     );
   });

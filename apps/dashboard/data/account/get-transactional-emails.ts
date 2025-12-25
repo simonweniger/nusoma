@@ -19,7 +19,7 @@ async function getTransactionalEmailsData(
 
   const [userFromDb] = await db
     .select({
-      enabledContactsNotifications: userTable.enabledContactsNotifications,
+      enabledDocumentsNotifications: userTable.enabledDocumentsNotifications,
       enabledInboxNotifications: userTable.enabledInboxNotifications,
       enabledWeeklySummary: userTable.enabledWeeklySummary
     })
@@ -32,7 +32,7 @@ async function getTransactionalEmailsData(
   }
 
   return {
-    enabledContactsNotifications: userFromDb.enabledContactsNotifications,
+    enabledDocumentsNotifications: userFromDb.enabledDocumentsNotifications,
     enabledInboxNotifications: userFromDb.enabledInboxNotifications,
     enabledWeeklySummary: userFromDb.enabledWeeklySummary
   };

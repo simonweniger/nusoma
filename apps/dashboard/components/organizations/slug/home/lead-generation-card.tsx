@@ -22,8 +22,8 @@ import { cn } from '@workspace/ui/lib/utils';
 import type { LeadGenerationDataPointDto } from '~/types/dtos/lead-generation-data-point-dto';
 
 const chartConfig = {
-  contacts: {
-    label: 'Contacts'
+  documents: {
+    label: 'Documents'
   },
   people: {
     label: 'People',
@@ -63,7 +63,7 @@ export function LeadGenerationCard({
       <CardHeader className="flex flex-col items-stretch space-y-0 border-b p-0! sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
           <CardTitle className="text-sm">Lead generation</CardTitle>
-          <CardDescription>New contacts added to the pool.</CardDescription>
+          <CardDescription>New documents added to the pool.</CardDescription>
         </div>
         <div className="flex">
           {['people', 'companies'].map((value) => {
@@ -120,7 +120,7 @@ export function LeadGenerationCard({
               content={
                 <ChartTooltipContent
                   className="w-[150px]"
-                  nameKey="contacts"
+                  nameKey="documents"
                   labelFormatter={(value) =>
                     new Date(String(value)).toLocaleDateString('en-US', {
                       month: 'short',

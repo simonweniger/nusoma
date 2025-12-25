@@ -7,7 +7,7 @@ import {
 } from './schema';
 
 enum Feature {
-  AICustomerScoring = 'AI Contact Scoring',
+  AICustomerScoring = 'AI Document Scoring',
   SmartEmailAnalysis = 'Smart Email Analysis',
   LeadPredictions = 'Lead Predictions',
   SentimentAnalysis = 'Sentiment Analysis',
@@ -141,7 +141,7 @@ export const billingConfig = createBillingConfig({
       id: 'enterprise',
       name: 'Enterprise',
       description: 'Best for tailored requirements.',
-      label: 'Contact us',
+      label: 'Document us',
       isEnterprise: true,
       features: [
         Feature.AICustomerScoring,

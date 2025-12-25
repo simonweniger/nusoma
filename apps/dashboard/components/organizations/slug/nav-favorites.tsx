@@ -49,7 +49,7 @@ import { cn } from '@workspace/ui/lib/utils';
 
 import { removeFavorite } from '~/actions/favorites/remove-favorite';
 import { reorderFavorites } from '~/actions/favorites/reorder-favorites';
-import { ContactAvatar } from '~/components/organizations/slug/contacts/details/contact-avatar';
+import { DocumentAvatar } from '~/components/organizations/slug/documents/details/document-avatar';
 import { useActiveOrganization } from '~/hooks/use-active-organization';
 import type { FavoriteDto } from '~/types/dtos/favorite-dto';
 
@@ -185,7 +185,7 @@ function FavoriteSidebarMenuItem({
   ): Promise<void> => {
     e.stopPropagation();
     e.preventDefault();
-    const result = await removeFavorite({ contactId: favorite.contactId });
+    const result = await removeFavorite({ documentId: favorite.documentId });
     if (result?.serverError || result?.validationErrors) {
       toast.error("Couldn't remove favorite");
     }
@@ -200,14 +200,14 @@ function FavoriteSidebarMenuItem({
         <TooltipTrigger
           render={
             <Link
-              href={`${replaceOrgSlug(routes.dashboard.organizations.slug.Contacts, activeOrganization.slug)}/${favorite.contactId}`}
+              href={`${replaceOrgSlug(routes.dashboard.organizations.slug.Documents, activeOrganization.slug)}/${favorite.documentId}`}
               className={cn(
                 sidebarMenuButtonVariants({ variant: 'default' }),
                 'group/fav-item relative'
               )}
             >
               <GripVerticalIcon className="pointer-events-none absolute -left-0.5 top-3 z-20 size-3! shrink-0 opacity-0 group-hover/fav-item:opacity-60" />
-              <ContactAvatar
+              <DocumentAvatar
                 record={favorite.record}
                 src={favorite.image}
               />

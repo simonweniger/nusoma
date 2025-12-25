@@ -6,7 +6,7 @@ import { endOfDay, format, startOfDay } from 'date-fns';
 import { getAuthOrganizationContext } from '@workspace/auth/context';
 import { ValidationError } from '@workspace/common/errors';
 import { db, sql } from '@workspace/database/client';
-import { ContactRecord, contactTable } from '@workspace/database/schema';
+import { DocumentRecord, documentTable } from '@workspace/database/schema';
 
 import { Caching, OrganizationCacheKey } from '~/data/caching';
 import {
@@ -29,26 +29,26 @@ async function getLeadGenerationDataCached(
     )
   );
   cacheTag(
-    Caching.createOrganizationTag(OrganizationCacheKey.Contacts, organizationId)
+    Caching.createOrganizationTag(OrganizationCacheKey.Documents, organizationId)
   );
 
-  const contacts = await db
+  const documents = await db
     .select({
-      record: contactTable.record,
-      createdAt: contactTable.createdAt
+      record: documentTable.record,
+      createdAt: documentTable.createdAt
     })
-    .from(contactTable)
+    .from(documentTable)
     .where(
-      sql`${contactTable.organizationId} = ${organizationId} 
-      AND ${contactTable.createdAt} BETWEEN ${startOfDay(from)} AND ${endOfDay(to)}`
+      sql`${documentTable.organizationId} = ${organizationId} 
+      AND ${documentTable.createdAt} BETWEEN ${startOfDay(from)} AND ${endOfDay(to)}`
     );
 
   const dataPointsByDate = Object.values(
-    contacts.reduce(
+    documents.reduce(
       (acc, { record, createdAt }) => {
         const date = format(createdAt, 'yyyy-MM-dd');
         acc[date] = acc[date] || { date, people: 0, companies: 0 };
-        acc[date][record === ContactRecord.PERSON ? 'people' : 'companies']++;
+        acc[date][record === DocumentRecord.PERSON ? 'people' : 'companies']++;
 
         return acc;
       },

@@ -4,7 +4,7 @@ import { cacheLife, cacheTag } from 'next/cache';
 
 import { getAuthOrganizationContext } from '@workspace/auth/context';
 import { and, asc, db, eq } from '@workspace/database/client';
-import { contactTable, favoriteTable } from '@workspace/database/schema';
+import { documentTable, favoriteTable } from '@workspace/database/schema';
 
 import { Caching, OrganizationCacheKey } from '~/data/caching';
 import type { FavoriteDto } from '~/types/dtos/favorite-dto';
@@ -27,18 +27,18 @@ async function getFavoritesData(
     .select({
       id: favoriteTable.id,
       order: favoriteTable.order,
-      contact: {
-        id: contactTable.id,
-        name: contactTable.name,
-        record: contactTable.record,
-        image: contactTable.image
+      document: {
+        id: documentTable.id,
+        name: documentTable.name,
+        record: documentTable.record,
+        image: documentTable.image
       }
     })
     .from(favoriteTable)
-    .innerJoin(contactTable, eq(favoriteTable.contactId, contactTable.id))
+    .innerJoin(documentTable, eq(favoriteTable.documentId, documentTable.id))
     .where(
       and(
-        eq(contactTable.organizationId, organizationId),
+        eq(documentTable.organizationId, organizationId),
         eq(favoriteTable.userId, userId)
       )
     )
@@ -47,10 +47,10 @@ async function getFavoritesData(
   return favorites.map((favorite) => ({
     id: favorite.id,
     order: favorite.order,
-    contactId: favorite.contact.id,
-    name: favorite.contact.name,
-    record: favorite.contact.record,
-    image: favorite.contact.image ? favorite.contact.image : undefined
+    documentId: favorite.document.id,
+    name: favorite.document.name,
+    record: favorite.document.record,
+    image: favorite.document.image ? favorite.document.image : undefined
   }));
 }
 

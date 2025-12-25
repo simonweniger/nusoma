@@ -41,7 +41,7 @@ const DATA = [
       <div>
         The Free plan is perfect for getting started and includes:
         <ul className="mt-2 list-disc pl-5">
-          <li>AI Contact Scoring for 100 contacts/month</li>
+          <li>AI Document Scoring for 100 contacts/month</li>
           <li>Smart Email Analysis for 1,000 emails/month</li>
           <li>Access for up to 2 team members</li>
         </ul>
@@ -54,7 +54,7 @@ const DATA = [
       <div>
         The Pro plan is ideal for growing teams and includes:
         <ul className="mt-2 list-disc pl-5">
-          <li>Unlimited AI Contact Scoring and Email Analysis</li>
+          <li>Unlimited AI Document Scoring and Email Analysis</li>
           <li>Advanced Lead Predictions</li>
           <li>Real-time Sentiment Analysis</li>
           <li>Up to 120 team members</li>
@@ -68,7 +68,7 @@ const DATA = [
       <div>
         The Enterprise plan is fully customizable and includes:
         <ul className="mt-2 list-disc pl-5">
-          <li>AI Contact Scoring and Email Analysis with custom limits</li>
+          <li>AI Document Scoring and Email Analysis with custom limits</li>
           <li>Custom AI models for Lead Predictions</li>
           <li>Advanced storage solutions</li>
           <li>24/7 Enterprise Support</li>

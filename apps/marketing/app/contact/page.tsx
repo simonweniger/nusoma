@@ -1,7 +1,7 @@
 import * as React from 'react';
 import type { Metadata } from 'next';
 
-import { Contact } from '~/components/sections/contact';
+import { Contact } from '~/components/sections/document';
 import { FAQ } from '~/components/sections/faq';
 import { createTitle } from '~/lib/formatters';
 

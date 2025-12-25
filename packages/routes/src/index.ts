@@ -59,7 +59,7 @@ export const routes = {
       Index: `${baseUrl.Dashboard}/organizations`,
       slug: {
         ChoosePlan: `${baseUrl.Dashboard}/organizations/[slug]/choose-plan`,
-        Contacts: `${baseUrl.Dashboard}/organizations/[slug]/contacts`,
+        Documents: `${baseUrl.Dashboard}/organizations/[slug]/documents`,
         Home: `${baseUrl.Dashboard}/organizations/[slug]/home`,
         Index: `${baseUrl.Dashboard}/organizations/[slug]`,
         settings: {
@@ -85,7 +85,7 @@ export const routes = {
     Api: `${baseUrl.Marketing}/api`,
     Blog: `${baseUrl.Marketing}/blog`,
     Careers: `${baseUrl.Marketing}/careers`,
-    Contact: `${baseUrl.Marketing}/contact`,
+    Document: `${baseUrl.Marketing}/document`,
     CookiePolicy: `${baseUrl.Marketing}/cookie-policy`,
     Docs: `${baseUrl.Marketing}/docs`,
     Index: `${baseUrl.Marketing}/`,
@@ -99,14 +99,14 @@ export const routes = {
 
 type ExtractSlugRoutes<T> =
   T extends Record<string, unknown>
-    ? {
-        [K in keyof T]: T[K] extends string
-          ? T[K] extends `${string}[slug]${string}`
-            ? T[K]
-            : never
-          : ExtractSlugRoutes<T[K]>;
-      }[keyof T]
-    : never;
+  ? {
+    [K in keyof T]: T[K] extends string
+    ? T[K] extends `${string}[slug]${string}`
+    ? T[K]
+    : never
+    : ExtractSlugRoutes<T[K]>;
+  }[keyof T]
+  : never;
 
 type OrganizationsSlugRoutes = ExtractSlugRoutes<
   typeof routes.dashboard.organizations.slug
@@ -140,6 +140,6 @@ export function getUserImageUrl(userId: string, hash: string): string {
   return `${routes.dashboard.Api}/user-images/${userId}?v=${hash}`;
 }
 
-export function getContactImageUrl(contactId: string, hash: string): string {
-  return `${routes.dashboard.Api}/contact-images/${contactId}?v=${hash}`;
+export function getDocumentImageUrl(documentId: string, hash: string): string {
+  return `${routes.dashboard.Api}/document-images/${documentId}?v=${hash}`;
 }

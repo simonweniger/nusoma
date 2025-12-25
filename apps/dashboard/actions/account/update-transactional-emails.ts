@@ -16,7 +16,7 @@ export const updateTransactionalEmails = authActionClient
     await db
       .update(userTable)
       .set({
-        enabledContactsNotifications: parsedInput.enabledContactsNotifications,
+        enabledDocumentsNotifications: parsedInput.enabledDocumentsNotifications,
         enabledInboxNotifications: parsedInput.enabledInboxNotifications,
         enabledWeeklySummary: parsedInput.enabledWeeklySummary
       })

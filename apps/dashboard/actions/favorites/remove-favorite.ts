@@ -20,7 +20,7 @@ export const removeFavorite = authOrganizationActionClient
         .where(
           and(
             eq(favoriteTable.userId, ctx.session.user.id),
-            eq(favoriteTable.contactId, parsedInput.contactId)
+            eq(favoriteTable.documentId, parsedInput.documentId)
           )
         );
 
@@ -37,9 +37,9 @@ export const removeFavorite = authOrganizationActionClient
 
     updateTag(
       Caching.createUserTag(
-        UserCacheKey.ContactIsInFavorites,
+        UserCacheKey.DocumentIsInFavorites,
         ctx.session.user.id,
-        parsedInput.contactId
+        parsedInput.documentId
       )
     );
   });

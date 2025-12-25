@@ -59,12 +59,12 @@ export enum ActorType {
   API = 'api'
 }
 
-export enum ContactRecord {
+export enum DocumentRecord {
   PERSON = 'person',
   COMPANY = 'company'
 }
 
-export enum ContactStage {
+export enum DocumentStage {
   LEAD = 'lead',
   QUALIFIED = 'qualified',
   OPPORTUNITY = 'opportunity',
@@ -74,7 +74,7 @@ export enum ContactStage {
   WON = 'won'
 }
 
-export enum ContactTaskStatus {
+export enum DocumentTaskStatus {
   OPEN = 'open',
   COMPLETED = 'completed'
 }
@@ -107,9 +107,9 @@ export enum Role {
 }
 
 export enum WebhookTrigger {
-  CONTACT_CREATED = 'contactCreated',
-  CONTACT_UPDATED = 'contactUpdated',
-  CONTACT_DELETED = 'contactDeleted'
+  document_CREATED = 'documentCreated',
+  document_UPDATED = 'documentUpdated',
+  document_DELETED = 'documentDeleted'
 }
 
 function enumToPgEnum<T extends Record<string, string>>(myEnum: T) {
@@ -123,17 +123,17 @@ function enumToPgEnum<T extends Record<string, string>>(myEnum: T) {
 
 export const actionTypeEnum = pgEnum('actiontype', enumToPgEnum(ActionType));
 export const actorTypeEnum = pgEnum('actortype', enumToPgEnum(ActorType));
-export const contactRecordEnum = pgEnum(
-  'contactrecord',
-  enumToPgEnum(ContactRecord)
+export const documentRecordEnum = pgEnum(
+  'documentrecord',
+  enumToPgEnum(DocumentRecord)
 );
-export const contactStageEnum = pgEnum(
-  'contactstage',
-  enumToPgEnum(ContactStage)
+export const documentStageEnum = pgEnum(
+  'documentstage',
+  enumToPgEnum(DocumentStage)
 );
-export const contactTaskStatusEnum = pgEnum(
-  'contacttaskstatus',
-  enumToPgEnum(ContactTaskStatus)
+export const documentTaskStatusEnum = pgEnum(
+  'documenttaskstatus',
+  enumToPgEnum(DocumentTaskStatus)
 );
 export const dayOfWeekEnum = pgEnum('dayofweek', enumToPgEnum(DayOfWeek));
 export const feedbackCategoryEnum = pgEnum(
@@ -245,8 +245,8 @@ export const changeEmailRequestTable = pgTable(
   ]
 );
 
-export const contactTable = pgTable(
-  'contact',
+export const documentTable = pgTable(
+  'document',
   {
     id: uuid('id').primaryKey().notNull().defaultRandom(),
     organizationId: uuid('organizationId')
@@ -266,25 +266,25 @@ export const contactTable = pgTable(
       .notNull()
       .$onUpdate(() => new Date()),
     image: varchar('image', { length: 2048 }),
-    stage: contactStageEnum('stage').default(ContactStage.LEAD).notNull(),
+    stage: documentStageEnum('stage').default(DocumentStage.LEAD).notNull(),
     phone: varchar('phone', { length: 32 }),
-    record: contactRecordEnum('record').default(ContactRecord.PERSON).notNull()
+    record: documentRecordEnum('record').default(DocumentRecord.PERSON).notNull()
   },
   (table) => [
-    index('IX_contact_organizationId').using(
+    index('IX_document_organizationId').using(
       'btree',
       table.organizationId.asc().nullsLast().op('uuid_ops')
     )
   ]
 );
 
-export const contactCommentTable = pgTable(
-  'contactComment',
+export const documentCommentTable = pgTable(
+  'documentComment',
   {
     id: uuid('id').primaryKey().notNull().defaultRandom(),
-    contactId: uuid('contactId')
+    documentId: uuid('documentId')
       .notNull()
-      .references(() => contactTable.id, {
+      .references(() => documentTable.id, {
         onDelete: 'cascade',
         onUpdate: 'cascade'
       }),
@@ -304,24 +304,24 @@ export const contactCommentTable = pgTable(
       .$onUpdate(() => new Date())
   },
   (table) => [
-    index('IX_contactComment_contactId').using(
+    index('IX_documentComment_documentId').using(
       'btree',
-      table.contactId.asc().nullsLast().op('uuid_ops')
+      table.documentId.asc().nullsLast().op('uuid_ops')
     ),
-    index('IX_contactComment_userId').using(
+    index('IX_documentComment_userId').using(
       'btree',
       table.userId.asc().nullsLast().op('uuid_ops')
     )
   ]
 );
 
-export const contactNoteTable = pgTable(
-  'contactNote',
+export const documentNoteTable = pgTable(
+  'documentNote',
   {
     id: uuid('id').primaryKey().notNull().defaultRandom(),
-    contactId: uuid('contactId')
+    documentId: uuid('documentId')
       .notNull()
-      .references(() => contactTable.id, {
+      .references(() => documentTable.id, {
         onDelete: 'cascade',
         onUpdate: 'cascade'
       }),
@@ -341,24 +341,24 @@ export const contactNoteTable = pgTable(
       .$onUpdate(() => new Date())
   },
   (table) => [
-    index('IX_contactNote_contactId').using(
+    index('IX_documentNote_documentId').using(
       'btree',
-      table.contactId.asc().nullsLast().op('uuid_ops')
+      table.documentId.asc().nullsLast().op('uuid_ops')
     ),
-    index('IX_contactNote_userId').using(
+    index('IX_documentNote_userId').using(
       'btree',
       table.userId.asc().nullsLast().op('uuid_ops')
     )
   ]
 );
 
-export const contactPageVisitTable = pgTable(
-  'contactPageVisit',
+export const documentPageVisitTable = pgTable(
+  'documentPageVisit',
   {
     id: uuid('id').primaryKey().notNull().defaultRandom(),
-    contactId: uuid('contactId')
+    documentId: uuid('documentId')
       .notNull()
-      .references(() => contactTable.id, {
+      .references(() => documentTable.id, {
         onDelete: 'cascade',
         onUpdate: 'cascade'
       }),
@@ -371,24 +371,24 @@ export const contactPageVisitTable = pgTable(
     })
   },
   (table) => [
-    index('IX_contactPageVisit_contactId').using(
+    index('IX_documentPageVisit_documentId').using(
       'btree',
-      table.contactId.asc().nullsLast().op('uuid_ops')
+      table.documentId.asc().nullsLast().op('uuid_ops')
     ),
-    index('IX_contactPageVisit_userId').using(
+    index('IX_documentPageVisit_userId').using(
       'btree',
       table.userId.asc().nullsLast().op('uuid_ops')
     )
   ]
 );
 
-export const contactImageTable = pgTable(
-  'contactImage',
+export const documentImageTable = pgTable(
+  'documentImage',
   {
     id: uuid('id').primaryKey().notNull().defaultRandom(),
-    contactId: uuid('contactId')
+    documentId: uuid('documentId')
       .notNull()
-      .references(() => contactTable.id, {
+      .references(() => documentTable.id, {
         onDelete: 'cascade',
         onUpdate: 'cascade'
       }),
@@ -397,27 +397,27 @@ export const contactImageTable = pgTable(
     hash: varchar('hash', { length: 64 })
   },
   (table) => [
-    index('IX_contactImage_contactId').using(
+    index('IX_documentImage_documentId').using(
       'btree',
-      table.contactId.asc().nullsLast().op('uuid_ops')
+      table.documentId.asc().nullsLast().op('uuid_ops')
     )
   ]
 );
 
-export const contactTaskTable = pgTable(
-  'contactTask',
+export const documentTaskTable = pgTable(
+  'documentTask',
   {
     id: uuid('id').primaryKey().notNull().defaultRandom(),
-    contactId: uuid('contactId')
+    documentId: uuid('documentId')
       .notNull()
-      .references(() => contactTable.id, {
+      .references(() => documentTable.id, {
         onDelete: 'cascade',
         onUpdate: 'cascade'
       }),
     title: varchar('title', { length: 255 }).notNull(),
     description: varchar('description', { length: 8000 }),
-    status: contactTaskStatusEnum('status')
-      .default(ContactTaskStatus.OPEN)
+    status: documentTaskStatusEnum('status')
+      .default(DocumentTaskStatus.OPEN)
       .notNull(),
     dueDate: timestamp('dueDate', { precision: 3, mode: 'date' }),
     createdAt: timestamp('createdAt', { precision: 3, mode: 'date' })
@@ -429,9 +429,9 @@ export const contactTaskTable = pgTable(
       .$onUpdate(() => new Date())
   },
   (table) => [
-    index('IX_contactTask_contactId').using(
+    index('IX_documentTask_documentId').using(
       'btree',
-      table.contactId.asc().nullsLast().op('uuid_ops')
+      table.documentId.asc().nullsLast().op('uuid_ops')
     )
   ]
 );
@@ -446,18 +446,18 @@ export const favoriteTable = pgTable(
         onDelete: 'cascade',
         onUpdate: 'cascade'
       }),
-    contactId: uuid('contactId')
+    documentId: uuid('documentId')
       .notNull()
-      .references(() => contactTable.id, {
+      .references(() => documentTable.id, {
         onDelete: 'cascade',
         onUpdate: 'cascade'
       }),
     order: integer('order').default(0).notNull()
   },
   (table) => [
-    index('IX_favorite_contactId').using(
+    index('IX_favorite_documentId').using(
       'btree',
-      table.contactId.asc().nullsLast().op('uuid_ops')
+      table.documentId.asc().nullsLast().op('uuid_ops')
     ),
     index('IX_favorite_userId').using(
       'btree',
@@ -511,14 +511,14 @@ export const invitationTable = pgTable(
   ]
 );
 
-export const contactTagTable = pgTable(
-  'contactTag',
+export const documentTagTable = pgTable(
+  'documentTag',
   {
     id: uuid('id').primaryKey().notNull().defaultRandom(),
     text: varchar('text', { length: 128 }).notNull()
   },
   (table) => [
-    uniqueIndex('IX_contactTag_text_unique').using(
+    uniqueIndex('IX_documentTag_text_unique').using(
       'btree',
       table.text.asc().nullsLast().op('text_ops')
     )
@@ -690,7 +690,7 @@ export const userTable = pgTable(
     completedOnboarding: boolean('completedOnboarding')
       .default(false)
       .notNull(),
-    enabledContactsNotifications: boolean('enabledContactsNotifications')
+    enabledDocumentsNotifications: boolean('enabledDocumentsNotifications')
       .default(false)
       .notNull(),
     enabledInboxNotifications: boolean('enabledInboxNotifications')
@@ -825,13 +825,13 @@ export const workTimeSlotTable = pgTable(
   ]
 );
 
-export const contactActivityTable = pgTable(
-  'contactActivity',
+export const documentActivityTable = pgTable(
+  'documentActivity',
   {
     id: uuid('id').primaryKey().notNull().defaultRandom(),
-    contactId: uuid('contactId')
+    documentId: uuid('documentId')
       .notNull()
-      .references(() => contactTable.id, {
+      .references(() => documentTable.id, {
         onDelete: 'cascade',
         onUpdate: 'cascade'
       }),
@@ -844,11 +844,11 @@ export const contactActivityTable = pgTable(
       .notNull()
   },
   (table) => [
-    index('IX_contactActivity_contactId').using(
+    index('IX_documentActivity_documentId').using(
       'btree',
-      table.contactId.asc().nullsLast().op('uuid_ops')
+      table.documentId.asc().nullsLast().op('uuid_ops')
     ),
-    index('IX_contactActivity_occurredAt').using(
+    index('IX_documentActivity_occurredAt').using(
       'btree',
       table.occurredAt.asc().nullsLast().op('timestamp_ops')
     )
@@ -1065,18 +1065,18 @@ export const orderItemTable = pgTable('orderItem', {
     )
   ]);
 
-export const contactToContactTagTable = pgTable(
-  'contactToContactTag',
+export const documentToDocumentTagTable = pgTable(
+  'documentToDocumentTag',
   {
-    contactId: uuid('contactId')
+    documentId: uuid('documentId')
       .notNull()
-      .references(() => contactTable.id, {
+      .references(() => documentTable.id, {
         onDelete: 'cascade',
         onUpdate: 'cascade'
       }),
-    contactTagId: uuid('contactTagId')
+    documentTagId: uuid('documentTagId')
       .notNull()
-      .references(() => contactTagTable.id, {
+      .references(() => documentTagTable.id, {
         onDelete: 'cascade',
         onUpdate: 'cascade'
       })
@@ -1084,13 +1084,13 @@ export const contactToContactTagTable = pgTable(
   (table) => [
     {
       pk: primaryKey({
-        columns: [table.contactId, table.contactTagId]
+        columns: [table.documentId, table.documentTagId]
       }),
-      contactIdIdx: index('IX_contactToContactTag_contactId').on(
-        table.contactId
+      documentIdIdx: index('IX_documentToDocumentTag_documentId').on(
+        table.documentId
       ),
-      contactTagIdIdx: index('IX_contactToContactTag_contactTagId').on(
-        table.contactTagId
+      documentTagIdIdx: index('IX_documentToDocumentTag_documentTagId').on(
+        table.documentTagId
       )
     }
   ]
@@ -1109,7 +1109,7 @@ export const organizationRelations = relations(
   organizationTable,
   ({ many }) => ({
     apiKeys: many(apiKeyTable),
-    contacts: many(contactTable),
+    documents: many(documentTable),
     invitations: many(invitationTable),
     feedbacks: many(feedbackTable),
     workHours: many(workHoursTable),
@@ -1131,9 +1131,9 @@ export const authenticatorAppRelations = relations(
 export const userRelations = relations(userTable, ({ many }) => ({
   authenticatorApps: many(authenticatorAppTable),
   changeEmailRequests: many(changeEmailRequestTable),
-  contactComments: many(contactCommentTable),
-  contactNotes: many(contactNoteTable),
-  contactPageVisits: many(contactPageVisitTable),
+  documentComments: many(documentCommentTable),
+  documentNotes: many(documentNoteTable),
+  documentPageVisits: many(documentPageVisitTable),
   favorites: many(favoriteTable),
   accounts: many(accountTable),
   feedbacks: many(feedbackTable),
@@ -1152,70 +1152,70 @@ export const changeEmailRequestRelations = relations(
   })
 );
 
-export const contactRelations = relations(contactTable, ({ one, many }) => ({
+export const documentRelations = relations(documentTable, ({ one, many }) => ({
   organization: one(organizationTable, {
-    fields: [contactTable.organizationId],
+    fields: [documentTable.organizationId],
     references: [organizationTable.id],
   }),
-  contactComments: many(contactCommentTable),
-  contactNotes: many(contactNoteTable),
-  contactPageVisits: many(contactPageVisitTable),
-  contactTasks: many(contactTaskTable),
+  documentComments: many(documentCommentTable),
+  documentNotes: many(documentNoteTable),
+  documentPageVisits: many(documentPageVisitTable),
+  documentTasks: many(documentTaskTable),
   favorites: many(favoriteTable),
-  contactActivities: many(contactActivityTable),
-  contactToContactTags: many(contactToContactTagTable)
+  documentActivities: many(documentActivityTable),
+  documentToDocumentTags: many(documentToDocumentTagTable)
 }));
 
-export const contactCommentRelations = relations(
-  contactCommentTable,
+export const documentCommentRelations = relations(
+  documentCommentTable,
   ({ one }) => ({
-    contact: one(contactTable, {
-      fields: [contactCommentTable.contactId],
-      references: [contactTable.id]
+    document: one(documentTable, {
+      fields: [documentCommentTable.documentId],
+      references: [documentTable.id]
     }),
     user: one(userTable, {
-      fields: [contactCommentTable.userId],
+      fields: [documentCommentTable.userId],
       references: [userTable.id]
     })
   })
 );
 
-export const contactNoteRelations = relations(contactNoteTable, ({ one }) => ({
-  contact: one(contactTable, {
-    fields: [contactNoteTable.contactId],
-    references: [contactTable.id]
+export const documentNoteRelations = relations(documentNoteTable, ({ one }) => ({
+  document: one(documentTable, {
+    fields: [documentNoteTable.documentId],
+    references: [documentTable.id]
   }),
   user: one(userTable, {
-    fields: [contactNoteTable.userId],
+    fields: [documentNoteTable.userId],
     references: [userTable.id]
   })
 }));
 
-export const contactPageVisitRelations = relations(
-  contactPageVisitTable,
+export const documentPageVisitRelations = relations(
+  documentPageVisitTable,
   ({ one }) => ({
-    contact: one(contactTable, {
-      fields: [contactPageVisitTable.contactId],
-      references: [contactTable.id]
+    document: one(documentTable, {
+      fields: [documentPageVisitTable.documentId],
+      references: [documentTable.id]
     }),
     user: one(userTable, {
-      fields: [contactPageVisitTable.userId],
+      fields: [documentPageVisitTable.userId],
       references: [userTable.id]
     })
   })
 );
 
-export const contactTaskRelations = relations(contactTaskTable, ({ one }) => ({
-  contact: one(contactTable, {
-    fields: [contactTaskTable.contactId],
-    references: [contactTable.id]
+export const documentTaskRelations = relations(documentTaskTable, ({ one }) => ({
+  document: one(documentTable, {
+    fields: [documentTaskTable.documentId],
+    references: [documentTable.id]
   })
 }));
 
 export const favoriteRelations = relations(favoriteTable, ({ one }) => ({
-  contact: one(contactTable, {
-    fields: [favoriteTable.contactId],
-    references: [contactTable.id]
+  document: one(documentTable, {
+    fields: [favoriteTable.documentId],
+    references: [documentTable.id]
   }),
   user: one(userTable, {
     fields: [favoriteTable.userId],
@@ -1286,12 +1286,12 @@ export const workTimeSlotRelations = relations(
   })
 );
 
-export const contactActivityRelations = relations(
-  contactActivityTable,
+export const documentActivityRelations = relations(
+  documentActivityTable,
   ({ one }) => ({
-    contact: one(contactTable, {
-      fields: [contactActivityTable.contactId],
-      references: [contactTable.id]
+    document: one(documentTable, {
+      fields: [documentActivityTable.documentId],
+      references: [documentTable.id]
     })
   })
 );
@@ -1352,20 +1352,20 @@ export const orderItemRelations = relations(orderItemTable, ({ one }) => ({
   })
 }));
 
-export const contactTagRelations = relations(contactTagTable, ({ many }) => ({
-  contactToContactTags: many(contactToContactTagTable)
+export const documentTagRelations = relations(documentTagTable, ({ many }) => ({
+  documentToDocumentTags: many(documentToDocumentTagTable)
 }));
 
-export const contactToContactTagRelations = relations(
-  contactToContactTagTable,
+export const documentToDocumentTagRelations = relations(
+  documentToDocumentTagTable,
   ({ one }) => ({
-    contact: one(contactTable, {
-      fields: [contactToContactTagTable.contactId],
-      references: [contactTable.id]
+    document: one(documentTable, {
+      fields: [documentToDocumentTagTable.documentId],
+      references: [documentTable.id]
     }),
-    contactTag: one(contactTagTable, {
-      fields: [contactToContactTagTable.contactTagId],
-      references: [contactTagTable.id]
+    documentTag: one(documentTagTable, {
+      fields: [documentToDocumentTagTable.documentTagId],
+      references: [documentTagTable.id]
     })
   })
 );

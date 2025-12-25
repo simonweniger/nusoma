@@ -67,9 +67,9 @@ export const CreateWebhookModal = NiceModal.create<CreateWebhookModalProps>(
       defaultValues: {
         url: '',
         triggers: [
-          WebhookTrigger.CONTACT_CREATED,
-          WebhookTrigger.CONTACT_UPDATED,
-          WebhookTrigger.CONTACT_DELETED
+          WebhookTrigger.document_CREATED,
+          WebhookTrigger.document_UPDATED,
+          WebhookTrigger.document_DELETED
         ],
         secret: generateId(32)
       }

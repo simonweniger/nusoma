@@ -1,10 +1,10 @@
-import { type ContactRecord } from '@workspace/database/schema';
+import { type DocumentRecord } from '@workspace/database/schema';
 
 export type FavoriteDto = {
   id: string;
   order: number;
-  contactId: string;
+  documentId: string;
   name: string;
-  record: ContactRecord;
+  record: DocumentRecord;
   image?: string;
 };

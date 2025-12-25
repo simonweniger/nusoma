@@ -35,7 +35,7 @@ const DATA = [
     type: 'email',
     icon: MailIcon,
     title: 'Follow-up Email',
-    timing: '2 days after initial contact'
+    timing: '2 days after initial document'
   },
   {
     type: 'message',

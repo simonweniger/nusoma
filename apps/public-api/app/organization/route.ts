@@ -33,7 +33,7 @@ import { withAuth } from '~/lib/with-auth';
  *                 email:
  *                   type: string
  *                   format: email
- *                   example: "contact@acme.com"
+ *                   example: "document@acme.com"
  *                 website:
  *                   type: string
  *                   format: uri

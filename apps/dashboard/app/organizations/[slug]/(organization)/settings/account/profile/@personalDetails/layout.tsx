@@ -8,7 +8,7 @@ export default function PersonalDetailsLayout({
   return (
     <AnnotatedSection
       title="Personal details"
-      description="Set your name and contact information, the email address entered here is used for your login access."
+      description="Set your name and document information, the email address entered here is used for your login access."
     >
       {children}
     </AnnotatedSection>

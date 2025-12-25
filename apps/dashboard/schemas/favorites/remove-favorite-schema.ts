@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 export const removeFavoriteSchema = z.object({
-  contactId: z
-    .uuid('Contact id is invalid.')
+  documentId: z
+    .uuid('Document id is invalid.')
     .trim()
-    .min(1, 'Contact id is required.')
+    .min(1, 'Document id is required.')
     .max(36, 'Maximum 36 characters allowed.')
 });
 

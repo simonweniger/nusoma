@@ -1,13 +1,13 @@
 CREATE TYPE "public"."actiontype" AS ENUM('create', 'update', 'delete');--> statement-breakpoint
 CREATE TYPE "public"."actortype" AS ENUM('system', 'member', 'api');--> statement-breakpoint
-CREATE TYPE "public"."contactrecord" AS ENUM('person', 'company');--> statement-breakpoint
-CREATE TYPE "public"."contactstage" AS ENUM('lead', 'qualified', 'opportunity', 'proposal', 'inNegotiation', 'lost', 'won');--> statement-breakpoint
-CREATE TYPE "public"."contacttaskstatus" AS ENUM('open', 'completed');--> statement-breakpoint
+CREATE TYPE "public"."documentrecord" AS ENUM('person', 'company');--> statement-breakpoint
+CREATE TYPE "public"."documentstage" AS ENUM('lead', 'qualified', 'opportunity', 'proposal', 'inNegotiation', 'lost', 'won');--> statement-breakpoint
+CREATE TYPE "public"."documenttaskstatus" AS ENUM('open', 'completed');--> statement-breakpoint
 CREATE TYPE "public"."dayofweek" AS ENUM('sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday');--> statement-breakpoint
 CREATE TYPE "public"."feedbackcategory" AS ENUM('suggestion', 'problem', 'question');--> statement-breakpoint
 CREATE TYPE "public"."invitationstatus" AS ENUM('pending', 'accepted', 'revoked');--> statement-breakpoint
 CREATE TYPE "public"."Role" AS ENUM('member', 'admin');--> statement-breakpoint
-CREATE TYPE "public"."webhooktrigger" AS ENUM('contactCreated', 'contactUpdated', 'contactDeleted');--> statement-breakpoint
+CREATE TYPE "public"."webhooktrigger" AS ENUM('documentCreated', 'documentUpdated', 'documentDeleted');--> statement-breakpoint
 CREATE TABLE "account" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"userId" uuid NOT NULL,
@@ -57,9 +57,9 @@ CREATE TABLE "changeEmailRequest" (
 	"updatedAt" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "contactActivity" (
+CREATE TABLE "documentActivity" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"contactId" uuid NOT NULL,
+	"documentId" uuid NOT NULL,
 	"actionType" "actiontype" NOT NULL,
 	"actorId" varchar(255) NOT NULL,
 	"actorType" "actortype" NOT NULL,
@@ -67,40 +67,40 @@ CREATE TABLE "contactActivity" (
 	"occurredAt" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "contactComment" (
+CREATE TABLE "documentComment" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"contactId" uuid NOT NULL,
+	"documentId" uuid NOT NULL,
 	"userId" uuid NOT NULL,
 	"text" varchar(2000) NOT NULL,
 	"createdAt" timestamp (3) DEFAULT now() NOT NULL,
 	"updatedAt" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "contactImage" (
+CREATE TABLE "documentImage" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"contactId" uuid NOT NULL,
+	"documentId" uuid NOT NULL,
 	"data" "bytea",
 	"contentType" varchar(255),
 	"hash" varchar(64)
 );
 --> statement-breakpoint
-CREATE TABLE "contactNote" (
+CREATE TABLE "documentNote" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"contactId" uuid NOT NULL,
+	"documentId" uuid NOT NULL,
 	"userId" uuid NOT NULL,
 	"text" varchar(8000),
 	"createdAt" timestamp (3) DEFAULT now() NOT NULL,
 	"updatedAt" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "contactPageVisit" (
+CREATE TABLE "documentPageVisit" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"contactId" uuid NOT NULL,
+	"documentId" uuid NOT NULL,
 	"timestamp" timestamp (3) DEFAULT now() NOT NULL,
 	"userId" uuid
 );
 --> statement-breakpoint
-CREATE TABLE "contact" (
+CREATE TABLE "document" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"organizationId" uuid NOT NULL,
 	"name" varchar(255) NOT NULL,
@@ -109,36 +109,36 @@ CREATE TABLE "contact" (
 	"createdAt" timestamp (3) DEFAULT now() NOT NULL,
 	"updatedAt" timestamp (3) DEFAULT now() NOT NULL,
 	"image" varchar(2048),
-	"stage" "contactstage" DEFAULT 'lead' NOT NULL,
+	"stage" "documentstage" DEFAULT 'lead' NOT NULL,
 	"phone" varchar(32),
-	"record" "contactrecord" DEFAULT 'person' NOT NULL
+	"record" "documentrecord" DEFAULT 'person' NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "contactTag" (
+CREATE TABLE "documentTag" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"text" varchar(128) NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "contactTask" (
+CREATE TABLE "documentTask" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"contactId" uuid NOT NULL,
+	"documentId" uuid NOT NULL,
 	"title" varchar(255) NOT NULL,
 	"description" varchar(8000),
-	"status" "contacttaskstatus" DEFAULT 'open' NOT NULL,
+	"status" "documenttaskstatus" DEFAULT 'open' NOT NULL,
 	"dueDate" timestamp (3),
 	"createdAt" timestamp (3) DEFAULT now() NOT NULL,
 	"updatedAt" timestamp (3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "contactToContactTag" (
-	"contactId" uuid NOT NULL,
-	"contactTagId" uuid NOT NULL
+CREATE TABLE "documentToDocumentTag" (
+	"documentId" uuid NOT NULL,
+	"documentTagId" uuid NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "favorite" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"userId" uuid NOT NULL,
-	"contactId" uuid NOT NULL,
+	"documentId" uuid NOT NULL,
 	"order" integer DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
@@ -244,7 +244,7 @@ CREATE TABLE "user" (
 	"lastLogin" timestamp (3),
 	"locale" varchar(8) DEFAULT 'en-US' NOT NULL,
 	"completedOnboarding" boolean DEFAULT false NOT NULL,
-	"enabledContactsNotifications" boolean DEFAULT false NOT NULL,
+	"enabledDocumentsNotifications" boolean DEFAULT false NOT NULL,
 	"enabledInboxNotifications" boolean DEFAULT false NOT NULL,
 	"enabledNewsletter" boolean DEFAULT false NOT NULL,
 	"enabledProductUpdates" boolean DEFAULT false NOT NULL,
@@ -290,20 +290,20 @@ ALTER TABLE "account" ADD CONSTRAINT "account_userId_user_id_fk" FOREIGN KEY ("u
 ALTER TABLE "apiKey" ADD CONSTRAINT "apiKey_organizationId_organization_id_fk" FOREIGN KEY ("organizationId") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "authenticatorApp" ADD CONSTRAINT "authenticatorApp_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "changeEmailRequest" ADD CONSTRAINT "changeEmailRequest_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "contactActivity" ADD CONSTRAINT "contactActivity_contactId_contact_id_fk" FOREIGN KEY ("contactId") REFERENCES "public"."contact"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "contactComment" ADD CONSTRAINT "contactComment_contactId_contact_id_fk" FOREIGN KEY ("contactId") REFERENCES "public"."contact"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "contactComment" ADD CONSTRAINT "contactComment_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "contactImage" ADD CONSTRAINT "contactImage_contactId_contact_id_fk" FOREIGN KEY ("contactId") REFERENCES "public"."contact"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "contactNote" ADD CONSTRAINT "contactNote_contactId_contact_id_fk" FOREIGN KEY ("contactId") REFERENCES "public"."contact"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "contactNote" ADD CONSTRAINT "contactNote_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "contactPageVisit" ADD CONSTRAINT "contactPageVisit_contactId_contact_id_fk" FOREIGN KEY ("contactId") REFERENCES "public"."contact"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "contactPageVisit" ADD CONSTRAINT "contactPageVisit_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "contact" ADD CONSTRAINT "contact_organizationId_organization_id_fk" FOREIGN KEY ("organizationId") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "contactTask" ADD CONSTRAINT "contactTask_contactId_contact_id_fk" FOREIGN KEY ("contactId") REFERENCES "public"."contact"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "contactToContactTag" ADD CONSTRAINT "contactToContactTag_contactId_contact_id_fk" FOREIGN KEY ("contactId") REFERENCES "public"."contact"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "contactToContactTag" ADD CONSTRAINT "contactToContactTag_contactTagId_contactTag_id_fk" FOREIGN KEY ("contactTagId") REFERENCES "public"."contactTag"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "documentActivity" ADD CONSTRAINT "documentActivity_documentId_document_id_fk" FOREIGN KEY ("documentId") REFERENCES "public"."document"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "documentComment" ADD CONSTRAINT "documentComment_documentId_document_id_fk" FOREIGN KEY ("documentId") REFERENCES "public"."document"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "documentComment" ADD CONSTRAINT "documentComment_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "documentImage" ADD CONSTRAINT "documentImage_documentId_document_id_fk" FOREIGN KEY ("documentId") REFERENCES "public"."document"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "documentNote" ADD CONSTRAINT "documentNote_documentId_document_id_fk" FOREIGN KEY ("documentId") REFERENCES "public"."document"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "documentNote" ADD CONSTRAINT "documentNote_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "documentPageVisit" ADD CONSTRAINT "documentPageVisit_documentId_document_id_fk" FOREIGN KEY ("documentId") REFERENCES "public"."document"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "documentPageVisit" ADD CONSTRAINT "documentPageVisit_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "document" ADD CONSTRAINT "document_organizationId_organization_id_fk" FOREIGN KEY ("organizationId") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "documentTask" ADD CONSTRAINT "documentTask_documentId_document_id_fk" FOREIGN KEY ("documentId") REFERENCES "public"."document"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "documentToDocumentTag" ADD CONSTRAINT "documentToDocumentTag_documentId_document_id_fk" FOREIGN KEY ("documentId") REFERENCES "public"."document"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "documentToDocumentTag" ADD CONSTRAINT "documentToDocumentTag_documentTagId_documentTag_id_fk" FOREIGN KEY ("documentTagId") REFERENCES "public"."documentTag"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "favorite" ADD CONSTRAINT "favorite_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "favorite" ADD CONSTRAINT "favorite_contactId_contact_id_fk" FOREIGN KEY ("contactId") REFERENCES "public"."contact"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "favorite" ADD CONSTRAINT "favorite_documentId_document_id_fk" FOREIGN KEY ("documentId") REFERENCES "public"."document"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "feedback" ADD CONSTRAINT "feedback_organizationId_organization_id_fk" FOREIGN KEY ("organizationId") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "feedback" ADD CONSTRAINT "feedback_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "invitation" ADD CONSTRAINT "invitation_organizationId_organization_id_fk" FOREIGN KEY ("organizationId") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
@@ -322,19 +322,19 @@ CREATE UNIQUE INDEX "IX_apiKey_hashedKey_unique" ON "apiKey" USING btree ("hashe
 CREATE INDEX "IX_apiKey_organizationId" ON "apiKey" USING btree ("organizationId" uuid_ops);--> statement-breakpoint
 CREATE UNIQUE INDEX "IX_authenticatorApp_userId_unique" ON "authenticatorApp" USING btree ("userId" uuid_ops);--> statement-breakpoint
 CREATE INDEX "IX_changeEmailRequest_userId" ON "changeEmailRequest" USING btree ("userId" uuid_ops);--> statement-breakpoint
-CREATE INDEX "IX_contactActivity_contactId" ON "contactActivity" USING btree ("contactId" uuid_ops);--> statement-breakpoint
-CREATE INDEX "IX_contactActivity_occurredAt" ON "contactActivity" USING btree ("occurredAt" timestamp_ops);--> statement-breakpoint
-CREATE INDEX "IX_contactComment_contactId" ON "contactComment" USING btree ("contactId" uuid_ops);--> statement-breakpoint
-CREATE INDEX "IX_contactComment_userId" ON "contactComment" USING btree ("userId" uuid_ops);--> statement-breakpoint
-CREATE INDEX "IX_contactImage_contactId" ON "contactImage" USING btree ("contactId" uuid_ops);--> statement-breakpoint
-CREATE INDEX "IX_contactNote_contactId" ON "contactNote" USING btree ("contactId" uuid_ops);--> statement-breakpoint
-CREATE INDEX "IX_contactNote_userId" ON "contactNote" USING btree ("userId" uuid_ops);--> statement-breakpoint
-CREATE INDEX "IX_contactPageVisit_contactId" ON "contactPageVisit" USING btree ("contactId" uuid_ops);--> statement-breakpoint
-CREATE INDEX "IX_contactPageVisit_userId" ON "contactPageVisit" USING btree ("userId" uuid_ops);--> statement-breakpoint
-CREATE INDEX "IX_contact_organizationId" ON "contact" USING btree ("organizationId" uuid_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "IX_contactTag_text_unique" ON "contactTag" USING btree ("text" text_ops);--> statement-breakpoint
-CREATE INDEX "IX_contactTask_contactId" ON "contactTask" USING btree ("contactId" uuid_ops);--> statement-breakpoint
-CREATE INDEX "IX_favorite_contactId" ON "favorite" USING btree ("contactId" uuid_ops);--> statement-breakpoint
+CREATE INDEX "IX_documentActivity_documentId" ON "documentActivity" USING btree ("documentId" uuid_ops);--> statement-breakpoint
+CREATE INDEX "IX_documentActivity_occurredAt" ON "documentActivity" USING btree ("occurredAt" timestamp_ops);--> statement-breakpoint
+CREATE INDEX "IX_documentComment_documentId" ON "documentComment" USING btree ("documentId" uuid_ops);--> statement-breakpoint
+CREATE INDEX "IX_documentComment_userId" ON "documentComment" USING btree ("userId" uuid_ops);--> statement-breakpoint
+CREATE INDEX "IX_documentImage_documentId" ON "documentImage" USING btree ("documentId" uuid_ops);--> statement-breakpoint
+CREATE INDEX "IX_documentNote_documentId" ON "documentNote" USING btree ("documentId" uuid_ops);--> statement-breakpoint
+CREATE INDEX "IX_documentNote_userId" ON "documentNote" USING btree ("userId" uuid_ops);--> statement-breakpoint
+CREATE INDEX "IX_documentPageVisit_documentId" ON "documentPageVisit" USING btree ("documentId" uuid_ops);--> statement-breakpoint
+CREATE INDEX "IX_documentPageVisit_userId" ON "documentPageVisit" USING btree ("userId" uuid_ops);--> statement-breakpoint
+CREATE INDEX "IX_document_organizationId" ON "document" USING btree ("organizationId" uuid_ops);--> statement-breakpoint
+CREATE UNIQUE INDEX "IX_documentTag_text_unique" ON "documentTag" USING btree ("text" text_ops);--> statement-breakpoint
+CREATE INDEX "IX_documentTask_documentId" ON "documentTask" USING btree ("documentId" uuid_ops);--> statement-breakpoint
+CREATE INDEX "IX_favorite_documentId" ON "favorite" USING btree ("documentId" uuid_ops);--> statement-breakpoint
 CREATE INDEX "IX_favorite_userId" ON "favorite" USING btree ("userId" uuid_ops);--> statement-breakpoint
 CREATE INDEX "IX_feedback_organizationId" ON "feedback" USING btree ("organizationId" uuid_ops);--> statement-breakpoint
 CREATE INDEX "IX_feedback_userId" ON "feedback" USING btree ("userId" uuid_ops);--> statement-breakpoint

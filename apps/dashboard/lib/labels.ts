@@ -1,7 +1,7 @@
 import { AuthErrorCode } from '@workspace/auth/errors';
 import {
-  ContactRecord,
-  ContactStage,
+  DocumentRecord,
+  DocumentStage,
   FeedbackCategory,
   Role,
   WebhookTrigger
@@ -9,19 +9,19 @@ import {
 
 import { Provider } from '~/types/auth';
 
-export const contactStageLabel: Record<ContactStage, string> = {
-  [ContactStage.LEAD]: 'Lead',
-  [ContactStage.QUALIFIED]: 'Qualified',
-  [ContactStage.OPPORTUNITY]: 'Opportunity',
-  [ContactStage.PROPOSAL]: 'Proposal',
-  [ContactStage.IN_NEGOTIATION]: 'In negotiation',
-  [ContactStage.LOST]: 'Lost',
-  [ContactStage.WON]: 'Won'
+export const documentStageLabel: Record<DocumentStage, string> = {
+  [DocumentStage.LEAD]: 'Lead',
+  [DocumentStage.QUALIFIED]: 'Qualified',
+  [DocumentStage.OPPORTUNITY]: 'Opportunity',
+  [DocumentStage.PROPOSAL]: 'Proposal',
+  [DocumentStage.IN_NEGOTIATION]: 'In negotiation',
+  [DocumentStage.LOST]: 'Lost',
+  [DocumentStage.WON]: 'Won'
 };
 
-export const contactRecordLabel: Record<ContactRecord, string> = {
-  [ContactRecord.PERSON]: 'Person',
-  [ContactRecord.COMPANY]: 'Company'
+export const documentRecordLabel: Record<DocumentRecord, string> = {
+  [DocumentRecord.PERSON]: 'Person',
+  [DocumentRecord.COMPANY]: 'Company'
 };
 
 export const roleLabels: Record<Role, string> = {
@@ -36,9 +36,9 @@ export const feedbackCategoryLabels: Record<FeedbackCategory, string> = {
 };
 
 export const webhookTriggerLabels: Record<WebhookTrigger, string> = {
-  [WebhookTrigger.CONTACT_CREATED]: 'Contact created',
-  [WebhookTrigger.CONTACT_UPDATED]: 'Contact updated',
-  [WebhookTrigger.CONTACT_DELETED]: 'Contact deleted'
+  [WebhookTrigger.document_CREATED]: 'Document created',
+  [WebhookTrigger.document_UPDATED]: 'Document updated',
+  [WebhookTrigger.document_DELETED]: 'Document deleted'
 };
 
 export const identityProviderLabels: Record<Provider, string> = {

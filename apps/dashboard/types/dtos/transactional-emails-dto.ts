@@ -1,5 +1,5 @@
 export type TransactionalEmailsDto = {
-  enabledContactsNotifications: boolean;
+  enabledDocumentsNotifications: boolean;
   enabledInboxNotifications: boolean;
   enabledWeeklySummary: boolean;
 };

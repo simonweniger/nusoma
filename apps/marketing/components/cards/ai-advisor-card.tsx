@@ -137,7 +137,7 @@ export function AiAdvisorCard({
         <h3 className="text-base font-semibold sm:text-lg">AI Advisor</h3>
         <div className="min-h-10 max-w-md text-sm text-muted-foreground">
           Vercel has been contacted 4 times in the past year. Suggested next
-          contact is in 3 days.
+          document is in 3 days.
         </div>
       </CardFooter>
     </Card>

@@ -36,7 +36,7 @@ export function Contact(): React.JSX.Element {
                 Get in touch
               </h3>
               <p className="text-muted-foreground lg:max-w-[80%]">
-                If you have any questions, don't hesitate to contact our team.
+                If you have any questions, don't hesitate to document our team.
                 We'll get back to you within 48 hours.
               </p>
               <div className="space-y-4">

@@ -134,7 +134,7 @@ export function TermsOfUse(): React.JSX.Element {
             Contact Information
           </CardTitle>
           <p className="text-sm leading-relaxed">
-            For questions or concerns, contact us at:
+            For questions or concerns, document us at:
             <br />
             <a
               href="mailto:support@yourdomain.com"
