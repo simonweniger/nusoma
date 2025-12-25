@@ -26,6 +26,7 @@ import {
 } from '@workspace/ui/components/form';
 import { Input } from '@workspace/ui/components/input';
 import { Separator } from '@workspace/ui/components/separator';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { cn } from '@workspace/ui/lib/utils';
 
 import { submitRecoveryCode } from '~/actions/auth/submit-recovery-code';
@@ -154,10 +155,10 @@ export function RecoveryCodeCard({
               variant="default"
               className="w-full"
               disabled={!canSubmit}
-              loading={methods.formState.isSubmitting}
               onClick={methods.handleSubmit(onSubmit)}
             >
-              Submit
+              {methods.formState.isSubmitting && <Spinner />}
+              {methods.formState.isSubmitting ? 'Submitting...' : 'Submit'}
             </Button>
           </form>
         </Form>

@@ -34,6 +34,7 @@ import {
   FormLabel
 } from '@workspace/ui/components/form';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { useMediaQuery } from '@workspace/ui/hooks/use-media-query';
 import { MediaQueries } from '@workspace/ui/lib/media-queries';
 import { cn } from '@workspace/ui/lib/utils';
@@ -159,22 +160,26 @@ export const DeleteAccountModal = NiceModal.create<DeleteAccountModalProps>(
           type="button"
           variant="destructive"
           disabled={!canSubmit}
-          loading={methods.formState.isSubmitting}
           onClick={methods.handleSubmit(onSubmit)}
         >
-          Delete
+          {methods.formState.isSubmitting && <Spinner />}
+          {methods.formState.isSubmitting ? 'Deleting...' : 'Delete'}
         </Button>
       </>
     );
     return (
       <Form {...methods}>
         {mdUp ? (
-          <AlertDialog open={modal.visible}>
-            <AlertDialogContent
-              className="max-w-lg"
-              onClose={modal.handleClose}
-              onAnimationEndCapture={modal.handleAnimationEndCapture}
-            >
+          <AlertDialog
+            open={modal.visible}
+            onOpenChange={modal.handleClose}
+            onOpenChangeComplete={(open) => {
+              if (!open) {
+                modal.handleAnimationEndCapture();
+              }
+            }}
+          >
+            <AlertDialogContent className="max-w-lg">
               <AlertDialogHeader>
                 <AlertDialogTitle>{title}</AlertDialogTitle>
                 <AlertDialogDescription>{description}</AlertDialogDescription>

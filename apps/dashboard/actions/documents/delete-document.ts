@@ -34,7 +34,9 @@ export const deleteDocument = authOrganizationActionClient
         .delete(documentImageTable)
         .where(eq(documentImageTable.documentId, parsedInput.id));
 
-      await tx.delete(documentTable).where(eq(documentTable.id, parsedInput.id));
+      await tx
+        .delete(documentTable)
+        .where(eq(documentTable.id, parsedInput.id));
     });
 
     updateTag(

@@ -10,7 +10,6 @@ import {
   CardFooter,
   type CardProps
 } from '@workspace/ui/components/card';
-import { Separator } from '@workspace/ui/components/separator';
 import { cn } from '@workspace/ui/lib/utils';
 
 import { DeleteAccountModal } from '~/components/organizations/slug/settings/account/profile/delete-account-modal';

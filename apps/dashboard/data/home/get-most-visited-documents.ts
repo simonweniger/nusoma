@@ -32,7 +32,10 @@ async function getMostVisitedDocumentsData(
     )
   );
   cacheTag(
-    Caching.createOrganizationTag(OrganizationCacheKey.Documents, organizationId)
+    Caching.createOrganizationTag(
+      OrganizationCacheKey.Documents,
+      organizationId
+    )
   );
 
   const pageVisits = count(documentPageVisitTable.id).as('pageVisits');

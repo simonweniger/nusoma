@@ -38,6 +38,7 @@ import {
   PopoverTrigger
 } from '@workspace/ui/components/popover';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { Switch } from '@workspace/ui/components/switch';
 import { useMediaQuery } from '@workspace/ui/hooks/use-media-query';
 import { MediaQueries } from '@workspace/ui/lib/media-queries';
@@ -200,22 +201,26 @@ export const CreateApiKeyModal = NiceModal.create<CreateApiKeyModalProps>(
           type="button"
           variant="default"
           disabled={!canSubmit}
-          loading={methods.formState.isSubmitting}
           onClick={methods.handleSubmit(onSubmit)}
         >
-          Create
+          {methods.formState.isSubmitting && <Spinner />}
+          {methods.formState.isSubmitting ? 'Creating...' : 'Create'}
         </Button>
       </>
     );
     return (
       <Form {...methods}>
         {mdUp ? (
-          <Dialog open={modal.visible}>
-            <DialogContent
-              className="max-w-sm"
-              onClose={modal.handleClose}
-              onAnimationEndCapture={modal.handleAnimationEndCapture}
-            >
+          <Dialog
+            open={modal.visible}
+            onOpenChange={modal.handleClose}
+            onOpenChangeComplete={(open) => {
+              if (!open) {
+                modal.handleAnimationEndCapture();
+              }
+            }}
+          >
+            <DialogContent className="max-w-sm">
               <DialogHeader>
                 <DialogTitle>{title}</DialogTitle>
                 <DialogDescription className="sr-only">

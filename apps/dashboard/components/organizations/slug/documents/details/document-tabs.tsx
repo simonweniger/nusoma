@@ -3,10 +3,10 @@ import { ActivityIcon, CheckSquare2Icon, FileIcon } from 'lucide-react';
 
 import { Separator } from '@workspace/ui/components/separator';
 import {
-  UnderlinedTabs,
-  UnderlinedTabsContent,
-  UnderlinedTabsList,
-  UnderlinedTabsTrigger
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
 } from '@workspace/ui/components/tabs';
 
 import { DocumentNotesTab } from '~/components/organizations/slug/documents/details/notes/document-notes-tab';
@@ -46,13 +46,14 @@ export async function DocumentTabs({
   document
 }: DocumentTabsProps): Promise<React.JSX.Element> {
   return (
-    <UnderlinedTabs
+    <Tabs
+      variant="underline"
       defaultValue={Tab.Activity}
       className="flex size-full flex-col"
     >
-      <UnderlinedTabsList className="h-12 max-h-12 min-h-12 gap-x-2 overflow-x-auto border-none px-4">
+      <TabsList className="h-12 max-h-12 min-h-12 gap-x-2 overflow-x-auto border-none px-4">
         {tabList.map((item) => (
-          <UnderlinedTabsTrigger
+          <TabsTrigger
             key={item.value}
             value={item.value}
             className="mx-0 border-t-4 border-t-transparent"
@@ -61,34 +62,34 @@ export async function DocumentTabs({
               <item.icon className="size-4 shrink-0" />
               {item.label}
             </div>
-          </UnderlinedTabsTrigger>
+          </TabsTrigger>
         ))}
-      </UnderlinedTabsList>
+      </TabsList>
       <Separator />
-      <UnderlinedTabsContent
+      <TabsContent
         value={Tab.Activity}
         className="m-0 p-0 md:grow md:overflow-hidden"
       >
         <React.Suspense>
           <DocumentActivityTab document={document} />
         </React.Suspense>
-      </UnderlinedTabsContent>
-      <UnderlinedTabsContent
+      </TabsContent>
+      <TabsContent
         value={Tab.Notes}
         className="m-0 p-0 md:grow md:overflow-hidden"
       >
         <React.Suspense>
           <DocumentNotesTab document={document} />
         </React.Suspense>
-      </UnderlinedTabsContent>
-      <UnderlinedTabsContent
+      </TabsContent>
+      <TabsContent
         value={Tab.Tasks}
         className="m-0 p-0 md:grow md:overflow-hidden"
       >
         <React.Suspense>
           <DocumentTasksTab document={document} />
         </React.Suspense>
-      </UnderlinedTabsContent>
-    </UnderlinedTabs>
+      </TabsContent>
+    </Tabs>
   );
 }

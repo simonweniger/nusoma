@@ -83,7 +83,7 @@ function InvoiceListItem({
         </div>
       </div>
       <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
+        <DropdownMenuTrigger>
           <Button
             type="button"
             variant="ghost"
@@ -96,7 +96,6 @@ function InvoiceListItem({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem
-            asChild
             className="cursor-pointer"
             disabled={!invoice.url}
           >

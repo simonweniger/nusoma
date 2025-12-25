@@ -81,24 +81,25 @@ async function getDocumentsData(
     // Tags Filter
     params.tags?.length
       ? exists(
-        db
-          .select({})
-          .from(documentToDocumentTagTable)
-          .innerJoin(
-            documentTagTable,
-            eq(documentToDocumentTagTable.documentTagId, documentTagTable.id)
-          )
-          .where(
-            and(
-              eq(documentToDocumentTagTable.documentId, documentTable.id),
-              inArray(documentTagTable.text, params.tags)
+          db
+            .select({})
+            .from(documentToDocumentTagTable)
+            .innerJoin(
+              documentTagTable,
+              eq(documentToDocumentTagTable.documentTagId, documentTagTable.id)
             )
-          )
-      )
+            .where(
+              and(
+                eq(documentToDocumentTagTable.documentId, documentTable.id),
+                inArray(documentTagTable.text, params.tags)
+              )
+            )
+        )
       : undefined,
     // Search query
     params.searchQuery
-      ? sql`(${documentTable.name} ILIKE ${'%' + params.searchQuery + '%'} OR ${documentTable.email
+      ? sql`(${documentTable.name} ILIKE ${'%' + params.searchQuery + '%'} OR ${
+          documentTable.email
         } ILIKE ${'%' + params.searchQuery + '%'})`
       : undefined
   );

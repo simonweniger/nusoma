@@ -21,6 +21,7 @@ import {
 import { Input } from '@workspace/ui/components/input';
 import { Separator } from '@workspace/ui/components/separator';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 
 import { updateBillingEmail } from '~/actions/billing/update-billing-email';
 import { useZodForm } from '~/hooks/use-zod-form';
@@ -88,10 +89,10 @@ export function BillingEmailCard({
             variant="default"
             size="default"
             disabled={!canSubmit}
-            loading={methods.formState.isSubmitting}
             onClick={methods.handleSubmit(onSubmit)}
           >
-            Save
+            {methods.formState.isSubmitting && <Spinner />}
+            {methods.formState.isSubmitting ? 'Saving...' : 'Save'}
           </Button>
         </CardFooter>
       </Card>

@@ -23,7 +23,10 @@ async function getDocumentTagsData(organizationId: string): Promise<TagDto[]> {
     )
   );
   cacheTag(
-    Caching.createOrganizationTag(OrganizationCacheKey.Documents, organizationId)
+    Caching.createOrganizationTag(
+      OrganizationCacheKey.Documents,
+      organizationId
+    )
   );
 
   const documentTags = await db

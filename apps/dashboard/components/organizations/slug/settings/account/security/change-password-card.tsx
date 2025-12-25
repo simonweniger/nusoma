@@ -25,6 +25,7 @@ import { InputPassword } from '@workspace/ui/components/input-password';
 import { InputWithAdornments } from '@workspace/ui/components/input-with-adornments';
 import { Separator } from '@workspace/ui/components/separator';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 
 import { PasswordFormMessage } from '~/components/auth/password-form-message';
 import { useZodForm } from '~/hooks/use-zod-form';
@@ -191,10 +192,10 @@ export function ChangePasswordCard({
             variant="default"
             size="default"
             disabled={!canSubmit}
-            loading={methods.formState.isSubmitting}
             onClick={methods.handleSubmit(onSubmit)}
           >
-            Change
+            {methods.formState.isSubmitting && <Spinner />}
+            {methods.formState.isSubmitting ? 'Changing...' : 'Change'}
           </Button>
         </CardFooter>
       </Card>

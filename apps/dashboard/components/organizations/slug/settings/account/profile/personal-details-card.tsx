@@ -24,7 +24,6 @@ import {
 import { ImageDropzone } from '@workspace/ui/components/image-dropzone';
 import { Input } from '@workspace/ui/components/input';
 import { InputWithAdornments } from '@workspace/ui/components/input-with-adornments';
-import { Separator } from '@workspace/ui/components/separator';
 import { toast } from '@workspace/ui/components/sonner';
 import { Spinner } from '@workspace/ui/components/spinner';
 import {

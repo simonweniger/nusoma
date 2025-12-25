@@ -94,7 +94,9 @@ async function getDocumentData(
   };
 }
 
-export async function getDocument(input: GetDocumentSchema): Promise<DocumentDto> {
+export async function getDocument(
+  input: GetDocumentSchema
+): Promise<DocumentDto> {
   const ctx = await getAuthOrganizationContext();
 
   const result = getDocumentSchema.safeParse(input);

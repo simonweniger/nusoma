@@ -19,7 +19,10 @@ export const deleteDocumentNote = authOrganizationActionClient
         documentId: documentNoteTable.documentId
       })
       .from(documentNoteTable)
-      .innerJoin(documentTable, eq(documentNoteTable.documentId, documentTable.id))
+      .innerJoin(
+        documentTable,
+        eq(documentNoteTable.documentId, documentTable.id)
+      )
       .where(
         and(
           eq(documentNoteTable.id, parsedInput.id),

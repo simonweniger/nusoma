@@ -19,8 +19,7 @@ export type DocumentFavoriteToggleProps = ButtonProps & {
 export function DocumentFavoriteToggle({
   document,
   addedToFavorites,
-  className,
-  ...other
+  className
 }: DocumentFavoriteToggleProps): React.JSX.Element {
   const description = addedToFavorites ? 'Remove favorite' : 'Add favorite';
   const handleToggleFavorite = async (): Promise<void> => {
@@ -38,12 +37,10 @@ export function DocumentFavoriteToggle({
   };
   return (
     <Button
-      type="button"
       variant="ghost"
       title={description}
       onClick={handleToggleFavorite}
       className={cn('size-9', className)}
-      {...other}
     >
       <StarIcon
         className={cn('size-4 shrink-0', addedToFavorites && 'fill-primary')}

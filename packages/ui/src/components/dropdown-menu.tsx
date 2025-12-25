@@ -24,12 +24,20 @@ function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
   );
 }
 
-function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
+function DropdownMenuTrigger({
+  asChild,
+  render,
+  children,
+  ...props
+}: MenuPrimitive.Trigger.Props & { asChild?: boolean }) {
   return (
     <MenuPrimitive.Trigger
       data-slot="dropdown-menu-trigger"
+      render={asChild ? (children as React.ReactElement) : render}
       {...props}
-    />
+    >
+      {asChild ? undefined : children}
+    </MenuPrimitive.Trigger>
   );
 }
 
@@ -100,10 +108,14 @@ function DropdownMenuItem({
   className,
   inset,
   variant = 'default',
+  asChild,
+  render,
+  children,
   ...props
 }: MenuPrimitive.Item.Props & {
   inset?: boolean;
   variant?: 'default' | 'destructive';
+  asChild?: boolean;
 }) {
   return (
     <MenuPrimitive.Item
@@ -114,8 +126,11 @@ function DropdownMenuItem({
         "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:text-destructive not-data-[variant=destructive]:focus:**:text-accent-foreground gap-1.5 rounded-md px-1.5 py-1 text-sm [&_svg:not([class*='size-'])]:size-4 group/dropdown-menu-item relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-inset:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
+      render={asChild ? (children as React.ReactElement) : render}
       {...props}
-    />
+    >
+      {asChild ? undefined : children}
+    </MenuPrimitive.Item>
   );
 }
 

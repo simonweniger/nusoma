@@ -41,9 +41,9 @@ export function PriceIntervalSelector({
                   ? 'grid-cols-3'
                   : 'grid-cols-4'
           }`}
-          onValueChange={(interval: PriceInterval) => {
-            console.log(interval);
-            onIntervalChange(interval);
+          onValueChange={(value) => {
+            console.log(value);
+            onIntervalChange(value as PriceInterval);
           }}
         >
           {billingConfigDisplayIntervals.map((displayInterval) => (

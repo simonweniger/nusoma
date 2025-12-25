@@ -224,14 +224,14 @@ export async function updateDocumentAndCaptureEvent(
     const updatedDocument =
       Object.keys(documentValues).length > 0
         ? await tx
-          .update(documentTable)
-          .set(documentValues)
-          .where(eq(documentTable.id, documentId))
-          .returning()
-          .then((rows) => ({
-            ...rows[0],
-            tags: currentDocument.tags
-          }))
+            .update(documentTable)
+            .set(documentValues)
+            .where(eq(documentTable.id, documentId))
+            .returning()
+            .then((rows) => ({
+              ...rows[0],
+              tags: currentDocument.tags
+            }))
         : Object.assign({}, currentDocument);
 
     if (tags && tags.length > 0) {

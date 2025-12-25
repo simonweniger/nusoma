@@ -4,7 +4,10 @@ import { updateTag } from 'next/cache';
 
 import { NotFoundError } from '@workspace/common/errors';
 import { and, db, eq } from '@workspace/database/client';
-import { documentCommentTable, documentTable } from '@workspace/database/schema';
+import {
+  documentCommentTable,
+  documentTable
+} from '@workspace/database/schema';
 
 import { authOrganizationActionClient } from '~/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '~/data/caching';

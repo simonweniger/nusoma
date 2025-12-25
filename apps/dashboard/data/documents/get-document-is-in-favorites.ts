@@ -21,7 +21,11 @@ async function getDocumentIsInFavoritesData(
   'use cache';
   cacheLife('default');
   cacheTag(
-    Caching.createUserTag(UserCacheKey.DocumentIsInFavorites, userId, documentId)
+    Caching.createUserTag(
+      UserCacheKey.DocumentIsInFavorites,
+      userId,
+      documentId
+    )
   );
   cacheTag(
     Caching.createOrganizationTag(

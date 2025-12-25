@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Autoplay from 'embla-carousel-autoplay';
 import useEmblaCarousel, {
   type UseEmblaCarouselType
 } from 'embla-carousel-react';
@@ -233,6 +234,8 @@ function CarouselNext({
 
 export {
   type CarouselApi,
+  type CarouselProps,
+  Autoplay,
   Carousel,
   CarouselContent,
   CarouselItem,

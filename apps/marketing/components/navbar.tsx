@@ -69,35 +69,37 @@ export function Navbar(): React.JSX.Element {
                           <ul className="w-96 list-none p-2">
                             {item.items.map((subItem, subIndex) => (
                               <li key={subIndex}>
-                                <NavigationMenuLink asChild>
-                                  <Link
-                                    href={subItem.href}
-                                    target={
-                                      subItem.external ? '_blank' : undefined
-                                    }
-                                    rel={
-                                      subItem.external
-                                        ? 'noopener noreferrer'
-                                        : undefined
-                                    }
-                                    className="group flex select-none flex-row items-center gap-4 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                                  >
-                                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border bg-background text-muted-foreground transition-colors group-hover:text-foreground">
-                                      {subItem.icon}
-                                    </div>
-                                    <div>
-                                      <div className="text-sm font-medium">
-                                        {subItem.title}
-                                        {subItem.external && (
-                                          <ExternalLink className="-mt-2 ml-1 size-2 inline text-muted-foreground" />
-                                        )}
+                                <NavigationMenuLink
+                                  render={
+                                    <Link
+                                      href={subItem.href}
+                                      target={
+                                        subItem.external ? '_blank' : undefined
+                                      }
+                                      rel={
+                                        subItem.external
+                                          ? 'noopener noreferrer'
+                                          : undefined
+                                      }
+                                      className="group flex select-none flex-row items-center gap-4 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                    >
+                                      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border bg-background text-muted-foreground transition-colors group-hover:text-foreground">
+                                        {subItem.icon}
                                       </div>
-                                      <p className="text-sm leading-snug text-muted-foreground">
-                                        {subItem.description}
-                                      </p>
-                                    </div>
-                                  </Link>
-                                </NavigationMenuLink>
+                                      <div>
+                                        <div className="text-sm font-medium">
+                                          {subItem.title}
+                                          {subItem.external && (
+                                            <ExternalLink className="-mt-2 ml-1 size-2 inline text-muted-foreground" />
+                                          )}
+                                        </div>
+                                        <p className="text-sm leading-snug text-muted-foreground">
+                                          {subItem.description}
+                                        </p>
+                                      </div>
+                                    </Link>
+                                  }
+                                />
                               </li>
                             ))}
                           </ul>
@@ -106,7 +108,6 @@ export function Navbar(): React.JSX.Element {
                     ) : (
                       <NavigationMenuItem key={index}>
                         <NavigationMenuLink
-                          asChild
                           active={
                             !item.external &&
                             pathname.startsWith(
@@ -117,17 +118,20 @@ export function Navbar(): React.JSX.Element {
                             navigationMenuTriggerStyle(),
                             'rounded-xl text-[15px] font-normal data-active:bg-accent'
                           )}
-                        >
-                          <Link
-                            href={item.href}
-                            target={item.external ? '_blank' : undefined}
-                            rel={
-                              item.external ? 'noopener noreferrer' : undefined
-                            }
-                          >
-                            {item.title}
-                          </Link>
-                        </NavigationMenuLink>
+                          render={
+                            <Link
+                              href={item.href}
+                              target={item.external ? '_blank' : undefined}
+                              rel={
+                                item.external
+                                  ? 'noopener noreferrer'
+                                  : undefined
+                              }
+                            >
+                              {item.title}
+                            </Link>
+                          }
+                        />
                       </NavigationMenuItem>
                     )
                   )}

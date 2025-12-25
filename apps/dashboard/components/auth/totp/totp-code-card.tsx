@@ -36,6 +36,7 @@ import {
   REGEXP_ONLY_DIGITS
 } from '@workspace/ui/components/input-otp';
 import { Separator } from '@workspace/ui/components/separator';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { cn } from '@workspace/ui/lib/utils';
 
 import { submitTotpCode } from '~/actions/auth/submit-totp-code';
@@ -178,10 +179,10 @@ export function TotpCodeCard({
               variant="default"
               className="w-full"
               disabled={!canSubmit}
-              loading={methods.formState.isSubmitting}
               onClick={methods.handleSubmit(onSubmit)}
             >
-              Submit
+              {methods.formState.isSubmitting && <Spinner />}
+              {methods.formState.isSubmitting ? 'Submitting...' : 'Submit'}
             </Button>
           </form>
         </Form>

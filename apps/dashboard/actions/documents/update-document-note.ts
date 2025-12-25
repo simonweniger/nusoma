@@ -17,7 +17,10 @@ export const updateDocumentNote = authOrganizationActionClient
     const [documentNote] = await db
       .select({})
       .from(documentNoteTable)
-      .innerJoin(documentTable, eq(documentNoteTable.documentId, documentTable.id))
+      .innerJoin(
+        documentTable,
+        eq(documentNoteTable.documentId, documentTable.id)
+      )
       .where(
         and(
           eq(documentTable.organizationId, ctx.organization.id),

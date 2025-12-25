@@ -17,12 +17,16 @@ import { useEnhancedModal } from '~/hooks/use-enhanced-modal';
 export const UpgradePlanDialog = NiceModal.create(() => {
   const modal = useEnhancedModal();
   return (
-    <Dialog open={modal.visible}>
-      <DialogContent
-        className="max-w-full flex flex-col h-full rounded-none!"
-        onClose={modal.handleClose}
-        onAnimationEndCapture={modal.handleAnimationEndCapture}
-      >
+    <Dialog
+      open={modal.visible}
+      onOpenChange={modal.handleClose}
+      onOpenChangeComplete={(open) => {
+        if (!open) {
+          modal.handleAnimationEndCapture();
+        }
+      }}
+    >
+      <DialogContent className="max-w-full flex flex-col h-full rounded-none!">
         <DialogHeader className="sr-only">
           <DialogTitle className="sr-only">Upgrade your plan</DialogTitle>
           <DialogDescription className="sr-only">

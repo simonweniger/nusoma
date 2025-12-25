@@ -168,22 +168,24 @@ function MainMobileMenu({
                     }))
                   }
                 >
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="flex h-9 w-full items-center justify-between px-4 text-left"
-                    >
-                      <span className="text-base font-medium">
-                        {item.title}
-                      </span>
-                      {expanded[item.title.toLowerCase()] ? (
-                        <ChevronUpIcon className="size-4" />
-                      ) : (
-                        <ChevronDownIcon className="size-4" />
-                      )}
-                    </Button>
-                  </CollapsibleTrigger>
+                  <CollapsibleTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="flex h-9 w-full items-center justify-between px-4 text-left"
+                      >
+                        <span className="text-base font-medium">
+                          {item.title}
+                        </span>
+                        {expanded[item.title.toLowerCase()] ? (
+                          <ChevronUpIcon className="size-4" />
+                        ) : (
+                          <ChevronDownIcon className="size-4" />
+                        )}
+                      </Button>
+                    }
+                  />
                   <CollapsibleContent>
                     <ul className="mt-2 pl-4">
                       {item.items.map((subItem) => (
@@ -277,23 +279,25 @@ function DocsMobileMenu({
                   }))
                 }
               >
-                <CollapsibleTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="flex h-9 w-full items-center justify-between px-4 text-left"
-                  >
-                    <div className="flex flex-row items-center gap-2 text-base font-medium">
-                      {item.icon}
-                      {item.title}
-                    </div>
-                    {expanded[item.title.toLowerCase()] ? (
-                      <ChevronUpIcon className="size-4" />
-                    ) : (
-                      <ChevronDownIcon className="size-4" />
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
+                <CollapsibleTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="flex h-9 w-full items-center justify-between px-4 text-left"
+                    >
+                      <div className="flex flex-row items-center gap-2 text-base font-medium">
+                        {item.icon}
+                        {item.title}
+                      </div>
+                      {expanded[item.title.toLowerCase()] ? (
+                        <ChevronUpIcon className="size-4" />
+                      ) : (
+                        <ChevronDownIcon className="size-4" />
+                      )}
+                    </Button>
+                  }
+                />
                 <CollapsibleContent>
                   <ul className="mt-2 pl-4">
                     {item.items.map((subItem) => (

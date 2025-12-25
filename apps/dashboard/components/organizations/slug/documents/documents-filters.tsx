@@ -14,11 +14,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@workspace/ui/components/select';
-import {
-  UnderlinedTabs,
-  UnderlinedTabsList,
-  UnderlinedTabsTrigger
-} from '@workspace/ui/components/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@workspace/ui/components/tabs';
 import { useMediaQuery } from '@workspace/ui/hooks/use-media-query';
 import { MediaQueries } from '@workspace/ui/lib/media-queries';
 
@@ -109,14 +105,15 @@ export function DocumentsFilters({
   return (
     <>
       <div className="flex items-center gap-2">
-        <UnderlinedTabs
+        <Tabs
+          variant="underline"
           value={records}
           onValueChange={handleRecordsChange}
           className="hidden sm:flex -ml-2"
         >
-          <UnderlinedTabsList className="mr-2 h-12 max-h-12 min-h-12 gap-x-2 border-none">
+          <TabsList className="mr-2 h-12 max-h-12 min-h-12 gap-x-2 border-none">
             {recordsOptions.map((option) => (
-              <UnderlinedTabsTrigger
+              <TabsTrigger
                 key={option.value}
                 value={option.value}
                 className="mx-0 border-t-4 border-t-transparent"
@@ -125,10 +122,10 @@ export function DocumentsFilters({
                   {option.icon}
                   {option.label}
                 </div>
-              </UnderlinedTabsTrigger>
+              </TabsTrigger>
             ))}
-          </UnderlinedTabsList>
-        </UnderlinedTabs>
+          </TabsList>
+        </Tabs>
         <Select
           value={records}
           onValueChange={(value) => setRecords(value as RecordsOption)}

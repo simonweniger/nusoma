@@ -36,12 +36,16 @@ export const CopyCreatedApiKeyModal =
       toast.success('Copied!');
     };
     return (
-      <AlertDialog open={modal.visible}>
-        <AlertDialogContent
-          className="max-w-sm"
-          onClose={modal.handleClose}
-          onAnimationEndCapture={modal.handleAnimationEndCapture}
-        >
+      <AlertDialog
+        open={modal.visible}
+        onOpenChange={modal.handleClose}
+        onOpenChangeComplete={(open) => {
+          if (!open) {
+            modal.handleAnimationEndCapture();
+          }
+        }}
+      >
+        <AlertDialogContent className="max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle>API key created</AlertDialogTitle>
             <AlertDialogDescription className="sr-only">

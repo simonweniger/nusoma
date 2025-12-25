@@ -13,6 +13,7 @@ import {
 } from '@workspace/ui/components/alert';
 import { Button } from '@workspace/ui/components/button';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 
 import { createBillingPortalSessionUrl } from '~/actions/billing/create-billing-portal-session-url';
 import { UpgradePlanDialog } from '~/components/organizations/slug/settings/organization/billing/upgrade-plan-dialog';
@@ -150,10 +151,10 @@ function SubscriptionInfo({
           type="button"
           variant="outline"
           disabled={pending}
-          loading={pending}
           onClick={handleBillingPortalRedirect}
         >
-          Change plan
+          {pending && <Spinner />}
+          {pending ? 'Changing...' : 'Change plan'}
         </Button>
       </div>
     </>
@@ -213,10 +214,10 @@ function OrderInfo({ order }: OrderInfoProps): React.JSX.Element {
           type="button"
           variant="outline"
           disabled={pending}
-          loading={pending}
           onClick={handleBillingPortalRedirect}
         >
-          Change plan
+          {pending && <Spinner />}
+          {pending ? 'Changing...' : 'Change plan'}
         </Button>
       </div>
     </>

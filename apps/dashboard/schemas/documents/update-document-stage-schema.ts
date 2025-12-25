@@ -14,4 +14,6 @@ export const updateDocumentStageSchema = z.object({
   })
 });
 
-export type UpdateDocumentStageSchema = z.infer<typeof updateDocumentStageSchema>;
+export type UpdateDocumentStageSchema = z.infer<
+  typeof updateDocumentStageSchema
+>;

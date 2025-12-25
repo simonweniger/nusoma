@@ -39,7 +39,10 @@ async function getDocumentNotesData(
     )
   );
   cacheTag(
-    Caching.createOrganizationTag(OrganizationCacheKey.Documents, organizationId)
+    Caching.createOrganizationTag(
+      OrganizationCacheKey.Documents,
+      organizationId
+    )
   );
 
   const documentNotes = await db
@@ -57,7 +60,10 @@ async function getDocumentNotesData(
     })
     .from(documentNoteTable)
     .innerJoin(userTable, eq(documentNoteTable.userId, userTable.id))
-    .innerJoin(documentTable, eq(documentNoteTable.documentId, documentTable.id))
+    .innerJoin(
+      documentTable,
+      eq(documentNoteTable.documentId, documentTable.id)
+    )
     .where(
       and(
         eq(documentTable.organizationId, organizationId),

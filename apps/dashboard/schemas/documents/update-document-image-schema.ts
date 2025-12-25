@@ -23,4 +23,6 @@ export const updateDocumentImageSchema = z.object({
     .or(z.literal(''))
 });
 
-export type UpdateDocumentImageSchema = z.infer<typeof updateDocumentImageSchema>;
+export type UpdateDocumentImageSchema = z.infer<
+  typeof updateDocumentImageSchema
+>;

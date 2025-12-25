@@ -89,7 +89,7 @@ function WebhookListItem({
         )}
       </div>
       <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
+        <DropdownMenuTrigger>
           <Button
             type="button"
             variant="ghost"

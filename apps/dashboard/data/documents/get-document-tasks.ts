@@ -39,7 +39,10 @@ async function getDocumentTasksData(
       createdAt: documentTaskTable.createdAt
     })
     .from(documentTaskTable)
-    .innerJoin(documentTable, eq(documentTaskTable.documentId, documentTable.id))
+    .innerJoin(
+      documentTable,
+      eq(documentTaskTable.documentId, documentTable.id)
+    )
     .where(
       and(
         eq(documentTable.organizationId, organizationId),

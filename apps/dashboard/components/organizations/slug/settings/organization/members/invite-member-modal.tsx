@@ -38,6 +38,7 @@ import {
   SelectValue
 } from '@workspace/ui/components/select';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { useMediaQuery } from '@workspace/ui/hooks/use-media-query';
 import { MediaQueries } from '@workspace/ui/lib/media-queries';
 import { cn } from '@workspace/ui/lib/utils';
@@ -178,22 +179,26 @@ export const InviteMemberModal = NiceModal.create<InviteMemberModalProps>(
           type="button"
           variant="default"
           disabled={!canSubmit}
-          loading={methods.formState.isSubmitting}
           onClick={methods.handleSubmit(onSubmit)}
         >
-          Send invitation
+          {methods.formState.isSubmitting && <Spinner />}
+          {methods.formState.isSubmitting ? 'Sending...' : 'Send invitation'}
         </Button>
       </>
     );
     return (
       <Form {...methods}>
         {mdUp ? (
-          <Dialog open={modal.visible}>
-            <DialogContent
-              className="max-w-sm"
-              onClose={modal.handleClose}
-              onAnimationEndCapture={modal.handleAnimationEndCapture}
-            >
+          <Dialog
+            open={modal.visible}
+            onOpenChange={modal.handleClose}
+            onOpenChangeComplete={(open) => {
+              if (!open) {
+                modal.handleAnimationEndCapture();
+              }
+            }}
+          >
+            <DialogContent className="max-w-sm">
               <DialogHeader>
                 <DialogTitle>{title}</DialogTitle>
                 <DialogDescription>{description}</DialogDescription>

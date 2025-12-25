@@ -28,6 +28,7 @@ import {
   FormMessage
 } from '@workspace/ui/components/form';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { TextEditor } from '@workspace/ui/components/text-editor';
 import { useMediaQuery } from '@workspace/ui/hooks/use-media-query';
 import { MediaQueries } from '@workspace/ui/lib/media-queries';
@@ -119,22 +120,26 @@ export const AddDocumentNoteModal = NiceModal.create<AddDocumentNoteModalProps>(
           type="button"
           variant="default"
           disabled={!canSubmit}
-          loading={methods.formState.isSubmitting}
           onClick={methods.handleSubmit(onSubmit)}
         >
-          Save
+          {methods.formState.isSubmitting && <Spinner />}
+          {methods.formState.isSubmitting ? 'Saving...' : 'Save'}
         </Button>
       </>
     );
     return (
       <Form {...methods}>
         {mdUp ? (
-          <Dialog open={modal.visible}>
-            <DialogContent
-              className="max-w-xl"
-              onClose={modal.handleClose}
-              onAnimationEndCapture={modal.handleAnimationEndCapture}
-            >
+          <Dialog
+            open={modal.visible}
+            onOpenChange={modal.handleClose}
+            onOpenChangeComplete={(open) => {
+              if (!open) {
+                modal.handleAnimationEndCapture();
+              }
+            }}
+          >
+            <DialogContent className="max-w-xl">
               <DialogHeader>
                 <DialogTitle>{title}</DialogTitle>
                 <DialogDescription className="sr-only">

@@ -30,6 +30,7 @@ import {
 } from '@workspace/ui/components/select';
 import { Separator } from '@workspace/ui/components/separator';
 import { toast } from '@workspace/ui/components/sonner';
+import { Spinner } from '@workspace/ui/components/spinner';
 
 import { updateBillingAddress } from '~/actions/billing/update-billing-address';
 import { useZodForm } from '~/hooks/use-zod-form';
@@ -139,7 +140,7 @@ export function BillingAddressCard({
                         onValueChange={field.onChange}
                       >
                         <SelectTrigger className="[&>span]:truncate w-full">
-                          <SelectValue placeholder="---" />
+                          <SelectValue data-placeholder="---" />
                         </SelectTrigger>
                         <SelectContent>
                           <ScrollArea style={{ maxHeight: '176px' }}>
@@ -239,10 +240,10 @@ export function BillingAddressCard({
             variant="default"
             size="default"
             disabled={!canSubmit}
-            loading={methods.formState.isSubmitting}
             onClick={methods.handleSubmit(onSubmit)}
           >
-            Save
+            {methods.formState.isSubmitting && <Spinner />}
+            {methods.formState.isSubmitting ? 'Saving...' : 'Save'}
           </Button>
         </CardFooter>
       </Card>

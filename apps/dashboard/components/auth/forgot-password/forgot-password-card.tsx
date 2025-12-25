@@ -28,6 +28,7 @@ import {
   FormMessage
 } from '@workspace/ui/components/form';
 import { InputWithAdornments } from '@workspace/ui/components/input-with-adornments';
+import { Spinner } from '@workspace/ui/components/spinner';
 import { cn } from '@workspace/ui/lib/utils';
 
 import { useZodForm } from '~/hooks/use-zod-form';
@@ -130,9 +131,12 @@ export function ForgotPasswordCard({
               variant="default"
               className="w-full"
               disabled={!canSubmit}
-              loading={methods.formState.isSubmitting}
+              onClick={methods.handleSubmit(onSubmit)}
             >
-              Send instructions
+              {methods.formState.isSubmitting && <Spinner />}
+              {methods.formState.isSubmitting
+                ? 'Sending instructions...'
+                : 'Send instructions'}
             </Button>
           </form>
         </Form>

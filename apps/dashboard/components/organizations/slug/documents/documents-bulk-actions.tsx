@@ -116,7 +116,7 @@ export function DocumentsBulkActions({
   return (
     <DataTableBulkActions table={table}>
       <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
+        <DropdownMenuTrigger>
           <Button
             type="button"
             variant="outline"

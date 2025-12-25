@@ -12,10 +12,10 @@ import {
   AccordionTrigger
 } from '@workspace/ui/components/accordion';
 import {
-  UnderlinedTabs,
-  UnderlinedTabsContent,
-  UnderlinedTabsList,
-  UnderlinedTabsTrigger
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
 } from '@workspace/ui/components/tabs';
 import { cn } from '@workspace/ui/lib/utils';
 
@@ -149,7 +149,7 @@ const components = {
   th: ({ className, ...props }: React.HTMLAttributes<HTMLTableCellElement>) => (
     <th
       className={cn(
-        'border px-4 py-2 text-left font-bold [&[align=center]]:text-center [&[align=right]]:text-right',
+        'border px-4 py-2 text-left font-bold [[align=center]]:text-center [[align=right]]:text-right',
         className
       )}
       {...props}
@@ -158,7 +158,7 @@ const components = {
   td: ({ className, ...props }: React.HTMLAttributes<HTMLTableCellElement>) => (
     <td
       className={cn(
-        'border px-4 py-2 text-left [&[align=center]]:text-center [&[align=right]]:text-right',
+        'border px-4 py-2 text-left [[align=center]]:text-center [[align=right]]:text-right',
         className
       )}
       {...props}
@@ -196,11 +196,8 @@ const components = {
   AccordionTrigger,
   Callout,
   Image,
-  Tabs: ({
-    className,
-    ...props
-  }: React.ComponentProps<typeof UnderlinedTabs>) => (
-    <UnderlinedTabs
+  Tabs: ({ className, ...props }: React.ComponentProps<typeof Tabs>) => (
+    <Tabs
       className={cn('relative mt-6 w-full', className)}
       {...props}
     />
@@ -208,8 +205,8 @@ const components = {
   TabsList: ({
     className,
     ...props
-  }: React.ComponentProps<typeof UnderlinedTabsList>) => (
-    <UnderlinedTabsList
+  }: React.ComponentProps<typeof TabsList>) => (
+    <TabsList
       className={cn('w-full border-b', className)}
       {...props}
     />
@@ -217,8 +214,8 @@ const components = {
   TabsTrigger: ({
     className,
     ...props
-  }: React.ComponentProps<typeof UnderlinedTabsTrigger>) => (
-    <UnderlinedTabsTrigger
+  }: React.ComponentProps<typeof TabsTrigger>) => (
+    <TabsTrigger
       className={cn('', className)}
       {...props}
     />
@@ -226,8 +223,8 @@ const components = {
   TabsContent: ({
     className,
     ...props
-  }: React.ComponentProps<typeof UnderlinedTabsContent>) => (
-    <UnderlinedTabsContent
+  }: React.ComponentProps<typeof TabsContent>) => (
+    <TabsContent
       className={cn('p-4', className)}
       {...props}
     />

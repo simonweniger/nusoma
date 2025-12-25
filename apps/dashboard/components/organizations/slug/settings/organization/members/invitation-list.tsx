@@ -110,7 +110,7 @@ function InvitationListItem({
           {capitalize(invitation.role.toLowerCase())}
         </Badge>
         <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger>
             <Button
               type="button"
               variant="ghost"
