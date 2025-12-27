@@ -1,4 +1,6 @@
 import '@workspace/ui/globals.css';
+import '@workspace/editor/styles/_variables.scss';
+import '@workspace/editor/styles/_keyframe-animations.scss';
 
 import * as React from 'react';
 import type { Metadata, Viewport } from 'next';

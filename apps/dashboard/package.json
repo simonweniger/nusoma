@@ -32,6 +32,7 @@
     "@workspace/billing": "workspace:*",
     "@workspace/common": "workspace:*",
     "@workspace/database": "workspace:*",
+    "@workspace/editor": "workspace:*",
     "@workspace/email": "workspace:*",
     "@workspace/monitoring": "workspace:*",
     "@workspace/routes": "workspace:*",
@@ -76,6 +77,7 @@
     "@workspace/prettier-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "postcss": "8.5.6",
+    "sass": "^1.97.1",
     "tailwindcss": "4.1.17"
   },
   "prettier": "@workspace/prettier-config"

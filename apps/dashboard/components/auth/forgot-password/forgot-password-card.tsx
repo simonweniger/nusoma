@@ -76,10 +76,7 @@ export function ForgotPasswordCard({
   };
   return (
     <Card
-      className={cn(
-        'w-full px-4 py-8 border-transparent dark:border-border',
-        className
-      )}
+      className={cn('w-full border-transparent dark:border-border', className)}
       {...other}
     >
       <CardHeader>

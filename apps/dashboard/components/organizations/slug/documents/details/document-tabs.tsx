@@ -9,18 +9,25 @@ import {
   TabsTrigger
 } from '@workspace/ui/components/tabs';
 
+import { DocumentEditorTab } from '~/components/organizations/slug/documents/details/editor/document-editor-tab';
 import { DocumentNotesTab } from '~/components/organizations/slug/documents/details/notes/document-notes-tab';
 import { DocumentTasksTab } from '~/components/organizations/slug/documents/details/tasks/document-tasks-tab';
 import { DocumentActivityTab } from '~/components/organizations/slug/documents/details/timeline/document-activity-tab';
 import type { DocumentDto } from '~/types/dtos/document-dto';
 
 enum Tab {
+  Editor = 'editor',
   Activity = 'activity',
   Notes = 'notes',
   Tasks = 'tasks'
 }
 
 const tabList = [
+  {
+    icon: FileIcon,
+    label: 'Editor',
+    value: Tab.Editor
+  },
   {
     icon: ActivityIcon,
     label: 'Activity',
@@ -66,6 +73,14 @@ export async function DocumentTabs({
         ))}
       </TabsList>
       <Separator />
+      <TabsContent
+        value={Tab.Editor}
+        className="m-0 p-0 md:grow md:overflow-hidden"
+      >
+        <React.Suspense>
+          <DocumentEditorTab document={document} />
+        </React.Suspense>
+      </TabsContent>
       <TabsContent
         value={Tab.Activity}
         className="m-0 p-0 md:grow md:overflow-hidden"

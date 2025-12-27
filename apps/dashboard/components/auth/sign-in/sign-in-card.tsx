@@ -234,7 +234,7 @@ export function SignInCard({
             >
               {methods.formState.isSubmitting ? (
                 <div className="flex items-center gap-2">
-                  <Spinner size="small" />
+                  <Spinner />
                   <span>Signing in...</span>
                 </div>
               ) : (

@@ -15,6 +15,7 @@ const INTERNAL_PACKAGES = [
   '@workspace/rate-limit',
   '@workspace/routes',
   '@workspace/ui',
+  '@workspace/editor',
   '@workspace/webhooks'
 ];
 

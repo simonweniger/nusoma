@@ -45,13 +45,10 @@ export function VerifyEmailCard({
 
   return (
     <Card
-      className={cn(
-        'w-full px-4 py-8 border-transparent dark:border-border',
-        className
-      )}
+      className={cn('w-full  border-transparent dark:border-border', className)}
       {...other}
     >
-      <CardHeader>
+      <CardHeader className="px-4 pt-4">
         <CardTitle className="text-base lg:text-lg">
           Please check your email
         </CardTitle>
@@ -60,7 +57,7 @@ export function VerifyEmailCard({
           a verification link.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 pb-4">
         <p className="text-sm text-muted-foreground">
           Click the link in the email to verify your account.
         </p>

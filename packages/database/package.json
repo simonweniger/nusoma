@@ -6,6 +6,9 @@
   "scripts": {
     "clean": "git clean -xdf .cache .turbo build dist node_modules",
     "typecheck": "tsc --noEmit",
+    "db-auth": "neonctl auth",
+    "new-branch": "neonctl branches create --name $(git rev-parse --abbrev-ref HEAD)",
+    "connect": "bun scripts/update-env.ts $(git rev-parse --abbrev-ref HEAD)",
     "generate": "drizzle-kit generate --config=drizzle.config.ts",
     "migrate": "drizzle-kit migrate --config=drizzle.config.ts",
     "push": "drizzle-kit push --config=drizzle.config.ts",
