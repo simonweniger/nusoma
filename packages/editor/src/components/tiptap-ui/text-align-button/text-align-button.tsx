@@ -1,55 +1,51 @@
-import { forwardRef, useCallback } from "react"
+import { forwardRef, useCallback } from 'react';
 
-// --- Lib ---
-import { parseShortcutKeys } from "@workspace/editor/lib/tiptap-utils"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-
+import { Badge } from '@workspace/editor/components/tiptap-ui-primitive/badge';
+// --- UI Primitives ---
+import type { ButtonProps } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
 // --- Tiptap UI ---
 import type {
   TextAlign,
-  UseTextAlignConfig,
-} from "@workspace/editor/components/tiptap-ui/text-align-button"
+  UseTextAlignConfig
+} from '@workspace/editor/components/tiptap-ui/text-align-button';
 import {
   TEXT_ALIGN_SHORTCUT_KEYS,
-  useTextAlign,
-} from "@workspace/editor/components/tiptap-ui/text-align-button"
+  useTextAlign
+} from '@workspace/editor/components/tiptap-ui/text-align-button';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
+// --- Lib ---
+import { parseShortcutKeys } from '@workspace/editor/lib/tiptap-utils';
 
-// --- UI Primitives ---
-import type { ButtonProps } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Badge } from "@workspace/editor/components/tiptap-ui-primitive/badge"
-
-type IconProps = React.SVGProps<SVGSVGElement>
-type IconComponent = ({ className, ...props }: IconProps) => React.ReactElement
+type IconProps = React.SVGProps<SVGSVGElement>;
+type IconComponent = ({ className, ...props }: IconProps) => React.ReactElement;
 
 export interface TextAlignButtonProps
-  extends Omit<ButtonProps, "type">,
-    UseTextAlignConfig {
+  extends Omit<ButtonProps, 'type'>, UseTextAlignConfig {
   /**
    * Optional text to display alongside the icon.
    */
-  text?: string
+  text?: string;
   /**
    * Optional show shortcut keys in the button.
    * @default false
    */
-  showShortcut?: boolean
+  showShortcut?: boolean;
   /**
    * Optional custom icon component to render instead of the default.
    */
-  icon?: React.MemoExoticComponent<IconComponent> | React.FC<IconProps>
+  icon?: React.MemoExoticComponent<IconComponent> | React.FC<IconProps>;
 }
 
 export function TextAlignShortcutBadge({
   align,
-  shortcutKeys = TEXT_ALIGN_SHORTCUT_KEYS[align],
+  shortcutKeys = TEXT_ALIGN_SHORTCUT_KEYS[align]
 }: {
-  align: TextAlign
-  shortcutKeys?: string
+  align: TextAlign;
+  shortcutKeys?: string;
 }) {
-  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>
+  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>;
 }
 
 /**
@@ -76,7 +72,7 @@ export const TextAlignButton = forwardRef<
     },
     ref
   ) => {
-    const { editor } = useTiptapEditor(providedEditor)
+    const { editor } = useTiptapEditor(providedEditor);
     const {
       isVisible,
       handleTextAlign,
@@ -84,35 +80,35 @@ export const TextAlignButton = forwardRef<
       canAlign,
       isActive,
       Icon,
-      shortcutKeys,
+      shortcutKeys
     } = useTextAlign({
       editor,
       align,
       hideWhenUnavailable,
-      onAligned,
-    })
+      onAligned
+    });
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleTextAlign()
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        handleTextAlign();
       },
       [handleTextAlign, onClick]
-    )
+    );
 
     if (!isVisible) {
-      return null
+      return null;
     }
 
-    const RenderIcon = CustomIcon ?? Icon
+    const RenderIcon = CustomIcon ?? Icon;
 
     return (
       <Button
         type="button"
         disabled={!canAlign}
         data-style="ghost"
-        data-active-state={isActive ? "on" : "off"}
+        data-active-state={isActive ? 'on' : 'off'}
         data-disabled={!canAlign}
         role="button"
         tabIndex={-1}
@@ -136,8 +132,8 @@ export const TextAlignButton = forwardRef<
           </>
         )}
       </Button>
-    )
+    );
   }
-)
+);
 
-TextAlignButton.displayName = "TextAlignButton"
+TextAlignButton.displayName = 'TextAlignButton';

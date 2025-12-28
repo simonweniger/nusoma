@@ -17,7 +17,12 @@ import { Color, TextStyle } from '@tiptap/extension-text-style';
 import { Typography } from '@tiptap/extension-typography';
 import { UniqueID } from '@tiptap/extension-unique-id';
 import { Placeholder, Selection } from '@tiptap/extensions';
-import { EditorContent, EditorContext, useEditor } from '@tiptap/react';
+import {
+  EditorContent,
+  EditorContext,
+  useEditor,
+  type Editor
+} from '@tiptap/react';
 // --- Tiptap Core Extensions ---
 import { StarterKit } from '@tiptap/starter-kit';
 import { createPortal } from 'react-dom';
@@ -37,7 +42,10 @@ import { TableKit } from '@workspace/editor/components/tiptap-node/table-node/ex
 import { TableCellHandleMenu } from '@workspace/editor/components/tiptap-node/table-node/ui/table-cell-handle-menu';
 import { TableExtendRowColumnButtons } from '@workspace/editor/components/tiptap-node/table-node/ui/table-extend-row-column-button';
 import { TableHandle } from '@workspace/editor/components/tiptap-node/table-node/ui/table-handle/table-handle';
-import { TableSelectionOverlay } from '@workspace/editor/components/tiptap-node/table-node/ui/table-selection-overlay';
+import {
+  TableSelectionOverlay,
+  type ResizeHandle
+} from '@workspace/editor/components/tiptap-node/table-node/ui/table-selection-overlay';
 import { useScrollToHash } from '@workspace/editor/components/tiptap-ui/copy-anchor-link-button/use-scroll-to-hash';
 // --- Hooks ---
 import { useUiEditorState } from '@workspace/editor/hooks/use-ui-editor-state';
@@ -298,7 +306,12 @@ export function EditorProvider(props: EditorProviderProps) {
         <TableHandle />
         <TableSelectionOverlay
           showResizeHandles={true}
-          cellMenu={(props: any) => (
+          cellMenu={(props: {
+            editor?: Editor | null;
+            onResizeStart?: (
+              handle: ResizeHandle
+            ) => (event: React.MouseEvent) => void;
+          }) => (
             <TableCellHandleMenu
               editor={props.editor}
               onMouseDown={(e: React.MouseEvent) =>

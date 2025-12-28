@@ -1,43 +1,39 @@
-import { forwardRef, useCallback } from "react"
+import { forwardRef, useCallback } from 'react';
 
-// --- Lib ---
-import { parseShortcutKeys } from "@workspace/editor/lib/tiptap-utils"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-
+import { Badge } from '@workspace/editor/components/tiptap-ui-primitive/badge';
+// --- UI Primitives ---
+import type { ButtonProps } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
 // --- Tiptap UI ---
-import type { UseDuplicateConfig } from "@workspace/editor/components/tiptap-ui/duplicate-button"
+import type { UseDuplicateConfig } from '@workspace/editor/components/tiptap-ui/duplicate-button';
 import {
   DUPLICATE_SHORTCUT_KEY,
-  useDuplicate,
-} from "@workspace/editor/components/tiptap-ui/duplicate-button"
-
-// --- UI Primitives ---
-import type { ButtonProps } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Badge } from "@workspace/editor/components/tiptap-ui-primitive/badge"
+  useDuplicate
+} from '@workspace/editor/components/tiptap-ui/duplicate-button';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
+// --- Lib ---
+import { parseShortcutKeys } from '@workspace/editor/lib/tiptap-utils';
 
 export interface DuplicateButtonProps
-  extends Omit<ButtonProps, "type">,
-    UseDuplicateConfig {
+  extends Omit<ButtonProps, 'type'>, UseDuplicateConfig {
   /**
    * Optional text to display alongside the icon.
    */
-  text?: string
+  text?: string;
   /**
    * Optional show shortcut keys in the button.
    * @default false
    */
-  showShortcut?: boolean
+  showShortcut?: boolean;
 }
 
 export function DuplicateShortcutBadge({
-  shortcutKeys = DUPLICATE_SHORTCUT_KEY,
+  shortcutKeys = DUPLICATE_SHORTCUT_KEY
 }: {
-  shortcutKeys?: string
+  shortcutKeys?: string;
 }) {
-  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>
+  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>;
 }
 
 /**
@@ -62,25 +58,25 @@ export const DuplicateButton = forwardRef<
     },
     ref
   ) => {
-    const { editor } = useTiptapEditor(providedEditor)
+    const { editor } = useTiptapEditor(providedEditor);
     const { isVisible, handleDuplicate, label, shortcutKeys, Icon } =
       useDuplicate({
         editor,
         hideWhenUnavailable,
-        onDuplicated,
-      })
+        onDuplicated
+      });
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleDuplicate()
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        handleDuplicate();
       },
       [handleDuplicate, onClick]
-    )
+    );
 
     if (!isVisible) {
-      return null
+      return null;
     }
 
     return (
@@ -105,8 +101,8 @@ export const DuplicateButton = forwardRef<
           </>
         )}
       </Button>
-    )
+    );
   }
-)
+);
 
-DuplicateButton.displayName = "DuplicateButton"
+DuplicateButton.displayName = 'DuplicateButton';

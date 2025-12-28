@@ -1,40 +1,36 @@
-import { forwardRef, useCallback } from "react"
+import { forwardRef, useCallback } from 'react';
 
-// --- Lib ---
-import { parseShortcutKeys } from "@workspace/editor/lib/tiptap-utils"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-
-// --- Tiptap UI ---
-import type { UseMoveNodeConfig } from "@workspace/editor/components/tiptap-ui/move-node-button"
-import { useMoveNode } from "@workspace/editor/components/tiptap-ui/move-node-button"
-
+import { Badge } from '@workspace/editor/components/tiptap-ui-primitive/badge';
 // --- UI Primitives ---
-import type { ButtonProps } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Badge } from "@workspace/editor/components/tiptap-ui-primitive/badge"
+import type { ButtonProps } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
+// --- Tiptap UI ---
+import type { UseMoveNodeConfig } from '@workspace/editor/components/tiptap-ui/move-node-button';
+import { useMoveNode } from '@workspace/editor/components/tiptap-ui/move-node-button';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
+// --- Lib ---
+import { parseShortcutKeys } from '@workspace/editor/lib/tiptap-utils';
 
 export interface MoveNodeButtonProps
-  extends Omit<ButtonProps, "type">,
-    UseMoveNodeConfig {
+  extends Omit<ButtonProps, 'type'>, UseMoveNodeConfig {
   /**
    * Optional text to display alongside the icon.
    */
-  text?: string
+  text?: string;
   /**
    * Optional show shortcut keys in the button.
    * @default false
    */
-  showShortcut?: boolean
+  showShortcut?: boolean;
 }
 
 export function MoveNodeShortcutBadge({
-  shortcutKeys,
+  shortcutKeys
 }: {
-  shortcutKeys: string
+  shortcutKeys: string;
 }) {
-  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>
+  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>;
 }
 
 /**
@@ -58,35 +54,35 @@ export const MoveNodeButton = forwardRef<
     },
     ref
   ) => {
-    const { editor } = useTiptapEditor(providedEditor)
+    const { editor } = useTiptapEditor(providedEditor);
     const {
       isVisible,
       handleMoveNode,
       canMoveNode,
       label,
       shortcutKeys,
-      Icon,
+      Icon
     } = useMoveNode({
       editor,
       direction,
       hideWhenUnavailable,
-      onMoved,
-    })
+      onMoved
+    });
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleMoveNode()
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        handleMoveNode();
       },
       [handleMoveNode, onClick]
-    )
+    );
 
     if (!isVisible) {
-      return null
+      return null;
     }
 
-    const tooltip = direction === "up" ? "Move Up" : "Move Down"
+    const tooltip = direction === 'up' ? 'Move Up' : 'Move Down';
 
     return (
       <Button
@@ -111,8 +107,8 @@ export const MoveNodeButton = forwardRef<
           </>
         )}
       </Button>
-    )
+    );
   }
-)
+);
 
-MoveNodeButton.displayName = "MoveNodeButton"
+MoveNodeButton.displayName = 'MoveNodeButton';

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Form, type SubmitHandler } from 'react-hook-form';
+import { type SubmitHandler } from 'react-hook-form';
 
 import { Button } from '@workspace/ui/components/button';
 import {
@@ -11,6 +11,7 @@ import {
   type CardProps
 } from '@workspace/ui/components/card';
 import {
+  Form,
   FormControl,
   FormDescription,
   FormField,

@@ -1,40 +1,43 @@
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-import { getAvatar } from "@workspace/editor/lib/tiptap-collab-utils"
 import {
   Avatar,
   AvatarFallback,
   AvatarGroup,
-  AvatarImage,
-} from "@workspace/editor/components/tiptap-ui-primitive/avatar"
-import { Button, ButtonGroup } from "@workspace/editor/components/tiptap-ui-primitive/button"
+  AvatarImage
+} from '@workspace/editor/components/tiptap-ui-primitive/avatar';
+import {
+  Button,
+  ButtonGroup
+} from '@workspace/editor/components/tiptap-ui-primitive/button';
 import {
   Card,
   CardBody,
-  CardItemGroup,
-} from "@workspace/editor/components/tiptap-ui-primitive/card"
+  CardItemGroup
+} from '@workspace/editor/components/tiptap-ui-primitive/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@workspace/editor/components/tiptap-ui-primitive/dropdown-menu"
+  DropdownMenuTrigger
+} from '@workspace/editor/components/tiptap-ui-primitive/dropdown-menu';
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
+import { getAvatar } from '@workspace/editor/lib/tiptap-collab-utils';
 
-type User = { clientId: number; id: string; name: string; color: string }
+type User = { clientId: number; id: string; name: string; color: string };
 
 export function CollaborationUsers() {
-  const { editor } = useTiptapEditor()
+  const { editor } = useTiptapEditor();
 
   if (!editor || !editor.storage.collaborationCaret) {
-    return null
+    return null;
   }
 
   const collaborationUsers: User[] =
     editor.storage.collaborationCaret.users.map((user) => ({
       clientId: user.clientId,
       id: String(user.clientId),
-      name: user.name || "Anonymous",
-      color: user.color || "#000000",
-    }))
+      name: user.name || 'Anonymous',
+      color: user.color || '#000000'
+    }));
 
   return (
     <DropdownMenu>
@@ -42,11 +45,14 @@ export function CollaborationUsers() {
         <Button
           data-style="ghost"
           data-appearence="subdued"
-          style={{ padding: "0.25rem" }}
+          style={{ padding: '0.25rem' }}
         >
           <AvatarGroup maxVisible={3}>
             {collaborationUsers.map((user) => (
-              <Avatar key={user.id} userColor={user.color}>
+              <Avatar
+                key={user.id}
+                userColor={user.color}
+              >
                 <AvatarImage src={getAvatar(user.name)} />
                 <AvatarFallback>{user.name?.toUpperCase()[0]}</AvatarFallback>
               </Avatar>
@@ -60,7 +66,10 @@ export function CollaborationUsers() {
             <CardItemGroup>
               <ButtonGroup>
                 {collaborationUsers.map((user) => (
-                  <DropdownMenuItem key={user.id} asChild>
+                  <DropdownMenuItem
+                    key={user.id}
+                    asChild
+                  >
                     <Button data-style="ghost">
                       <Avatar userColor={user.color}>
                         <AvatarImage src={getAvatar(user.name)} />
@@ -78,5 +87,5 @@ export function CollaborationUsers() {
         </Card>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

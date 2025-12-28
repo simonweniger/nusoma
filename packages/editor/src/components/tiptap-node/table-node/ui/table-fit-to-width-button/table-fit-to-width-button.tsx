@@ -1,20 +1,18 @@
-"use client"
+'use client';
 
-import { forwardRef, useCallback } from "react"
+import { forwardRef, useCallback } from 'react';
 
 // --- Hooks ---
-import { useTableFitToWidth } from "@workspace/editor/components/tiptap-node/table-node/ui/table-fit-to-width-button/use-table-fit-to-width"
-import type { UseTableFitToWidthConfig } from "@workspace/editor/components/tiptap-node/table-node/ui/table-fit-to-width-button/use-table-fit-to-width"
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-
+import { useTableFitToWidth } from '@workspace/editor/components/tiptap-node/table-node/ui/table-fit-to-width-button/use-table-fit-to-width';
+import type { UseTableFitToWidthConfig } from '@workspace/editor/components/tiptap-node/table-node/ui/table-fit-to-width-button/use-table-fit-to-width';
 // --- Primitives ---
-import type { ButtonProps } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
+import type { ButtonProps } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
 
 export interface TableFitToWidthButtonProps
-  extends Omit<ButtonProps, "type">,
-    UseTableFitToWidthConfig {
-  text?: string
+  extends Omit<ButtonProps, 'type'>, UseTableFitToWidthConfig {
+  text?: string;
 }
 
 /**
@@ -48,25 +46,25 @@ export const TableFitToWidthButton = forwardRef<
     },
     ref
   ) => {
-    const { editor } = useTiptapEditor(providedEditor)
+    const { editor } = useTiptapEditor(providedEditor);
     const { isVisible, canFitToWidth, label, Icon, handleFitToWidth } =
       useTableFitToWidth({
         editor,
         hideWhenUnavailable,
-        onWidthAdjusted,
-      })
+        onWidthAdjusted
+      });
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleFitToWidth()
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        handleFitToWidth();
       },
       [handleFitToWidth, onClick]
-    )
+    );
 
     if (!isVisible) {
-      return null
+      return null;
     }
 
     return (
@@ -91,8 +89,8 @@ export const TableFitToWidthButton = forwardRef<
           </>
         )}
       </Button>
-    )
+    );
   }
-)
+);
 
-TableFitToWidthButton.displayName = "TableFitToWidthButton"
+TableFitToWidthButton.displayName = 'TableFitToWidthButton';

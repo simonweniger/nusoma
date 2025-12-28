@@ -115,7 +115,7 @@ function MemberListItem({
           {capitalize(member.role.toLowerCase())}
         </Badge>
         <DropdownMenu modal={false}>
-          <DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild>
             <Button
               type="button"
               variant="ghost"

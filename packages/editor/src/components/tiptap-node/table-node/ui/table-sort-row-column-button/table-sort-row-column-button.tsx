@@ -1,25 +1,22 @@
-"use client"
+'use client';
 
-import { forwardRef, useCallback } from "react"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
+import { forwardRef, useCallback } from 'react';
 
 // --- Tiptap UI ---
-import type { UseTableSortRowColumnConfig } from "@workspace/editor/components/tiptap-node/table-node/ui/table-sort-row-column-button"
-import { useTableSortRowColumn } from "@workspace/editor/components/tiptap-node/table-node/ui/table-sort-row-column-button"
-
+import type { UseTableSortRowColumnConfig } from '@workspace/editor/components/tiptap-node/table-node/ui/table-sort-row-column-button';
+import { useTableSortRowColumn } from '@workspace/editor/components/tiptap-node/table-node/ui/table-sort-row-column-button';
 // --- UI Primitives ---
-import type { ButtonProps } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
+import type { ButtonProps } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
 
 export interface TableSortRowColumnButtonProps
-  extends Omit<ButtonProps, "type">,
-    UseTableSortRowColumnConfig {
+  extends Omit<ButtonProps, 'type'>, UseTableSortRowColumnConfig {
   /**
    * Optional text to display alongside the icon.
    */
-  text?: string
+  text?: string;
 }
 
 /**
@@ -46,7 +43,7 @@ export const TableSortRowColumnButton = forwardRef<
     },
     ref
   ) => {
-    const { editor } = useTiptapEditor(providedEditor)
+    const { editor } = useTiptapEditor(providedEditor);
     const { isVisible, handleSort, label, canSortRowColumn, Icon } =
       useTableSortRowColumn({
         editor,
@@ -54,20 +51,20 @@ export const TableSortRowColumnButton = forwardRef<
         orientation,
         direction,
         hideWhenUnavailable,
-        onSorted,
-      })
+        onSorted
+      });
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleSort()
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        handleSort();
       },
       [handleSort, onClick]
-    )
+    );
 
     if (!isVisible) {
-      return null
+      return null;
     }
 
     return (
@@ -93,8 +90,8 @@ export const TableSortRowColumnButton = forwardRef<
           </>
         )}
       </Button>
-    )
+    );
   }
-)
+);
 
-TableSortRowColumnButton.displayName = "TableSortRowColumnButton"
+TableSortRowColumnButton.displayName = 'TableSortRowColumnButton';

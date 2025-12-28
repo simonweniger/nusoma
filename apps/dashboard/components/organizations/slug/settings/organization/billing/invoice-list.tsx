@@ -83,7 +83,7 @@ function InvoiceListItem({
         </div>
       </div>
       <DropdownMenu modal={false}>
-        <DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild>
           <Button
             type="button"
             variant="ghost"

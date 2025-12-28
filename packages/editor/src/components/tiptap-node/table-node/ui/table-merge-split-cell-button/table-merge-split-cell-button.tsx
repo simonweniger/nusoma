@@ -1,25 +1,22 @@
-"use client"
+'use client';
 
-import { forwardRef, useCallback } from "react"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
+import { forwardRef, useCallback } from 'react';
 
 // --- Tiptap UI ---
-import type { UseTableMergeSplitCellConfig } from "@workspace/editor/components/tiptap-node/table-node/ui/table-merge-split-cell-button"
-import { useTableMergeSplitCell } from "@workspace/editor/components/tiptap-node/table-node/ui/table-merge-split-cell-button"
-
+import type { UseTableMergeSplitCellConfig } from '@workspace/editor/components/tiptap-node/table-node/ui/table-merge-split-cell-button';
+import { useTableMergeSplitCell } from '@workspace/editor/components/tiptap-node/table-node/ui/table-merge-split-cell-button';
 // --- UI Primitives ---
-import type { ButtonProps } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
+import type { ButtonProps } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
 
 export interface TableMergeSplitCellButtonProps
-  extends Omit<ButtonProps, "type">,
-    UseTableMergeSplitCellConfig {
+  extends Omit<ButtonProps, 'type'>, UseTableMergeSplitCellConfig {
   /**
    * Optional text to display alongside the icon.
    */
-  text?: string
+  text?: string;
 }
 
 /**
@@ -73,26 +70,26 @@ export const TableMergeSplitCellButton = forwardRef<
     },
     ref
   ) => {
-    const { editor } = useTiptapEditor(providedEditor)
+    const { editor } = useTiptapEditor(providedEditor);
     const { isVisible, handleExecute, label, canExecute, Icon } =
       useTableMergeSplitCell({
         editor,
         action,
         hideWhenUnavailable,
-        onExecuted,
-      })
+        onExecuted
+      });
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleExecute()
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        handleExecute();
       },
       [handleExecute, onClick]
-    )
+    );
 
     if (!isVisible) {
-      return null
+      return null;
     }
 
     return (
@@ -118,8 +115,8 @@ export const TableMergeSplitCellButton = forwardRef<
           </>
         )}
       </Button>
-    )
+    );
   }
-)
+);
 
-TableMergeSplitCellButton.displayName = "TableMergeSplitCellButton"
+TableMergeSplitCellButton.displayName = 'TableMergeSplitCellButton';

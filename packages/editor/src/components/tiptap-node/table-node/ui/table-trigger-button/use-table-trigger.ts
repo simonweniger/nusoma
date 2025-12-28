@@ -1,18 +1,16 @@
-"use client"
+'use client';
 
-import { useCallback, useState } from "react"
-import type { Editor } from "@tiptap/react"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-
-// --- Lib ---
-import { isExtensionAvailable } from "@workspace/editor/lib/tiptap-utils"
+import { useCallback, useState } from 'react';
+import type { Editor } from '@tiptap/react';
 
 // --- Icons ---
-import { TableIcon } from "@workspace/editor/components/tiptap-icons/table-icon"
+import { TableIcon } from '@workspace/editor/components/tiptap-icons/table-icon';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
+// --- Lib ---
+import { isExtensionAvailable } from '@workspace/editor/lib/tiptap-utils';
 
-const REQUIRED_EXTENSIONS = ["table"]
+const REQUIRED_EXTENSIONS = ['table'];
 
 /**
  * Configuration for the table trigger functionality
@@ -21,34 +19,34 @@ export interface UseTableTriggerButtonConfig {
   /**
    * The Tiptap editor instance.
    */
-  editor?: Editor | null
+  editor?: Editor | null;
   /**
    * Whether the button should hide when table insertion is not available.
    * @default false
    */
-  hideWhenUnavailable?: boolean
+  hideWhenUnavailable?: boolean;
   /**
    * Maximum number of rows in the grid selector.
    * @default 8
    */
-  maxRows?: number
+  maxRows?: number;
   /**
    * Maximum number of columns in the grid selector.
    * @default 8
    */
-  maxCols?: number
+  maxCols?: number;
   /**
    * Callback function called after a successful table insertion.
    */
-  onInserted?: (rows: number, cols: number) => void
+  onInserted?: (rows: number, cols: number) => void;
 }
 
 /**
  * Checks if a table can be inserted in the current editor state
  */
 export function canInsertTable(editor: Editor | null): boolean {
-  if (!editor || !editor.isEditable) return false
-  return isExtensionAvailable(editor, REQUIRED_EXTENSIONS)
+  if (!editor || !editor.isEditable) return false;
+  return isExtensionAvailable(editor, REQUIRED_EXTENSIONS);
 }
 
 /**
@@ -59,7 +57,7 @@ export function insertTable(
   rows: number,
   cols: number
 ): boolean {
-  if (!editor || !canInsertTable(editor)) return false
+  if (!editor || !canInsertTable(editor)) return false;
 
   try {
     return editor
@@ -68,12 +66,12 @@ export function insertTable(
       .insertTable({
         rows,
         cols,
-        withHeaderRow: false,
+        withHeaderRow: false
       })
-      .run()
+      .run();
   } catch (error) {
-    console.error("Error inserting table:", error)
-    return false
+    console.error('Error inserting table:', error);
+    return false;
   }
 }
 
@@ -84,13 +82,13 @@ export function shouldShowButton(
   editor: Editor | null,
   hideWhenUnavailable: boolean
 ): boolean {
-  if (!editor || !editor.isEditable) return false
+  if (!editor || !editor.isEditable) return false;
 
-  const hasExtension = isExtensionAvailable(editor, REQUIRED_EXTENSIONS)
-  if (!hasExtension) return false
+  const hasExtension = isExtensionAvailable(editor, REQUIRED_EXTENSIONS);
+  if (!hasExtension) return false;
 
   // If hiding when unavailable, also check if we can actually insert
-  return !hideWhenUnavailable || canInsertTable(editor)
+  return !hideWhenUnavailable || canInsertTable(editor);
 }
 
 /**
@@ -132,37 +130,37 @@ export function useTableTriggerButton(config?: UseTableTriggerButtonConfig) {
   const {
     editor: providedEditor,
     hideWhenUnavailable = false,
-    onInserted,
-  } = config || {}
+    onInserted
+  } = config || {};
 
-  const { editor } = useTiptapEditor(providedEditor)
-  const [isOpen, setIsOpen] = useState(false)
+  const { editor } = useTiptapEditor(providedEditor);
+  const [isOpen, setIsOpen] = useState(false);
   const [hoveredCell, setHoveredCell] = useState<{
-    row: number
-    col: number
-  } | null>(null)
+    row: number;
+    col: number;
+  } | null>(null);
 
-  const isVisible = shouldShowButton(editor, hideWhenUnavailable)
-  const canInsert = canInsertTable(editor)
+  const isVisible = shouldShowButton(editor, hideWhenUnavailable);
+  const canInsert = canInsertTable(editor);
 
   const handleCellHover = useCallback((row: number, col: number) => {
-    setHoveredCell({ row, col })
-  }, [])
+    setHoveredCell({ row, col });
+  }, []);
 
   const handleCellClick = useCallback(
     (row: number, col: number) => {
-      const success = insertTable(editor, row + 1, col + 1)
+      const success = insertTable(editor, row + 1, col + 1);
       if (success) {
-        setIsOpen(false)
-        onInserted?.(row + 1, col + 1)
+        setIsOpen(false);
+        onInserted?.(row + 1, col + 1);
       }
     },
     [editor, onInserted]
-  )
+  );
 
   const resetHoveredCell = useCallback(() => {
-    setHoveredCell(null)
-  }, [])
+    setHoveredCell(null);
+  }, []);
 
   return {
     isVisible,
@@ -173,7 +171,7 @@ export function useTableTriggerButton(config?: UseTableTriggerButtonConfig) {
     handleCellHover,
     handleCellClick,
     resetHoveredCell,
-    label: "Insert table",
-    Icon: TableIcon,
-  }
+    label: 'Insert table',
+    Icon: TableIcon
+  };
 }

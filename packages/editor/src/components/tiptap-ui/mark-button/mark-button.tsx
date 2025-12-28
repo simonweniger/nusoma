@@ -1,42 +1,44 @@
-import { forwardRef, useCallback } from "react"
+import { forwardRef, useCallback } from 'react';
 
-// --- Lib ---
-import { parseShortcutKeys } from "@workspace/editor/lib/tiptap-utils"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-
-// --- Tiptap UI ---
-import type { Mark, UseMarkConfig } from "@workspace/editor/components/tiptap-ui/mark-button"
-import { MARK_SHORTCUT_KEYS, useMark } from "@workspace/editor/components/tiptap-ui/mark-button"
-
+import { Badge } from '@workspace/editor/components/tiptap-ui-primitive/badge';
 // --- UI Primitives ---
-import type { ButtonProps } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Badge } from "@workspace/editor/components/tiptap-ui-primitive/badge"
+import type { ButtonProps } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
+// --- Tiptap UI ---
+import type {
+  Mark,
+  UseMarkConfig
+} from '@workspace/editor/components/tiptap-ui/mark-button';
+import {
+  MARK_SHORTCUT_KEYS,
+  useMark
+} from '@workspace/editor/components/tiptap-ui/mark-button';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
+// --- Lib ---
+import { parseShortcutKeys } from '@workspace/editor/lib/tiptap-utils';
 
 export interface MarkButtonProps
-  extends Omit<ButtonProps, "type">,
-    UseMarkConfig {
+  extends Omit<ButtonProps, 'type'>, UseMarkConfig {
   /**
    * Optional text to display alongside the icon.
    */
-  text?: string
+  text?: string;
   /**
    * Optional show shortcut keys in the button.
    * @default false
    */
-  showShortcut?: boolean
+  showShortcut?: boolean;
 }
 
 export function MarkShortcutBadge({
   type,
-  shortcutKeys = MARK_SHORTCUT_KEYS[type],
+  shortcutKeys = MARK_SHORTCUT_KEYS[type]
 }: {
-  type: Mark
-  shortcutKeys?: string
+  type: Mark;
+  shortcutKeys?: string;
 }) {
-  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>
+  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>;
 }
 
 /**
@@ -59,7 +61,7 @@ export const MarkButton = forwardRef<HTMLButtonElement, MarkButtonProps>(
     },
     ref
   ) => {
-    const { editor } = useTiptapEditor(providedEditor)
+    const { editor } = useTiptapEditor(providedEditor);
     const {
       isVisible,
       handleMark,
@@ -67,25 +69,25 @@ export const MarkButton = forwardRef<HTMLButtonElement, MarkButtonProps>(
       canToggle,
       isActive,
       Icon,
-      shortcutKeys,
+      shortcutKeys
     } = useMark({
       editor,
       type,
       hideWhenUnavailable,
-      onToggled,
-    })
+      onToggled
+    });
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleMark()
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        handleMark();
       },
       [handleMark, onClick]
-    )
+    );
 
     if (!isVisible) {
-      return null
+      return null;
     }
 
     return (
@@ -93,7 +95,7 @@ export const MarkButton = forwardRef<HTMLButtonElement, MarkButtonProps>(
         type="button"
         disabled={!canToggle}
         data-style="ghost"
-        data-active-state={isActive ? "on" : "off"}
+        data-active-state={isActive ? 'on' : 'off'}
         data-disabled={!canToggle}
         role="button"
         tabIndex={-1}
@@ -109,13 +111,16 @@ export const MarkButton = forwardRef<HTMLButtonElement, MarkButtonProps>(
             <Icon className="tiptap-button-icon" />
             {text && <span className="tiptap-button-text">{text}</span>}
             {showShortcut && (
-              <MarkShortcutBadge type={type} shortcutKeys={shortcutKeys} />
+              <MarkShortcutBadge
+                type={type}
+                shortcutKeys={shortcutKeys}
+              />
             )}
           </>
         )}
       </Button>
-    )
+    );
   }
-)
+);
 
-MarkButton.displayName = "MarkButton"
+MarkButton.displayName = 'MarkButton';

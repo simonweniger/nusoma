@@ -11,12 +11,13 @@ import {
   TrashIcon,
   UploadIcon
 } from 'lucide-react';
-import { Form, type SubmitHandler } from 'react-hook-form';
+import { type SubmitHandler } from 'react-hook-form';
 
 import { DocumentRecord } from '@workspace/database/schema';
 import { Avatar, AvatarFallback } from '@workspace/ui/components/avatar';
 import { Button } from '@workspace/ui/components/button';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,

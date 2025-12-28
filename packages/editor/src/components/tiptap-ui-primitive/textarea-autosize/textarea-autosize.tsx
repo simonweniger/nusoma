@@ -1,16 +1,16 @@
-import { useState } from "react"
-import type { TextareaAutosizeProps } from "react-textarea-autosize"
-import ReactTextareaAutosize from "react-textarea-autosize"
+import { useState } from 'react';
+import type { TextareaAutosizeProps } from 'react-textarea-autosize';
+import ReactTextareaAutosize from 'react-textarea-autosize';
 
 // -- Hooks --
-import { useIsomorphicLayoutEffect } from "@workspace/editor/hooks/use-isomorphic-layout-effect"
+import { useIsomorphicLayoutEffect } from '@workspace/editor/hooks/use-isomorphic-layout-effect';
 
 export function TextareaAutosize({ ...props }: TextareaAutosizeProps) {
-  const [isRerendered, setIsRerendered] = useState(false)
+  const [isRerendered, setIsRerendered] = useState(false);
 
-  useIsomorphicLayoutEffect(() => setIsRerendered(true), [])
+  useIsomorphicLayoutEffect(() => setIsRerendered(true), []);
 
-  return isRerendered ? <ReactTextareaAutosize {...props} /> : null
+  return isRerendered ? <ReactTextareaAutosize {...props} /> : null;
 }
 
-TextareaAutosize.displayName = "TextareaAutosize"
+TextareaAutosize.displayName = 'TextareaAutosize';

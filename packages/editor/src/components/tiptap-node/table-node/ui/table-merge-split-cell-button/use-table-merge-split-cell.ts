@@ -1,51 +1,49 @@
-import { useCallback } from "react"
-import type { Editor } from "@tiptap/react"
-import { mergeCells, splitCell } from "@tiptap/pm/tables"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-
-// --- Lib ---
-import { isExtensionAvailable } from "@workspace/editor/lib/tiptap-utils"
+import { useCallback } from 'react';
+import { mergeCells, splitCell } from '@tiptap/pm/tables';
+import type { Editor } from '@tiptap/react';
 
 // --- Icons ---
-import { TableCellMergeIcon } from "@workspace/editor/components/tiptap-icons/table-cell-merge-icon"
-import { TableCellSplitIcon } from "@workspace/editor/components/tiptap-icons/table-cell-split-icon"
+import { TableCellMergeIcon } from '@workspace/editor/components/tiptap-icons/table-cell-merge-icon';
+import { TableCellSplitIcon } from '@workspace/editor/components/tiptap-icons/table-cell-split-icon';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
+// --- Lib ---
+import { isExtensionAvailable } from '@workspace/editor/lib/tiptap-utils';
 
-export type MergeSplitAction = "merge" | "split"
+export type MergeSplitAction = 'merge' | 'split';
 
 export interface UseTableMergeSplitCellConfig {
   /**
    * The Tiptap editor instance. If omitted, the hook will use
    * the context/editor from `useTiptapEditor`.
    */
-  editor?: Editor | null
+  editor?: Editor | null;
   /**
    * The action to perform - merge or split cells.
    */
-  action: MergeSplitAction
+  action: MergeSplitAction;
   /**
    * Hide the button when the action isn't currently possible.
    * @default false
    */
-  hideWhenUnavailable?: boolean
+  hideWhenUnavailable?: boolean;
   /**
    * Callback function called after a successful merge or split.
    */
-  onExecuted?: (action: MergeSplitAction) => void
+  onExecuted?: (action: MergeSplitAction) => void;
 }
 
-const REQUIRED_EXTENSIONS = ["table"]
+const REQUIRED_EXTENSIONS = ['table'];
 
 export const tableMergeSplitCellLabels: Record<MergeSplitAction, string> = {
-  merge: "Merge cells",
-  split: "Split cell",
-}
+  merge: 'Merge cells',
+  split: 'Split cell'
+};
 
 export const tableMergeSplitCellIcons = {
   merge: TableCellMergeIcon,
-  split: TableCellSplitIcon,
-}
+  split: TableCellSplitIcon
+};
 
 /**
  * Checks if a table cell merge can be performed
@@ -57,13 +55,13 @@ function canMergeCells(editor: Editor | null): boolean {
     !editor.isEditable ||
     !isExtensionAvailable(editor, REQUIRED_EXTENSIONS)
   ) {
-    return false
+    return false;
   }
 
   try {
-    return mergeCells(editor.state, undefined)
+    return mergeCells(editor.state, undefined);
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -77,13 +75,13 @@ function canSplitCell(editor: Editor | null): boolean {
     !editor.isEditable ||
     !isExtensionAvailable(editor, REQUIRED_EXTENSIONS)
   ) {
-    return false
+    return false;
   }
 
   try {
-    return splitCell(editor.state, undefined)
+    return splitCell(editor.state, undefined);
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -91,14 +89,14 @@ function canSplitCell(editor: Editor | null): boolean {
  * Executes the cell merge operation in the editor.
  */
 function tableMergeCells(editor: Editor | null): boolean {
-  if (!canMergeCells(editor) || !editor) return false
+  if (!canMergeCells(editor) || !editor) return false;
 
   try {
-    const { state, view } = editor
-    return mergeCells(state, view.dispatch.bind(view))
+    const { state, view } = editor;
+    return mergeCells(state, view.dispatch.bind(view));
   } catch (error) {
-    console.error("Error merging table cells:", error)
-    return false
+    console.error('Error merging table cells:', error);
+    return false;
   }
 }
 
@@ -106,14 +104,14 @@ function tableMergeCells(editor: Editor | null): boolean {
  * Executes the cell split operation in the editor.
  */
 function tableSplitCell(editor: Editor | null): boolean {
-  if (!canSplitCell(editor) || !editor) return false
+  if (!canSplitCell(editor) || !editor) return false;
 
   try {
-    const { state, view } = editor
-    return splitCell(state, view.dispatch.bind(view))
+    const { state, view } = editor;
+    return splitCell(state, view.dispatch.bind(view));
   } catch (error) {
-    console.error("Error splitting table cell:", error)
-    return false
+    console.error('Error splitting table cell:', error);
+    return false;
   }
 }
 
@@ -122,18 +120,20 @@ function tableSplitCell(editor: Editor | null): boolean {
  */
 function tableMergeSplitCell({
   editor,
-  action,
+  action
 }: {
-  editor: Editor | null
-  action: MergeSplitAction
+  editor: Editor | null;
+  action: MergeSplitAction;
 }): boolean {
-  if (!editor) return false
+  if (!editor) return false;
 
   try {
-    return action === "merge" ? tableMergeCells(editor) : tableSplitCell(editor)
+    return action === 'merge'
+      ? tableMergeCells(editor)
+      : tableSplitCell(editor);
   } catch (error) {
-    console.error(`Error ${action}ing table cell:`, error)
-    return false
+    console.error(`Error ${action}ing table cell:`, error);
+    return false;
   }
 }
 
@@ -144,20 +144,20 @@ function tableMergeSplitCell({
 function shouldShowButton({
   editor,
   action,
-  hideWhenUnavailable,
+  hideWhenUnavailable
 }: {
-  editor: Editor | null
-  action: MergeSplitAction
-  hideWhenUnavailable: boolean
+  editor: Editor | null;
+  action: MergeSplitAction;
+  hideWhenUnavailable: boolean;
 }): boolean {
-  if (!editor || !editor.isEditable) return false
-  if (!isExtensionAvailable(editor, REQUIRED_EXTENSIONS)) return false
+  if (!editor || !editor.isEditable) return false;
+  if (!isExtensionAvailable(editor, REQUIRED_EXTENSIONS)) return false;
 
   if (hideWhenUnavailable) {
-    return action === "merge" ? canMergeCells(editor) : canSplitCell(editor)
+    return action === 'merge' ? canMergeCells(editor) : canSplitCell(editor);
   }
 
-  return true
+  return true;
 }
 
 /**
@@ -250,37 +250,37 @@ export function useTableMergeSplitCell(config: UseTableMergeSplitCellConfig) {
     editor: providedEditor,
     action,
     hideWhenUnavailable = false,
-    onExecuted,
-  } = config
+    onExecuted
+  } = config;
 
-  const { editor } = useTiptapEditor(providedEditor)
+  const { editor } = useTiptapEditor(providedEditor);
 
   const isVisible = shouldShowButton({
     editor,
     action,
-    hideWhenUnavailable,
-  })
+    hideWhenUnavailable
+  });
 
   const canPerformAction =
-    action === "merge" ? canMergeCells(editor) : canSplitCell(editor)
+    action === 'merge' ? canMergeCells(editor) : canSplitCell(editor);
 
   const handleExecute = useCallback(() => {
     const success = tableMergeSplitCell({
       editor,
-      action,
-    })
+      action
+    });
 
     if (success) {
-      onExecuted?.(action)
+      onExecuted?.(action);
     }
-    return success
-  }, [editor, action, onExecuted])
+    return success;
+  }, [editor, action, onExecuted]);
 
   return {
     isVisible,
     canExecute: canPerformAction,
     handleExecute,
     label: tableMergeSplitCellLabels[action],
-    Icon: tableMergeSplitCellIcons[action],
-  }
+    Icon: tableMergeSplitCellIcons[action]
+  };
 }

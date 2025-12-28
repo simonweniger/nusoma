@@ -1,25 +1,22 @@
-"use client"
+'use client';
 
-import { forwardRef, useCallback } from "react"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
+import { forwardRef, useCallback } from 'react';
 
 // --- Tiptap UI ---
-import type { UseTableHeaderRowColumnConfig } from "@workspace/editor/components/tiptap-node/table-node/ui/table-header-row-column-button"
-import { useTableHeaderRowColumn } from "@workspace/editor/components/tiptap-node/table-node/ui/table-header-row-column-button"
-
+import type { UseTableHeaderRowColumnConfig } from '@workspace/editor/components/tiptap-node/table-node/ui/table-header-row-column-button';
+import { useTableHeaderRowColumn } from '@workspace/editor/components/tiptap-node/table-node/ui/table-header-row-column-button';
 // --- UI Primitives ---
-import type { ButtonProps } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
+import type { ButtonProps } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
 
 export interface TableHeaderRowColumnButtonProps
-  extends Omit<ButtonProps, "type">,
-    UseTableHeaderRowColumnConfig {
+  extends Omit<ButtonProps, 'type'>, UseTableHeaderRowColumnConfig {
   /**
    * Optional text to display alongside the icon.
    */
-  text?: string
+  text?: string;
 }
 
 /**
@@ -46,27 +43,27 @@ export const TableHeaderRowColumnButton = forwardRef<
     },
     ref
   ) => {
-    const { editor } = useTiptapEditor(providedEditor)
+    const { editor } = useTiptapEditor(providedEditor);
     const { isVisible, handleToggle, label, canToggleHeader, Icon, isActive } =
       useTableHeaderRowColumn({
         editor,
         index,
         orientation,
         hideWhenUnavailable,
-        onToggled,
-      })
+        onToggled
+      });
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleToggle()
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        handleToggle();
       },
       [handleToggle, onClick]
-    )
+    );
 
     if (!isVisible) {
-      return null
+      return null;
     }
 
     return (
@@ -74,7 +71,7 @@ export const TableHeaderRowColumnButton = forwardRef<
         type="button"
         disabled={!canToggleHeader}
         data-style="ghost"
-        data-active-state={isActive ? "on" : "off"}
+        data-active-state={isActive ? 'on' : 'off'}
         data-disabled={!canToggleHeader}
         role="button"
         tabIndex={-1}
@@ -92,8 +89,8 @@ export const TableHeaderRowColumnButton = forwardRef<
           </>
         )}
       </Button>
-    )
+    );
   }
-)
+);
 
-TableHeaderRowColumnButton.displayName = "TableHeaderRowColumnButton"
+TableHeaderRowColumnButton.displayName = 'TableHeaderRowColumnButton';

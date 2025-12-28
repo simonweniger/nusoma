@@ -1,42 +1,44 @@
-import { forwardRef, useCallback } from "react"
+import { forwardRef, useCallback } from 'react';
 
-// --- Lib ---
-import { parseShortcutKeys } from "@workspace/editor/lib/tiptap-utils"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-
+import { Badge } from '@workspace/editor/components/tiptap-ui-primitive/badge';
 // --- UI Primitives ---
-import type { ButtonProps } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Badge } from "@workspace/editor/components/tiptap-ui-primitive/badge"
-
+import type { ButtonProps } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
 // --- Tiptap UI ---
-import type { ListType, UseListConfig } from "@workspace/editor/components/tiptap-ui/list-button"
-import { LIST_SHORTCUT_KEYS, useList } from "@workspace/editor/components/tiptap-ui/list-button"
+import type {
+  ListType,
+  UseListConfig
+} from '@workspace/editor/components/tiptap-ui/list-button';
+import {
+  LIST_SHORTCUT_KEYS,
+  useList
+} from '@workspace/editor/components/tiptap-ui/list-button';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
+// --- Lib ---
+import { parseShortcutKeys } from '@workspace/editor/lib/tiptap-utils';
 
 export interface ListButtonProps
-  extends Omit<ButtonProps, "type">,
-    UseListConfig {
+  extends Omit<ButtonProps, 'type'>, UseListConfig {
   /**
    * Optional text to display alongside the icon.
    */
-  text?: string
+  text?: string;
   /**
    * Optional show shortcut keys in the button.
    * @default false
    */
-  showShortcut?: boolean
+  showShortcut?: boolean;
 }
 
 export function ListShortcutBadge({
   type,
-  shortcutKeys = LIST_SHORTCUT_KEYS[type],
+  shortcutKeys = LIST_SHORTCUT_KEYS[type]
 }: {
-  type: ListType
-  shortcutKeys?: string
+  type: ListType;
+  shortcutKeys?: string;
 }) {
-  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>
+  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>;
 }
 
 /**
@@ -59,7 +61,7 @@ export const ListButton = forwardRef<HTMLButtonElement, ListButtonProps>(
     },
     ref
   ) => {
-    const { editor } = useTiptapEditor(providedEditor)
+    const { editor } = useTiptapEditor(providedEditor);
     const {
       isVisible,
       canToggle,
@@ -67,32 +69,32 @@ export const ListButton = forwardRef<HTMLButtonElement, ListButtonProps>(
       handleToggle,
       label,
       shortcutKeys,
-      Icon,
+      Icon
     } = useList({
       editor,
       type,
       hideWhenUnavailable,
-      onToggled,
-    })
+      onToggled
+    });
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleToggle()
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        handleToggle();
       },
       [handleToggle, onClick]
-    )
+    );
 
     if (!isVisible) {
-      return null
+      return null;
     }
 
     return (
       <Button
         type="button"
         data-style="ghost"
-        data-active-state={isActive ? "on" : "off"}
+        data-active-state={isActive ? 'on' : 'off'}
         role="button"
         tabIndex={-1}
         disabled={!canToggle}
@@ -109,13 +111,16 @@ export const ListButton = forwardRef<HTMLButtonElement, ListButtonProps>(
             <Icon className="tiptap-button-icon" />
             {text && <span className="tiptap-button-text">{text}</span>}
             {showShortcut && (
-              <ListShortcutBadge type={type} shortcutKeys={shortcutKeys} />
+              <ListShortcutBadge
+                type={type}
+                shortcutKeys={shortcutKeys}
+              />
             )}
           </>
         )}
       </Button>
-    )
+    );
   }
-)
+);
 
-ListButton.displayName = "ListButton"
+ListButton.displayName = 'ListButton';

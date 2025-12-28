@@ -1,12 +1,11 @@
-import type { Orientation } from "@workspace/editor/components/tiptap-node/table-node/lib/tiptap-table-utils"
-
-// --- UI ---
-import { useTableAlignCell } from "@workspace/editor/components/tiptap-node/table-node/ui/table-align-cell-button"
-
 // --- Icons ---
-import { AlignmentIcon } from "@workspace/editor/components/tiptap-icons/alignment-icon"
-import { ChevronRightIcon } from "@workspace/editor/components/tiptap-icons/chevron-right-icon"
-
+import { AlignmentIcon } from '@workspace/editor/components/tiptap-icons/alignment-icon';
+import { ChevronRightIcon } from '@workspace/editor/components/tiptap-icons/chevron-right-icon';
+import type { Orientation } from '@workspace/editor/components/tiptap-node/table-node/lib/tiptap-table-utils';
+// --- UI ---
+import { useTableAlignCell } from '@workspace/editor/components/tiptap-node/table-node/ui/table-align-cell-button';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { ComboboxList } from '@workspace/editor/components/tiptap-ui-primitive/combobox';
 // --- UI Primitives ---
 import {
   Menu,
@@ -14,72 +13,73 @@ import {
   MenuButtonArrow,
   MenuContent,
   MenuGroup,
-  MenuItem,
-} from "@workspace/editor/components/tiptap-ui-primitive/menu"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { ComboboxList } from "@workspace/editor/components/tiptap-ui-primitive/combobox"
-import { Separator } from "@workspace/editor/components/tiptap-ui-primitive/separator"
+  MenuItem
+} from '@workspace/editor/components/tiptap-ui-primitive/menu';
+import { Separator } from '@workspace/editor/components/tiptap-ui-primitive/separator';
 
 export interface ActionItemProps {
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
-  label: string
-  onClick: () => void
-  disabled?: boolean
-  isActive?: boolean
-  shortcutBadge?: React.ReactNode
+  icon: React.ComponentType<{
+    className?: string;
+    style?: React.CSSProperties;
+  }>;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  isActive?: boolean;
+  shortcutBadge?: React.ReactNode;
 }
 
 export const TableAlignMenu = ({
   index,
-  orientation,
+  orientation
 }: {
-  index?: number
-  orientation?: Orientation
+  index?: number;
+  orientation?: Orientation;
 }) => {
   const textAlign = {
     left: useTableAlignCell({
-      alignmentType: "text",
-      alignment: "left",
+      alignmentType: 'text',
+      alignment: 'left',
       index,
-      orientation,
+      orientation
     }),
     center: useTableAlignCell({
-      alignmentType: "text",
-      alignment: "center",
+      alignmentType: 'text',
+      alignment: 'center',
       index,
-      orientation,
+      orientation
     }),
     right: useTableAlignCell({
-      alignmentType: "text",
-      alignment: "right",
+      alignmentType: 'text',
+      alignment: 'right',
       index,
-      orientation,
-    }),
-  }
+      orientation
+    })
+  };
 
   const verticalAlign = {
     top: useTableAlignCell({
-      alignmentType: "vertical",
-      alignment: "top",
+      alignmentType: 'vertical',
+      alignment: 'top',
       index,
-      orientation,
+      orientation
     }),
     middle: useTableAlignCell({
-      alignmentType: "vertical",
-      alignment: "middle",
+      alignmentType: 'vertical',
+      alignment: 'middle',
       index,
-      orientation,
+      orientation
     }),
     bottom: useTableAlignCell({
-      alignmentType: "vertical",
-      alignment: "bottom",
+      alignmentType: 'vertical',
+      alignment: 'bottom',
       index,
-      orientation,
-    }),
-  }
+      orientation
+    })
+  };
 
   if (!textAlign.left.canAlignCell()) {
-    return null
+    return null;
   }
 
   return (
@@ -129,8 +129,8 @@ export const TableAlignMenu = ({
         </ComboboxList>
       </MenuContent>
     </Menu>
-  )
-}
+  );
+};
 
 const ActionItem = ({
   icon: Icon,
@@ -138,11 +138,14 @@ const ActionItem = ({
   onClick,
   disabled = false,
   isActive = false,
-  shortcutBadge,
+  shortcutBadge
 }: ActionItemProps) => (
   <MenuItem
     render={
-      <Button data-style="ghost" data-active-state={isActive ? "on" : "off"} />
+      <Button
+        data-style="ghost"
+        data-active-state={isActive ? 'on' : 'off'}
+      />
     }
     onClick={onClick}
     disabled={disabled}
@@ -151,6 +154,6 @@ const ActionItem = ({
     <span className="tiptap-button-text">{label}</span>
     {shortcutBadge}
   </MenuItem>
-)
+);
 
-ActionItem.displayName = "ActionItem"
+ActionItem.displayName = 'ActionItem';

@@ -1,27 +1,25 @@
-"use client"
+'use client';
 
-import { useCallback, useEffect, useState } from "react"
-import type { Editor } from "@tiptap/react"
-import { NodeSelection } from "@tiptap/pm/state"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
+import { useCallback, useEffect, useState } from 'react';
+import { NodeSelection } from '@tiptap/pm/state';
+import type { Editor } from '@tiptap/react';
 
 // --- Icons ---
-import { ChevronDownIcon } from "@workspace/editor/components/tiptap-icons/chevron-down-icon"
-
+import { ChevronDownIcon } from '@workspace/editor/components/tiptap-icons/chevron-down-icon';
 // --- Tiptap UI ---
-import type { Level } from "@workspace/editor/components/tiptap-ui/heading-button"
+import type { Level } from '@workspace/editor/components/tiptap-ui/heading-button';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
 
 export const TURN_INTO_BLOCKS = [
-  "paragraph",
-  "heading",
-  "bulletList",
-  "orderedList",
-  "taskList",
-  "blockquote",
-  "codeBlock",
-]
+  'paragraph',
+  'heading',
+  'bulletList',
+  'orderedList',
+  'taskList',
+  'blockquote',
+  'codeBlock'
+];
 
 /**
  * Configuration for the turn into dropdown functionality
@@ -30,80 +28,80 @@ export interface UseTurnIntoDropdownConfig {
   /**
    * The Tiptap editor instance.
    */
-  editor?: Editor | null
+  editor?: Editor | null;
   /**
    * Whether the dropdown should hide when no options are available.
    * @default false
    */
-  hideWhenUnavailable?: boolean
+  hideWhenUnavailable?: boolean;
   /**
    * Which block types to show in the dropdown
    * @default ["paragraph", "heading", "bulletList", "orderedList", "taskList", "blockquote", "codeBlock"]
    */
-  blockTypes?: string[]
+  blockTypes?: string[];
   /**
    * Callback function called when the dropdown state changes.
    */
-  onOpenChange?: (isOpen: boolean) => void
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 export const blockTypeOptions = [
   {
-    type: "paragraph",
-    label: "Text",
+    type: 'paragraph',
+    label: 'Text',
     isActive: (editor: Editor) =>
-      editor.isActive("paragraph") &&
-      !editor.isActive("heading") &&
-      !editor.isActive("bulletList") &&
-      !editor.isActive("orderedList") &&
-      !editor.isActive("taskList") &&
-      !editor.isActive("blockquote") &&
-      !editor.isActive("codeBlock"),
+      editor.isActive('paragraph') &&
+      !editor.isActive('heading') &&
+      !editor.isActive('bulletList') &&
+      !editor.isActive('orderedList') &&
+      !editor.isActive('taskList') &&
+      !editor.isActive('blockquote') &&
+      !editor.isActive('codeBlock')
   },
   {
-    type: "heading",
-    label: "Heading 1",
+    type: 'heading',
+    label: 'Heading 1',
     level: 1 as Level,
-    isActive: (editor: Editor) => editor.isActive("heading", { level: 1 }),
+    isActive: (editor: Editor) => editor.isActive('heading', { level: 1 })
   },
   {
-    type: "heading",
-    label: "Heading 2",
+    type: 'heading',
+    label: 'Heading 2',
     level: 2 as Level,
-    isActive: (editor: Editor) => editor.isActive("heading", { level: 2 }),
+    isActive: (editor: Editor) => editor.isActive('heading', { level: 2 })
   },
   {
-    type: "heading",
-    label: "Heading 3",
+    type: 'heading',
+    label: 'Heading 3',
     level: 3 as Level,
-    isActive: (editor: Editor) => editor.isActive("heading", { level: 3 }),
+    isActive: (editor: Editor) => editor.isActive('heading', { level: 3 })
   },
   {
-    type: "bulletList",
-    label: "Bulleted list",
-    isActive: (editor: Editor) => editor.isActive("bulletList"),
+    type: 'bulletList',
+    label: 'Bulleted list',
+    isActive: (editor: Editor) => editor.isActive('bulletList')
   },
   {
-    type: "orderedList",
-    label: "Numbered list",
-    isActive: (editor: Editor) => editor.isActive("orderedList"),
+    type: 'orderedList',
+    label: 'Numbered list',
+    isActive: (editor: Editor) => editor.isActive('orderedList')
   },
   {
-    type: "taskList",
-    label: "To-do list",
-    isActive: (editor: Editor) => editor.isActive("taskList"),
+    type: 'taskList',
+    label: 'To-do list',
+    isActive: (editor: Editor) => editor.isActive('taskList')
   },
   {
-    type: "blockquote",
-    label: "Blockquote",
-    isActive: (editor: Editor) => editor.isActive("blockquote"),
+    type: 'blockquote',
+    label: 'Blockquote',
+    isActive: (editor: Editor) => editor.isActive('blockquote')
   },
   {
-    type: "codeBlock",
-    label: "Code block",
-    isActive: (editor: Editor) => editor.isActive("codeBlock"),
-  },
-]
+    type: 'codeBlock',
+    label: 'Code block',
+    isActive: (editor: Editor) => editor.isActive('codeBlock')
+  }
+];
 
 /**
  * Checks if turn into functionality can be used in the current editor state
@@ -112,30 +110,30 @@ export function canTurnInto(
   editor: Editor | null,
   allowedBlockTypes?: string[]
 ): boolean {
-  if (!editor || !editor.isEditable) return false
+  if (!editor || !editor.isEditable) return false;
 
-  const blockTypes = allowedBlockTypes || TURN_INTO_BLOCKS
-  const { selection } = editor.state
+  const blockTypes = allowedBlockTypes || TURN_INTO_BLOCKS;
+  const { selection } = editor.state;
 
   if (selection instanceof NodeSelection) {
-    const nodeType = selection.node.type.name
-    return blockTypes.includes(nodeType)
+    const nodeType = selection.node.type.name;
+    return blockTypes.includes(nodeType);
   }
 
-  const { $anchor } = selection
-  const nodeType = $anchor.parent.type.name
-  return blockTypes.includes(nodeType)
+  const { $anchor } = selection;
+  const nodeType = $anchor.parent.type.name;
+  return blockTypes.includes(nodeType);
 }
 
 /**
  * Gets filtered block type options based on available types
  */
 export function getFilteredBlockTypeOptions(blockTypes?: string[]) {
-  if (!blockTypes) return blockTypeOptions
+  if (!blockTypes) return blockTypeOptions;
 
   return blockTypeOptions.filter((option) => {
-    return blockTypes.includes(option.type)
-  })
+    return blockTypes.includes(option.type);
+  });
 }
 
 /**
@@ -145,32 +143,34 @@ export function getActiveBlockType(
   editor: Editor | null,
   blockTypes?: string[]
 ) {
-  if (!editor) return getFilteredBlockTypeOptions(blockTypes)[0]
+  if (!editor) return getFilteredBlockTypeOptions(blockTypes)[0];
 
-  const filteredOptions = getFilteredBlockTypeOptions(blockTypes)
-  const activeOption = filteredOptions.find((option) => option.isActive(editor))
-  return activeOption || filteredOptions[0]
+  const filteredOptions = getFilteredBlockTypeOptions(blockTypes);
+  const activeOption = filteredOptions.find((option) =>
+    option.isActive(editor)
+  );
+  return activeOption || filteredOptions[0];
 }
 
 /**
  * Determines if the turn into dropdown should be visible
  */
 export function shouldShowTurnInto(params: {
-  editor: Editor | null
-  hideWhenUnavailable: boolean
-  blockTypes?: string[]
+  editor: Editor | null;
+  hideWhenUnavailable: boolean;
+  blockTypes?: string[];
 }): boolean {
-  const { editor, hideWhenUnavailable, blockTypes } = params
+  const { editor, hideWhenUnavailable, blockTypes } = params;
 
   if (!editor) {
-    return false
+    return false;
   }
 
-  if (hideWhenUnavailable && !editor.isActive("code")) {
-    return canTurnInto(editor, blockTypes)
+  if (hideWhenUnavailable && !editor.isActive('code')) {
+    return canTurnInto(editor, blockTypes);
   }
 
-  return true
+  return true;
 }
 
 /**
@@ -219,45 +219,45 @@ export function useTurnIntoDropdown(config?: UseTurnIntoDropdownConfig) {
     editor: providedEditor,
     hideWhenUnavailable = false,
     blockTypes,
-    onOpenChange,
-  } = config || {}
+    onOpenChange
+  } = config || {};
 
-  const { editor } = useTiptapEditor(providedEditor)
-  const [isOpen, setIsOpen] = useState(false)
-  const [isVisible, setIsVisible] = useState(true)
+  const { editor } = useTiptapEditor(providedEditor);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
-  const canToggle = canTurnInto(editor, blockTypes)
-  const activeBlockType = getActiveBlockType(editor, blockTypes)
+  const canToggle = canTurnInto(editor, blockTypes);
+  const activeBlockType = getActiveBlockType(editor, blockTypes);
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      if (!editor || !canToggle) return
-      setIsOpen(open)
-      onOpenChange?.(open)
+      if (!editor || !canToggle) return;
+      setIsOpen(open);
+      onOpenChange?.(open);
     },
     [canToggle, editor, onOpenChange]
-  )
+  );
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor) return;
 
     const handleSelectionUpdate = () => {
       setIsVisible(
         shouldShowTurnInto({
           editor,
           hideWhenUnavailable,
-          blockTypes,
+          blockTypes
         })
-      )
-    }
+      );
+    };
 
-    handleSelectionUpdate()
-    editor.on("selectionUpdate", handleSelectionUpdate)
+    handleSelectionUpdate();
+    editor.on('selectionUpdate', handleSelectionUpdate);
 
     return () => {
-      editor.off("selectionUpdate", handleSelectionUpdate)
-    }
-  }, [editor, hideWhenUnavailable, blockTypes])
+      editor.off('selectionUpdate', handleSelectionUpdate);
+    };
+  }, [editor, hideWhenUnavailable, blockTypes]);
 
   return {
     isVisible,
@@ -267,7 +267,7 @@ export function useTurnIntoDropdown(config?: UseTurnIntoDropdownConfig) {
     activeBlockType,
     handleOpenChange,
     filteredOptions: getFilteredBlockTypeOptions(blockTypes),
-    label: `Turn into (current: ${activeBlockType?.label || "Text"})`,
-    Icon: ChevronDownIcon,
-  }
+    label: `Turn into (current: ${activeBlockType?.label || 'Text'})`,
+    Icon: ChevronDownIcon
+  };
 }

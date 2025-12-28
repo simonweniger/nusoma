@@ -1,34 +1,35 @@
-import type { Orientation } from "@workspace/editor/components/tiptap-node/table-node/lib/tiptap-table-utils"
+import { useCallback, useEffect, useMemo } from 'react';
 import {
   offset,
   size,
   useFloating,
   useTransitionStyles,
-  type Placement,
-} from "@floating-ui/react"
-import { useEffect, useMemo, useCallback } from "react"
+  type Placement
+} from '@floating-ui/react';
+
+import type { Orientation } from '@workspace/editor/components/tiptap-node/table-node/lib/tiptap-table-utils';
 
 interface TableExtendRowColumnButtonPositionResult {
-  isMounted: boolean
-  ref: (node: HTMLElement | null) => void
-  style: React.CSSProperties
+  isMounted: boolean;
+  ref: (node: HTMLElement | null) => void;
+  style: React.CSSProperties;
 }
 
 interface TableExtendRowColumnButtonsPositioningResult {
-  rowButton: TableExtendRowColumnButtonPositionResult
-  columnButton: TableExtendRowColumnButtonPositionResult
+  rowButton: TableExtendRowColumnButtonPositionResult;
+  columnButton: TableExtendRowColumnButtonPositionResult;
 }
 
 const ORIENTATION_CONFIG = {
   row: {
-    placement: "bottom" as Placement,
-    sizeProperty: "width",
+    placement: 'bottom' as Placement,
+    sizeProperty: 'width'
   },
   column: {
-    placement: "right" as Placement,
-    sizeProperty: "height",
-  },
-} as const
+    placement: 'right' as Placement,
+    sizeProperty: 'height'
+  }
+} as const;
 
 /**
  * Custom hook for positioning extend buttons using Floating UI
@@ -38,7 +39,7 @@ function useTableExtendRowColumnButtonPosition(
   show: boolean,
   referencePosTable: DOMRect | null
 ): TableExtendRowColumnButtonPositionResult {
-  const config = ORIENTATION_CONFIG[orientation]
+  const config = ORIENTATION_CONFIG[orientation];
 
   const { refs, update, context, floatingStyles } = useFloating({
     open: show,
@@ -47,45 +48,45 @@ function useTableExtendRowColumnButtonPosition(
       offset(4),
       size({
         apply({ rects, elements }) {
-          const floating = elements.floating
-          if (!floating) return
+          const floating = elements.floating;
+          if (!floating) return;
 
           // Apply size based on orientation
-          const sizeValue = `${rects.reference[config.sizeProperty]}px`
-          floating.style[config.sizeProperty] = sizeValue
-        },
-      }),
-    ],
-  })
+          const sizeValue = `${rects.reference[config.sizeProperty]}px`;
+          floating.style[config.sizeProperty] = sizeValue;
+        }
+      })
+    ]
+  });
 
-  const { isMounted, styles } = useTransitionStyles(context)
+  const { isMounted, styles } = useTransitionStyles(context);
 
   const createVirtualReference = useCallback(
     (rect: DOMRect) => ({
-      getBoundingClientRect: () => rect,
+      getBoundingClientRect: () => rect
     }),
     []
-  )
+  );
 
   useEffect(() => {
-    if (!referencePosTable) return
+    if (!referencePosTable) return;
 
-    refs.setReference(createVirtualReference(referencePosTable))
-    update()
-  }, [referencePosTable, refs, update, createVirtualReference])
+    refs.setReference(createVirtualReference(referencePosTable));
+    update();
+  }, [referencePosTable, refs, update, createVirtualReference]);
 
   return useMemo(
     () => ({
       isMounted,
       ref: refs.setFloating,
       style: {
-        display: "flex",
+        display: 'flex',
         ...styles,
-        ...floatingStyles,
-      } as React.CSSProperties,
+        ...floatingStyles
+      } as React.CSSProperties
     }),
     [floatingStyles, isMounted, refs.setFloating, styles]
-  )
+  );
 }
 
 /**
@@ -97,22 +98,22 @@ export function useTableExtendRowColumnButtonsPositioning(
   referencePosTable: DOMRect | null
 ): TableExtendRowColumnButtonsPositioningResult {
   const rowButton = useTableExtendRowColumnButtonPosition(
-    "row",
+    'row',
     showAddOrRemoveRowsButton,
     referencePosTable
-  )
+  );
 
   const columnButton = useTableExtendRowColumnButtonPosition(
-    "column",
+    'column',
     showAddOrRemoveColumnsButton,
     referencePosTable
-  )
+  );
 
   return useMemo(
     () => ({
       rowButton,
-      columnButton,
+      columnButton
     }),
     [rowButton, columnButton]
-  )
+  );
 }

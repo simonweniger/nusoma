@@ -1,45 +1,41 @@
-"use client"
+'use client';
 
-import { forwardRef, useCallback } from "react"
+import { forwardRef, useCallback } from 'react';
 
-// --- Lib ---
-import { parseShortcutKeys } from "@workspace/editor/lib/tiptap-utils"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-
+import { Badge } from '@workspace/editor/components/tiptap-ui-primitive/badge';
+// --- UI Primitives ---
+import type { ButtonProps } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
 // --- Tiptap UI ---
-import type { UseCopyAnchorLinkConfig } from "@workspace/editor/components/tiptap-ui/copy-anchor-link-button"
+import type { UseCopyAnchorLinkConfig } from '@workspace/editor/components/tiptap-ui/copy-anchor-link-button';
 import {
   COPY_ANCHOR_LINK_SHORTCUT_KEY,
-  useCopyAnchorLink,
-} from "@workspace/editor/components/tiptap-ui/copy-anchor-link-button"
-
-// --- UI Primitives ---
-import type { ButtonProps } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Badge } from "@workspace/editor/components/tiptap-ui-primitive/badge"
+  useCopyAnchorLink
+} from '@workspace/editor/components/tiptap-ui/copy-anchor-link-button';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
+// --- Lib ---
+import { parseShortcutKeys } from '@workspace/editor/lib/tiptap-utils';
 
 export interface CopyAnchorLinkButtonProps
-  extends Omit<ButtonProps, "type">,
-    UseCopyAnchorLinkConfig {
+  extends Omit<ButtonProps, 'type'>, UseCopyAnchorLinkConfig {
   /**
    * Optional text to display alongside the icon.
    */
-  text?: string
+  text?: string;
   /**
    * Optional show shortcut keys in the button.
    * @default false
    */
-  showShortcut?: boolean
+  showShortcut?: boolean;
 }
 
 export function CopyAnchorLinkShortcutBadge({
-  shortcutKeys = COPY_ANCHOR_LINK_SHORTCUT_KEY,
+  shortcutKeys = COPY_ANCHOR_LINK_SHORTCUT_KEY
 }: {
-  shortcutKeys?: string
+  shortcutKeys?: string;
 }) {
-  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>
+  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>;
 }
 
 /**
@@ -66,27 +62,27 @@ export const CopyAnchorLinkButton = forwardRef<
     },
     ref
   ) => {
-    const { editor } = useTiptapEditor(providedEditor)
+    const { editor } = useTiptapEditor(providedEditor);
     const { isVisible, handleCopyAnchorLink, label, shortcutKeys, Icon } =
       useCopyAnchorLink({
         editor,
         hideWhenUnavailable,
         onNodeIdNotFound,
         onExtractedNodeId,
-        onCopied,
-      })
+        onCopied
+      });
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleCopyAnchorLink()
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        handleCopyAnchorLink();
       },
       [handleCopyAnchorLink, onClick]
-    )
+    );
 
     if (!isVisible) {
-      return null
+      return null;
     }
 
     return (
@@ -111,8 +107,8 @@ export const CopyAnchorLinkButton = forwardRef<
           </>
         )}
       </Button>
-    )
+    );
   }
-)
+);
 
-CopyAnchorLinkButton.displayName = "CopyAnchorLinkButton"
+CopyAnchorLinkButton.displayName = 'CopyAnchorLinkButton';

@@ -1,7 +1,9 @@
-import { forwardRef } from "react"
-import * as Ariakit from "@ariakit/react"
-import { cn } from "@workspace/editor/lib/tiptap-utils"
-import "@workspace/editor/components/tiptap-ui-primitive/combobox/combobox.scss"
+import { forwardRef } from 'react';
+import * as Ariakit from '@ariakit/react';
+
+import { cn } from '@workspace/editor/lib/tiptap-utils';
+
+import '@workspace/editor/components/tiptap-ui-primitive/combobox/combobox.scss';
 
 export function ComboboxProvider({ ...props }: Ariakit.ComboboxProviderProps) {
   return (
@@ -10,7 +12,7 @@ export function ComboboxProvider({ ...props }: Ariakit.ComboboxProviderProps) {
       resetValueOnHide
       {...props}
     />
-  )
+  );
 }
 
 export const ComboboxList = forwardRef<
@@ -20,12 +22,12 @@ export const ComboboxList = forwardRef<
   return (
     <Ariakit.ComboboxList
       ref={ref}
-      className={cn("tiptap-combobox-list", className)}
+      className={cn('tiptap-combobox-list', className)}
       {...props}
     />
-  )
-})
-ComboboxList.displayName = "ComboboxList"
+  );
+});
+ComboboxList.displayName = 'ComboboxList';
 
 export const ComboboxPopover = forwardRef<
   React.ComponentRef<typeof Ariakit.ComboboxPopover>,
@@ -34,12 +36,12 @@ export const ComboboxPopover = forwardRef<
   return (
     <Ariakit.ComboboxPopover
       ref={ref}
-      className={cn("tiptap-combobox-popover", className)}
+      className={cn('tiptap-combobox-popover', className)}
       {...props}
     />
-  )
-})
-ComboboxPopover.displayName = "ComboboxPopover"
+  );
+});
+ComboboxPopover.displayName = 'ComboboxPopover';
 
 export const Combobox = forwardRef<
   React.ComponentRef<typeof Ariakit.Combobox>,
@@ -50,11 +52,11 @@ export const Combobox = forwardRef<
       ref={ref}
       autoSelect
       {...props}
-      className={cn("tiptap-combobox", className)}
+      className={cn('tiptap-combobox', className)}
     />
-  )
-})
-Combobox.displayName = "Combobox"
+  );
+});
+Combobox.displayName = 'Combobox';
 
 export const ComboboxItem = forwardRef<
   React.ComponentRef<typeof Ariakit.ComboboxItem>,
@@ -63,9 +65,9 @@ export const ComboboxItem = forwardRef<
   return (
     <Ariakit.ComboboxItem
       ref={ref}
-      className={cn("tiptap-combobox-item", className)}
+      className={cn('tiptap-combobox-item', className)}
       {...props}
     />
-  )
-})
-ComboboxItem.displayName = "ComboboxItem"
+  );
+});
+ComboboxItem.displayName = 'ComboboxItem';

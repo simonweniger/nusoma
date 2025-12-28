@@ -1,91 +1,93 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
-import type { Node as TiptapNode } from "@tiptap/pm/model"
-import { offset } from "@floating-ui/react"
-import { DragHandle } from "@tiptap/extension-drag-handle-react"
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { offset } from '@floating-ui/react';
+import { DragHandle } from '@tiptap/extension-drag-handle-react';
+import type { Node as TiptapNode } from '@tiptap/pm/model';
 
-// Hooks
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-import { useIsBreakpoint } from "@workspace/editor/hooks/use-is-breakpoint"
-import { useUiEditorState } from "@workspace/editor/hooks/use-ui-editor-state"
-import { selectNodeAndHideFloating } from "@workspace/editor/hooks/use-floating-toolbar-visibility"
-
+import { ChevronRightIcon } from '@workspace/editor/components/tiptap-icons/chevron-right-icon';
+// Icons
+import { GripVerticalIcon } from '@workspace/editor/components/tiptap-icons/grip-vertical-icon';
+import { Repeat2Icon } from '@workspace/editor/components/tiptap-icons/repeat-2-icon';
+import { TableAlignMenu } from '@workspace/editor/components/tiptap-node/table-node/ui/table-alignment-menu';
+import { useTableClearRowColumnContent } from '@workspace/editor/components/tiptap-node/table-node/ui/table-clear-row-column-content-button';
+import { useTableFitToWidth } from '@workspace/editor/components/tiptap-node/table-node/ui/table-fit-to-width-button';
 // Primitive UI Components
-import { Button, ButtonGroup } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Spacer } from "@workspace/editor/components/tiptap-ui-primitive/spacer"
+import {
+  Button,
+  ButtonGroup
+} from '@workspace/editor/components/tiptap-ui-primitive/button';
+import {
+  Combobox,
+  ComboboxList
+} from '@workspace/editor/components/tiptap-ui-primitive/combobox';
 import {
   Menu,
+  MenuButton,
   MenuContent,
-  MenuItem,
   MenuGroup,
   MenuGroupLabel,
-  MenuButton,
-} from "@workspace/editor/components/tiptap-ui-primitive/menu"
-import { Combobox, ComboboxList } from "@workspace/editor/components/tiptap-ui-primitive/combobox"
-import { Separator } from "@workspace/editor/components/tiptap-ui-primitive/separator"
-
-// Tiptap UI
-import { useImageDownload } from "@workspace/editor/components/tiptap-ui/image-download-button"
-import {
-  DuplicateShortcutBadge,
-  useDuplicate,
-} from "@workspace/editor/components/tiptap-ui/duplicate-button"
-import {
-  CopyToClipboardShortcutBadge,
-  useCopyToClipboard,
-} from "@workspace/editor/components/tiptap-ui/copy-to-clipboard-button"
-import {
-  DeleteNodeShortcutBadge,
-  useDeleteNode,
-} from "@workspace/editor/components/tiptap-ui/delete-node-button"
-import {
-  CopyAnchorLinkShortcutBadge,
-  useCopyAnchorLink,
-} from "@workspace/editor/components/tiptap-ui/copy-anchor-link-button"
-import { useResetAllFormatting } from "@workspace/editor/components/tiptap-ui/reset-all-formatting-button"
-import { SlashCommandTriggerButton } from "@workspace/editor/components/tiptap-ui/slash-command-trigger-button"
+  MenuItem
+} from '@workspace/editor/components/tiptap-ui-primitive/menu';
+import { Separator } from '@workspace/editor/components/tiptap-ui-primitive/separator';
+import { Spacer } from '@workspace/editor/components/tiptap-ui-primitive/spacer';
 import {
   AskAiShortcutBadge,
-  useAiAsk,
-} from "@workspace/editor/components/tiptap-ui/ai-ask-button"
-import { useText } from "@workspace/editor/components/tiptap-ui/text-button"
-import { useHeading } from "@workspace/editor/components/tiptap-ui/heading-button"
-import { useList } from "@workspace/editor/components/tiptap-ui/list-button"
-import { useBlockquote } from "@workspace/editor/components/tiptap-ui/blockquote-button"
-import { useCodeBlock } from "@workspace/editor/components/tiptap-ui/code-block-button"
-import { ColorMenu } from "@workspace/editor/components/tiptap-ui/color-menu"
-import { TableAlignMenu } from "@workspace/editor/components/tiptap-node/table-node/ui/table-alignment-menu"
-import { useTableFitToWidth } from "@workspace/editor/components/tiptap-node/table-node/ui/table-fit-to-width-button"
-import { useTableClearRowColumnContent } from "@workspace/editor/components/tiptap-node/table-node/ui/table-clear-row-column-content-button"
-
-// Utils
+  useAiAsk
+} from '@workspace/editor/components/tiptap-ui/ai-ask-button';
+import { useBlockquote } from '@workspace/editor/components/tiptap-ui/blockquote-button';
+import { useCodeBlock } from '@workspace/editor/components/tiptap-ui/code-block-button';
+import { ColorMenu } from '@workspace/editor/components/tiptap-ui/color-menu';
 import {
-  getNodeDisplayName,
-  isTextSelectionValid,
-} from "@workspace/editor/lib/tiptap-collab-utils"
-import { SR_ONLY } from "@workspace/editor/lib/tiptap-utils"
-
+  CopyAnchorLinkShortcutBadge,
+  useCopyAnchorLink
+} from '@workspace/editor/components/tiptap-ui/copy-anchor-link-button';
+import {
+  CopyToClipboardShortcutBadge,
+  useCopyToClipboard
+} from '@workspace/editor/components/tiptap-ui/copy-to-clipboard-button';
+import {
+  DeleteNodeShortcutBadge,
+  useDeleteNode
+} from '@workspace/editor/components/tiptap-ui/delete-node-button';
 import type {
   DragContextMenuProps,
   MenuItemProps,
-  NodeChangeData,
-} from "@workspace/editor/components/tiptap-ui/drag-context-menu/drag-context-menu-types"
+  NodeChangeData
+} from '@workspace/editor/components/tiptap-ui/drag-context-menu/drag-context-menu-types';
+import {
+  DuplicateShortcutBadge,
+  useDuplicate
+} from '@workspace/editor/components/tiptap-ui/duplicate-button';
+import { useHeading } from '@workspace/editor/components/tiptap-ui/heading-button';
+// Tiptap UI
+import { useImageDownload } from '@workspace/editor/components/tiptap-ui/image-download-button';
+import { useList } from '@workspace/editor/components/tiptap-ui/list-button';
+import { useResetAllFormatting } from '@workspace/editor/components/tiptap-ui/reset-all-formatting-button';
+import { SlashCommandTriggerButton } from '@workspace/editor/components/tiptap-ui/slash-command-trigger-button';
+import { useText } from '@workspace/editor/components/tiptap-ui/text-button';
+import { selectNodeAndHideFloating } from '@workspace/editor/hooks/use-floating-toolbar-visibility';
+import { useIsBreakpoint } from '@workspace/editor/hooks/use-is-breakpoint';
+// Hooks
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
+import { useUiEditorState } from '@workspace/editor/hooks/use-ui-editor-state';
+// Utils
+import {
+  getNodeDisplayName,
+  isTextSelectionValid
+} from '@workspace/editor/lib/tiptap-collab-utils';
+import { SR_ONLY } from '@workspace/editor/lib/tiptap-utils';
 
-// Icons
-import { GripVerticalIcon } from "@workspace/editor/components/tiptap-icons/grip-vertical-icon"
-import { ChevronRightIcon } from "@workspace/editor/components/tiptap-icons/chevron-right-icon"
-import { Repeat2Icon } from "@workspace/editor/components/tiptap-icons/repeat-2-icon"
-import "./drag-context-menu.scss"
+import './drag-context-menu.scss';
 
 const useNodeTransformActions = () => {
-  const text = useText()
-  const heading1 = useHeading({ level: 1 })
-  const heading2 = useHeading({ level: 2 })
-  const heading3 = useHeading({ level: 3 })
-  const bulletList = useList({ type: "bulletList" })
-  const orderedList = useList({ type: "orderedList" })
-  const taskList = useList({ type: "taskList" })
-  const blockquote = useBlockquote()
-  const codeBlock = useCodeBlock()
+  const text = useText();
+  const heading1 = useHeading({ level: 1 });
+  const heading2 = useHeading({ level: 2 });
+  const heading3 = useHeading({ level: 3 });
+  const bulletList = useList({ type: 'bulletList' });
+  const orderedList = useList({ type: 'orderedList' });
+  const taskList = useList({ type: 'taskList' });
+  const blockquote = useBlockquote();
+  const codeBlock = useCodeBlock();
 
   const mapper = (
     action: ReturnType<
@@ -100,8 +102,8 @@ const useNodeTransformActions = () => {
     label: action.label,
     onClick: action.handleToggle,
     disabled: !action.canToggle,
-    isActive: action.isActive,
-  })
+    isActive: action.isActive
+  });
 
   const actions = [
     mapper(text),
@@ -110,13 +112,13 @@ const useNodeTransformActions = () => {
     mapper(orderedList),
     mapper(taskList),
     mapper(blockquote),
-    mapper(codeBlock),
-  ]
+    mapper(codeBlock)
+  ];
 
-  const allDisabled = actions.every((a) => a.disabled)
+  const allDisabled = actions.every((a) => a.disabled);
 
-  return allDisabled ? null : actions
-}
+  return allDisabled ? null : actions;
+};
 
 const BaseMenuItem: React.FC<MenuItemProps> = ({
   icon: Icon,
@@ -124,11 +126,14 @@ const BaseMenuItem: React.FC<MenuItemProps> = ({
   onClick,
   disabled = false,
   isActive = false,
-  shortcutBadge,
+  shortcutBadge
 }) => (
   <MenuItem
     render={
-      <Button data-style="ghost" data-active-state={isActive ? "on" : "off"} />
+      <Button
+        data-style="ghost"
+        data-active-state={isActive ? 'on' : 'off'}
+      />
     }
     onClick={onClick}
     disabled={disabled}
@@ -137,12 +142,12 @@ const BaseMenuItem: React.FC<MenuItemProps> = ({
     <span className="tiptap-button-text">{label}</span>
     {shortcutBadge}
   </MenuItem>
-)
+);
 
 const SubMenuTrigger: React.FC<{
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  children: React.ReactNode
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  children: React.ReactNode;
 }> = ({ icon: Icon, label, children }) => (
   <Menu
     placement="right"
@@ -167,26 +172,32 @@ const SubMenuTrigger: React.FC<{
       <ComboboxList>{children}</ComboboxList>
     </MenuContent>
   </Menu>
-)
+);
 
 const TransformActionGroup: React.FC = () => {
-  const actions = useNodeTransformActions()
+  const actions = useNodeTransformActions();
   const { canReset, handleResetFormatting, label, Icon } =
     useResetAllFormatting({
       hideWhenUnavailable: true,
-      preserveMarks: ["inlineThread"],
-    })
+      preserveMarks: ['inlineThread']
+    });
 
-  if (!actions && !canReset) return null
+  if (!actions && !canReset) return null;
 
   return (
     <>
       {actions && (
-        <SubMenuTrigger icon={Repeat2Icon} label="Turn Into">
+        <SubMenuTrigger
+          icon={Repeat2Icon}
+          label="Turn Into"
+        >
           <MenuGroup>
             <MenuGroupLabel>Turn into</MenuGroupLabel>
             {actions.map((action) => (
-              <BaseMenuItem key={action.label} {...action} />
+              <BaseMenuItem
+                key={action.label}
+                {...action}
+              />
             ))}
           </MenuGroup>
         </SubMenuTrigger>
@@ -203,14 +214,14 @@ const TransformActionGroup: React.FC = () => {
 
       <Separator orientation="horizontal" />
     </>
-  )
-}
+  );
+};
 
 const TableFitToWidth: React.FC = () => {
   const { canFitToWidth, handleFitToWidth, label, Icon } = useTableFitToWidth({
-    hideWhenUnavailable: true,
-  })
-  const clearAllContents = useTableClearRowColumnContent({ resetAttrs: true })
+    hideWhenUnavailable: true
+  });
+  const clearAllContents = useTableClearRowColumnContent({ resetAttrs: true });
 
   return (
     <>
@@ -226,21 +237,21 @@ const TableFitToWidth: React.FC = () => {
       {clearAllContents.canClearRowColumnContent && (
         <BaseMenuItem
           icon={clearAllContents.Icon}
-          label={"Clear all contents"}
+          label={'Clear all contents'}
           disabled={!clearAllContents.canClearRowColumnContent}
           onClick={clearAllContents.handleClear}
         />
       )}
     </>
-  )
-}
+  );
+};
 
 const ImageActionGroup: React.FC = () => {
   const { canDownload, handleDownload, label, Icon } = useImageDownload({
-    hideWhenUnavailable: true,
-  })
+    hideWhenUnavailable: true
+  });
 
-  if (!canDownload) return null
+  if (!canDownload) return null;
 
   return (
     <>
@@ -253,28 +264,28 @@ const ImageActionGroup: React.FC = () => {
 
       <Separator orientation="horizontal" />
     </>
-  )
-}
+  );
+};
 
 const CoreActionGroup: React.FC = () => {
   const {
     handleDuplicate,
     canDuplicate,
     label,
-    Icon: DuplicateIcon,
-  } = useDuplicate()
+    Icon: DuplicateIcon
+  } = useDuplicate();
   const {
     handleCopyToClipboard,
     canCopyToClipboard,
     label: copyLabel,
-    Icon: CopyIcon,
-  } = useCopyToClipboard()
+    Icon: CopyIcon
+  } = useCopyToClipboard();
   const {
     handleCopyAnchorLink,
     canCopyAnchorLink,
     label: copyAnchorLinkLabel,
-    Icon: CopyAnchorLinkIcon,
-  } = useCopyAnchorLink()
+    Icon: CopyAnchorLinkIcon
+  } = useCopyAnchorLink();
 
   return (
     <>
@@ -304,13 +315,13 @@ const CoreActionGroup: React.FC = () => {
 
       <Separator orientation="horizontal" />
     </>
-  )
-}
+  );
+};
 
 const AIActionGroup: React.FC = () => {
-  const { handleAiAsk, canAiAsk, Icon: AiAskIcon } = useAiAsk()
+  const { handleAiAsk, canAiAsk, Icon: AiAskIcon } = useAiAsk();
 
-  if (!canAiAsk) return null
+  if (!canAiAsk) return null;
 
   return (
     <>
@@ -327,11 +338,11 @@ const AIActionGroup: React.FC = () => {
 
       <Separator orientation="horizontal" />
     </>
-  )
-}
+  );
+};
 
 const DeleteActionGroup: React.FC = () => {
-  const { handleDeleteNode, canDeleteNode, label, Icon } = useDeleteNode()
+  const { handleDeleteNode, canDeleteNode, label, Icon } = useDeleteNode();
 
   return (
     <MenuGroup>
@@ -343,8 +354,8 @@ const DeleteActionGroup: React.FC = () => {
         shortcutBadge={<DeleteNodeShortcutBadge />}
       />
     </MenuGroup>
-  )
-}
+  );
+};
 
 export const DragContextMenu: React.FC<DragContextMenuProps> = ({
   editor: providedEditor,
@@ -352,76 +363,76 @@ export const DragContextMenu: React.FC<DragContextMenuProps> = ({
   mobileBreakpoint = 768,
   ...props
 }) => {
-  const { editor } = useTiptapEditor(providedEditor)
-  const { aiGenerationActive, isDragging } = useUiEditorState(editor)
-  const isMobile = useIsBreakpoint("max", mobileBreakpoint)
-  const [open, setOpen] = useState(false)
-  const [node, setNode] = useState<TiptapNode | null>(null)
-  const [nodePos, setNodePos] = useState<number>(-1)
+  const { editor } = useTiptapEditor(providedEditor);
+  const { aiGenerationActive, isDragging } = useUiEditorState(editor);
+  const isMobile = useIsBreakpoint('max', mobileBreakpoint);
+  const [open, setOpen] = useState(false);
+  const [node, setNode] = useState<TiptapNode | null>(null);
+  const [nodePos, setNodePos] = useState<number>(-1);
 
   const handleNodeChange = useCallback((data: NodeChangeData) => {
-    if (data.node) setNode(data.node)
-    setNodePos(data.pos)
-  }, [])
+    if (data.node) setNode(data.node);
+    setNodePos(data.pos);
+  }, []);
 
   useEffect(() => {
-    if (!editor) return
-    editor.commands.setLockDragHandle(open)
-    editor.commands.setMeta("lockDragHandle", open)
-  }, [editor, open])
+    if (!editor) return;
+    editor.commands.setLockDragHandle(open);
+    editor.commands.setMeta('lockDragHandle', open);
+  }, [editor, open]);
 
-  const mainAxisOffset = 16
+  const mainAxisOffset = 16;
 
   const dynamicPositions = useMemo(() => {
     return {
       middleware: [
         offset((props) => {
-          const { rects } = props
-          const nodeHeight = rects.reference.height
-          const dragHandleHeight = rects.floating.height
+          const { rects } = props;
+          const nodeHeight = rects.reference.height;
+          const dragHandleHeight = rects.floating.height;
 
-          const crossAxis = nodeHeight / 2 - dragHandleHeight / 2
+          const crossAxis = nodeHeight / 2 - dragHandleHeight / 2;
 
           return {
             mainAxis: mainAxisOffset,
             // if height is more than 40px, then it's likely a block node
-            crossAxis: nodeHeight > 40 ? 0 : crossAxis,
-          }
-        }),
-      ],
-    }
-  }, [])
+            crossAxis: nodeHeight > 40 ? 0 : crossAxis
+          };
+        })
+      ]
+    };
+  }, []);
 
   const handleOnMenuClose = useCallback(() => {
     if (editor) {
-      editor.commands.setMeta("hideDragHandle", true)
+      editor.commands.setMeta('hideDragHandle', true);
     }
-  }, [editor])
+  }, [editor]);
 
   const onElementDragStart = useCallback(() => {
-    if (!editor) return
-    editor.commands.setIsDragging(true)
-  }, [editor])
+    if (!editor) return;
+    editor.commands.setIsDragging(true);
+  }, [editor]);
 
   const onElementDragEnd = useCallback(() => {
-    if (!editor) return
-    editor.commands.setIsDragging(false)
+    if (!editor) return;
+    editor.commands.setIsDragging(false);
 
     setTimeout(() => {
-      editor.view.dom.blur()
-      editor.view.focus()
-    }, 0)
-  }, [editor])
+      editor.view.dom.blur();
+      editor.view.focus();
+    }, 0);
+  }, [editor]);
 
-  if (!editor) return null
+  if (!editor) return null;
 
-  const nodeName = getNodeDisplayName(editor)
+  const nodeName = getNodeDisplayName(editor);
 
   return (
     <div
       style={
         {
-          "--drag-handle-main-axis-offset": `${mainAxisOffset}px`,
+          '--drag-handle-main-axis-offset': `${mainAxisOffset}px`
         } as React.CSSProperties
       }
     >
@@ -437,9 +448,9 @@ export const DragContextMenu: React.FC<DragContextMenuProps> = ({
           orientation="horizontal"
           style={{
             ...(aiGenerationActive || isMobile || isTextSelectionValid(editor)
-              ? { opacity: 0, pointerEvents: "none" }
+              ? { opacity: 0, pointerEvents: 'none' }
               : {}),
-            ...(isDragging ? { opacity: 0 } : {}),
+            ...(isDragging ? { opacity: 0 } : {})
           }}
         >
           {withSlashCommandTrigger && (
@@ -468,8 +479,8 @@ export const DragContextMenu: React.FC<DragContextMenuProps> = ({
                     }
                     data-weight="small"
                     style={{
-                      cursor: "grab",
-                      ...(open ? { pointerEvents: "none" } : {}),
+                      cursor: 'grab',
+                      ...(open ? { pointerEvents: 'none' } : {})
                     }}
                     onMouseDown={() =>
                       selectNodeAndHideFloating(editor, nodePos)
@@ -488,7 +499,7 @@ export const DragContextMenu: React.FC<DragContextMenuProps> = ({
               portal
             >
               <Combobox style={SR_ONLY} />
-              <ComboboxList style={{ minWidth: "15rem" }}>
+              <ComboboxList style={{ minWidth: '15rem' }}>
                 <MenuGroup>
                   <MenuGroupLabel>{nodeName}</MenuGroupLabel>
                   <ColorMenu />
@@ -509,5 +520,5 @@ export const DragContextMenu: React.FC<DragContextMenuProps> = ({
         </ButtonGroup>
       </DragHandle>
     </div>
-  )
-}
+  );
+};

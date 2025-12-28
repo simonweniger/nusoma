@@ -1,5 +1,5 @@
-import { isHotkey } from "is-hotkey"
-import { useCallback } from "react"
+import { useCallback } from 'react';
+import { isHotkey } from 'is-hotkey';
 
 export function useKeyboardHandlers(
   promptValue: string | undefined,
@@ -8,19 +8,19 @@ export function useKeyboardHandlers(
 ) {
   return useCallback(
     (event: React.KeyboardEvent) => {
-      if (isHotkey("backspace", event) && !promptValue?.length) {
-        event.preventDefault()
-        onClose?.()
-      } else if (isHotkey("enter", event) && !event.shiftKey) {
-        event.preventDefault()
-        onInputSubmit?.()
-      } else if (isHotkey("escape", event)) {
-        event.preventDefault()
-        onClose?.()
+      if (isHotkey('backspace', event) && !promptValue?.length) {
+        event.preventDefault();
+        onClose?.();
+      } else if (isHotkey('enter', event) && !event.shiftKey) {
+        event.preventDefault();
+        onInputSubmit?.();
+      } else if (isHotkey('escape', event)) {
+        event.preventDefault();
+        onClose?.();
       }
     },
     [promptValue, onClose, onInputSubmit]
-  )
+  );
 }
 
 export function useBlurHandler(
@@ -30,15 +30,15 @@ export function useBlurHandler(
 ) {
   return useCallback(
     (e: React.FocusEvent<HTMLElement>) => {
-      const hasFocus = e.currentTarget.contains(e.relatedTarget as Node)
-      if (hasFocus) return
+      const hasFocus = e.currentTarget.contains(e.relatedTarget as Node);
+      if (hasFocus) return;
 
       if (isEmpty && onEmptyBlur) {
-        onEmptyBlur()
+        onEmptyBlur();
       } else if (onBlur) {
-        onBlur()
+        onBlur();
       }
     },
     [isEmpty, onBlur, onEmptyBlur]
-  )
+  );
 }

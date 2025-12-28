@@ -70,17 +70,19 @@ export function DocumentActionsDropdown({
   };
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <Button
-          type="button"
-          variant="ghost"
-          className="size-9"
-          title="Open menu"
-        >
-          <MoreHorizontalIcon className="size-4 shrink-0" />
-          <span className="sr-only">Open menu</span>
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            className="size-9"
+            title="Open menu"
+          >
+            <MoreHorizontalIcon className="size-4 shrink-0" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        }
+      />
       <DropdownMenuContent align="end">
         <DropdownMenuItem
           className="cursor-pointer"

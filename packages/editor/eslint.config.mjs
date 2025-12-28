@@ -1,1 +1,1 @@
-export { default } from '@workspace/eslint-config/base';
+export { default } from '@workspace/eslint-config/react-internal';

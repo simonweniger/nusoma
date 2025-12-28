@@ -305,6 +305,7 @@
         "@floating-ui/react": "^0.27.16",
         "@radix-ui/react-dropdown-menu": "^2.1.16",
         "@radix-ui/react-popover": "^1.1.15",
+        "@t3-oss/env-nextjs": "0.13.8",
         "@tiptap-pro/extension-ai": "/tmp/tiptap-pro-extension-ai.tgz",
         "@tiptap-pro/provider": "/tmp/tiptap-pro-provider.tgz",
         "@tiptap/core": "^3.14.0",
@@ -340,6 +341,7 @@
         "react-textarea-autosize": "^8.5.9",
         "sharp": "0.34.5",
         "yjs": "^13.6.28",
+        "zod": "4.1.13",
       },
       "devDependencies": {
         "@types/is-hotkey": "^0.1.10",

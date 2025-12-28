@@ -1,52 +1,48 @@
-"use client"
+'use client';
 
-import { forwardRef, useCallback } from "react"
+import { forwardRef, useCallback } from 'react';
 
-// --- Lib ---
-import { parseShortcutKeys } from "@workspace/editor/lib/tiptap-utils"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-
+import { Badge } from '@workspace/editor/components/tiptap-ui-primitive/badge';
+// --- UI Primitives ---
+import type { ButtonProps } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
 // --- Tiptap UI ---
-import type { UseImageUploadConfig } from "@workspace/editor/components/tiptap-ui/image-upload-button"
+import type { UseImageUploadConfig } from '@workspace/editor/components/tiptap-ui/image-upload-button';
 import {
   IMAGE_UPLOAD_SHORTCUT_KEY,
-  useImageUpload,
-} from "@workspace/editor/components/tiptap-ui/image-upload-button"
+  useImageUpload
+} from '@workspace/editor/components/tiptap-ui/image-upload-button';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
+// --- Lib ---
+import { parseShortcutKeys } from '@workspace/editor/lib/tiptap-utils';
 
-// --- UI Primitives ---
-import type { ButtonProps } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Badge } from "@workspace/editor/components/tiptap-ui-primitive/badge"
-
-type IconProps = React.SVGProps<SVGSVGElement>
-type IconComponent = ({ className, ...props }: IconProps) => React.ReactElement
+type IconProps = React.SVGProps<SVGSVGElement>;
+type IconComponent = ({ className, ...props }: IconProps) => React.ReactElement;
 
 export interface ImageUploadButtonProps
-  extends Omit<ButtonProps, "type">,
-    UseImageUploadConfig {
+  extends Omit<ButtonProps, 'type'>, UseImageUploadConfig {
   /**
    * Optional text to display alongside the icon.
    */
-  text?: string
+  text?: string;
   /**
    * Optional show shortcut keys in the button.
    * @default false
    */
-  showShortcut?: boolean
+  showShortcut?: boolean;
   /**
    * Optional custom icon component to render instead of the default.
    */
-  icon?: React.MemoExoticComponent<IconComponent> | React.FC<IconProps>
+  icon?: React.MemoExoticComponent<IconComponent> | React.FC<IconProps>;
 }
 
 export function ImageShortcutBadge({
-  shortcutKeys = IMAGE_UPLOAD_SHORTCUT_KEY,
+  shortcutKeys = IMAGE_UPLOAD_SHORTCUT_KEY
 }: {
-  shortcutKeys?: string
+  shortcutKeys?: string;
 }) {
-  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>
+  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>;
 }
 
 /**
@@ -72,7 +68,7 @@ export const ImageUploadButton = forwardRef<
     },
     ref
   ) => {
-    const { editor } = useTiptapEditor(providedEditor)
+    const { editor } = useTiptapEditor(providedEditor);
     const {
       isVisible,
       canInsert,
@@ -80,33 +76,33 @@ export const ImageUploadButton = forwardRef<
       label,
       isActive,
       shortcutKeys,
-      Icon,
+      Icon
     } = useImageUpload({
       editor,
       hideWhenUnavailable,
-      onInserted,
-    })
+      onInserted
+    });
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleImage()
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        handleImage();
       },
       [handleImage, onClick]
-    )
+    );
 
     if (!isVisible) {
-      return null
+      return null;
     }
 
-    const RenderIcon = CustomIcon ?? Icon
+    const RenderIcon = CustomIcon ?? Icon;
 
     return (
       <Button
         type="button"
         data-style="ghost"
-        data-active-state={isActive ? "on" : "off"}
+        data-active-state={isActive ? 'on' : 'off'}
         role="button"
         tabIndex={-1}
         disabled={!canInsert}
@@ -126,8 +122,8 @@ export const ImageUploadButton = forwardRef<
           </>
         )}
       </Button>
-    )
+    );
   }
-)
+);
 
-ImageUploadButton.displayName = "ImageUploadButton"
+ImageUploadButton.displayName = 'ImageUploadButton';

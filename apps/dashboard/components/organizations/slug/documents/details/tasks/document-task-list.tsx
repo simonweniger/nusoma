@@ -144,7 +144,7 @@ function DocumentTaskListItem({
             className="hidden sm:inline-flex"
           />
           <DropdownMenu>
-            <DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild>
               <Button
                 type="button"
                 variant="ghost"

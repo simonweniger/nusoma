@@ -1,46 +1,42 @@
-import { forwardRef, useCallback, useMemo } from "react"
+import { forwardRef, useCallback, useMemo } from 'react';
 
-// --- Lib ---
-import { parseShortcutKeys } from "@workspace/editor/lib/tiptap-utils"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-
+import { Badge } from '@workspace/editor/components/tiptap-ui-primitive/badge';
+// --- UI Primitives ---
+import type { ButtonProps } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
 // --- Tiptap UI ---
-import type { UseColorTextConfig } from "@workspace/editor/components/tiptap-ui/color-text-button"
+import type { UseColorTextConfig } from '@workspace/editor/components/tiptap-ui/color-text-button';
 import {
   COLOR_TEXT_SHORTCUT_KEY,
-  useColorText,
-} from "@workspace/editor/components/tiptap-ui/color-text-button"
-
-// --- UI Primitives ---
-import type { ButtonProps } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Badge } from "@workspace/editor/components/tiptap-ui-primitive/badge"
+  useColorText
+} from '@workspace/editor/components/tiptap-ui/color-text-button';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
+// --- Lib ---
+import { parseShortcutKeys } from '@workspace/editor/lib/tiptap-utils';
 
 // --- Styles ---
-import "@workspace/editor/components/tiptap-ui/color-text-button/color-text-button.scss"
+import '@workspace/editor/components/tiptap-ui/color-text-button/color-text-button.scss';
 
 export interface ColorTextButtonProps
-  extends Omit<ButtonProps, "type">,
-    UseColorTextConfig {
+  extends Omit<ButtonProps, 'type'>, UseColorTextConfig {
   /**
    * Optional text to display alongside the icon.
    */
-  text?: string
+  text?: string;
   /**
    * Optional show shortcut keys in the button.
    * @default false
    */
-  showShortcut?: boolean
+  showShortcut?: boolean;
 }
 
 export function ColorTextShortcutBadge({
-  shortcutKeys = COLOR_TEXT_SHORTCUT_KEY,
+  shortcutKeys = COLOR_TEXT_SHORTCUT_KEY
 }: {
-  shortcutKeys?: string
+  shortcutKeys?: string;
 }) {
-  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>
+  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>;
 }
 
 /**
@@ -67,7 +63,7 @@ export const ColorTextButton = forwardRef<
     },
     ref
   ) => {
-    const { editor } = useTiptapEditor(providedEditor)
+    const { editor } = useTiptapEditor(providedEditor);
     const {
       isVisible,
       canColorText,
@@ -75,42 +71,42 @@ export const ColorTextButton = forwardRef<
       handleColorText,
       label,
       shortcutKeys,
-      Icon,
+      Icon
     } = useColorText({
       editor,
       textColor,
       label: text || `Color text to ${textColor}`,
       hideWhenUnavailable,
-      onApplied,
-    })
+      onApplied
+    });
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleColorText()
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        handleColorText();
       },
       [handleColorText, onClick]
-    )
+    );
 
     const buttonStyle = useMemo(
       () =>
         ({
           ...style,
-          "--color-text-button-color": textColor,
+          '--color-text-button-color': textColor
         }) as React.CSSProperties,
       [textColor, style]
-    )
+    );
 
     if (!isVisible) {
-      return null
+      return null;
     }
 
     return (
       <Button
         type="button"
         data-style="ghost"
-        data-active-state={isActive ? "on" : "off"}
+        data-active-state={isActive ? 'on' : 'off'}
         role="button"
         tabIndex={-1}
         disabled={!canColorText}
@@ -141,8 +137,8 @@ export const ColorTextButton = forwardRef<
           </>
         )}
       </Button>
-    )
+    );
   }
-)
+);
 
-ColorTextButton.displayName = "ColorTextButton"
+ColorTextButton.displayName = 'ColorTextButton';

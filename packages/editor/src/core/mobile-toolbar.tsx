@@ -1,6 +1,8 @@
 'use client';
 
 import { cloneElement, useEffect, useMemo, useRef, useState } from 'react';
+import { type Editor } from '@tiptap/react';
+
 import { ArrowLeftIcon } from '@workspace/editor/components/tiptap-icons/arrow-left-icon';
 import { ChevronRightIcon } from '@workspace/editor/components/tiptap-icons/chevron-right-icon';
 import { HighlighterIcon } from '@workspace/editor/components/tiptap-icons/highlighter-icon';
@@ -10,7 +12,10 @@ import { MoreVerticalIcon } from '@workspace/editor/components/tiptap-icons/more
 import { PaintBucketIcon } from '@workspace/editor/components/tiptap-icons/paint-bucket-icon';
 import { Repeat2Icon } from '@workspace/editor/components/tiptap-icons/repeat-2-icon';
 import { ImageNodeFloating } from '@workspace/editor/components/tiptap-node/image-node/image-node-floating';
-import { Button, ButtonGroup } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import {
+  Button,
+  ButtonGroup
+} from '@workspace/editor/components/tiptap-ui-primitive/button';
 // --- UI Primitives ---
 import {
   Card,
@@ -77,7 +82,6 @@ import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
 import { useWindowSize } from '@workspace/editor/hooks/use-window-size';
 // --- Utils ---
 import { getNodeDisplayName } from '@workspace/editor/lib/tiptap-collab-utils';
-import { type Editor } from '@tiptap/react';
 
 // =============================================================================
 // Types & Constants

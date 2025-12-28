@@ -1,48 +1,44 @@
-import { forwardRef, useCallback } from "react"
+import { forwardRef, useCallback } from 'react';
 
-// --- Lib ---
-import { parseShortcutKeys } from "@workspace/editor/lib/tiptap-utils"
-
-// --- Hooks ---
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-
+import { Badge } from '@workspace/editor/components/tiptap-ui-primitive/badge';
+// --- UI Primitives ---
+import type { ButtonProps } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
 // --- Tiptap UI ---
 import type {
   ImageAlign,
-  UseImageAlignConfig,
-} from "@workspace/editor/components/tiptap-ui/image-align-button"
+  UseImageAlignConfig
+} from '@workspace/editor/components/tiptap-ui/image-align-button';
 import {
   IMAGE_ALIGN_SHORTCUT_KEYS,
-  useImageAlign,
-} from "@workspace/editor/components/tiptap-ui/image-align-button"
-
-// --- UI Primitives ---
-import type { ButtonProps } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { Badge } from "@workspace/editor/components/tiptap-ui-primitive/badge"
+  useImageAlign
+} from '@workspace/editor/components/tiptap-ui/image-align-button';
+// --- Hooks ---
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
+// --- Lib ---
+import { parseShortcutKeys } from '@workspace/editor/lib/tiptap-utils';
 
 export interface ImageAlignButtonProps
-  extends Omit<ButtonProps, "type">,
-    UseImageAlignConfig {
+  extends Omit<ButtonProps, 'type'>, UseImageAlignConfig {
   /**
    * Optional text to display alongside the icon.
    */
-  text?: string
+  text?: string;
   /**
    * Optional show shortcut keys in the button.
    * @default false
    */
-  showShortcut?: boolean
+  showShortcut?: boolean;
 }
 
 export function ImageAlignShortcutBadge({
   align,
-  shortcutKeys = IMAGE_ALIGN_SHORTCUT_KEYS[align],
+  shortcutKeys = IMAGE_ALIGN_SHORTCUT_KEYS[align]
 }: {
-  align: ImageAlign
-  shortcutKeys?: string
+  align: ImageAlign;
+  shortcutKeys?: string;
 }) {
-  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>
+  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>;
 }
 
 /**
@@ -60,7 +56,7 @@ export const ImageAlignButton = forwardRef<
       align,
       text,
       extensionName,
-      attributeName = "data-align",
+      attributeName = 'data-align',
       hideWhenUnavailable = false,
       onAligned,
       showShortcut = false,
@@ -70,7 +66,7 @@ export const ImageAlignButton = forwardRef<
     },
     ref
   ) => {
-    const { editor } = useTiptapEditor(providedEditor)
+    const { editor } = useTiptapEditor(providedEditor);
     const {
       isVisible,
       handleImageAlign,
@@ -78,27 +74,27 @@ export const ImageAlignButton = forwardRef<
       canAlign,
       isActive,
       Icon,
-      shortcutKeys,
+      shortcutKeys
     } = useImageAlign({
       editor,
       align,
       extensionName,
       attributeName,
       hideWhenUnavailable,
-      onAligned,
-    })
+      onAligned
+    });
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleImageAlign()
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        handleImageAlign();
       },
       [handleImageAlign, onClick]
-    )
+    );
 
     if (!isVisible) {
-      return null
+      return null;
     }
 
     return (
@@ -106,7 +102,7 @@ export const ImageAlignButton = forwardRef<
         type="button"
         disabled={!canAlign}
         data-style="ghost"
-        data-active-state={isActive ? "on" : "off"}
+        data-active-state={isActive ? 'on' : 'off'}
         data-disabled={!canAlign}
         role="button"
         tabIndex={-1}
@@ -130,8 +126,8 @@ export const ImageAlignButton = forwardRef<
           </>
         )}
       </Button>
-    )
+    );
   }
-)
+);
 
-ImageAlignButton.displayName = "ImageAlignButton"
+ImageAlignButton.displayName = 'ImageAlignButton';

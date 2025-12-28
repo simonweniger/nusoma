@@ -1,22 +1,25 @@
-"use client"
+'use client';
 
-import { Fragment, useCallback, useMemo } from "react"
-import { type Editor } from "@tiptap/react"
-import type { TextOptions } from "@tiptap-pro/extension-ai"
-import { type Language } from "@tiptap-pro/extension-ai"
+import { Fragment, useCallback, useMemo } from 'react';
+import type { TextOptions } from '@tiptap-pro/extension-ai';
+import { type Language } from '@tiptap-pro/extension-ai';
+import { type Editor } from '@tiptap/react';
 
-// -- Hooks --
-import { useTiptapEditor } from "@workspace/editor/hooks/use-tiptap-editor"
-
-// -- Tiptap UI --
-import {
-  getContextAndInsertAt,
-  useAiMenuState,
-} from "@workspace/editor/components/tiptap-ui/ai-menu"
-
+import { CheckAiIcon } from '@workspace/editor/components/tiptap-icons/check-ai-icon';
+// -- Icons --
+import { ChevronRightIcon } from '@workspace/editor/components/tiptap-icons/chevron-right-icon';
+import { CompleteSentenceIcon } from '@workspace/editor/components/tiptap-icons/complete-sentence-icon';
+import { LanguagesIcon } from '@workspace/editor/components/tiptap-icons/languages-icon';
+import { MicAiIcon } from '@workspace/editor/components/tiptap-icons/mic-ai-icon';
+import { Simplify2Icon } from '@workspace/editor/components/tiptap-icons/simplify-2-icon';
+import { SmileAiIcon } from '@workspace/editor/components/tiptap-icons/smile-ai-icon';
+import { SummarizeTextIcon } from '@workspace/editor/components/tiptap-icons/summarize-text-icon';
+import { TextExtendIcon } from '@workspace/editor/components/tiptap-icons/text-extend-icon';
+import { TextReduceIcon } from '@workspace/editor/components/tiptap-icons/text-reduce-icon';
+import { Button } from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { ComboboxList } from '@workspace/editor/components/tiptap-ui-primitive/combobox';
 // -- UI Primitives --
 import {
-  type Action,
   filterMenuGroups,
   filterMenuItems,
   Menu,
@@ -27,34 +30,27 @@ import {
   MenuGroupLabel,
   MenuItem,
   useComboboxValueState,
-} from "@workspace/editor/components/tiptap-ui-primitive/menu"
-import { Button } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { ComboboxList } from "@workspace/editor/components/tiptap-ui-primitive/combobox"
-import { Separator } from "@workspace/editor/components/tiptap-ui-primitive/separator"
-
+  type Action
+} from '@workspace/editor/components/tiptap-ui-primitive/menu';
+import { Separator } from '@workspace/editor/components/tiptap-ui-primitive/separator';
+// -- Tiptap UI --
+import {
+  getContextAndInsertAt,
+  useAiMenuState
+} from '@workspace/editor/components/tiptap-ui/ai-menu';
 import {
   SUPPORTED_LANGUAGES,
-  SUPPORTED_TONES,
-} from "@workspace/editor/components/tiptap-ui/ai-menu/ai-menu-items/ai-menu-items-constants"
+  SUPPORTED_TONES
+} from '@workspace/editor/components/tiptap-ui/ai-menu/ai-menu-items/ai-menu-items-constants';
 import type {
   EditorMenuAction,
   ExecutableMenuAction,
   MenuActionIdentifier,
   MenuActionRendererProps,
-  NestedMenuAction,
-} from "@workspace/editor/components/tiptap-ui/ai-menu/ai-menu-items/ai-menu-items-types"
-
-// -- Icons --
-import { ChevronRightIcon } from "@workspace/editor/components/tiptap-icons/chevron-right-icon"
-import { SummarizeTextIcon } from "@workspace/editor/components/tiptap-icons/summarize-text-icon"
-import { Simplify2Icon } from "@workspace/editor/components/tiptap-icons/simplify-2-icon"
-import { LanguagesIcon } from "@workspace/editor/components/tiptap-icons/languages-icon"
-import { MicAiIcon } from "@workspace/editor/components/tiptap-icons/mic-ai-icon"
-import { TextExtendIcon } from "@workspace/editor/components/tiptap-icons/text-extend-icon"
-import { TextReduceIcon } from "@workspace/editor/components/tiptap-icons/text-reduce-icon"
-import { CompleteSentenceIcon } from "@workspace/editor/components/tiptap-icons/complete-sentence-icon"
-import { SmileAiIcon } from "@workspace/editor/components/tiptap-icons/smile-ai-icon"
-import { CheckAiIcon } from "@workspace/editor/components/tiptap-icons/check-ai-icon"
+  NestedMenuAction
+} from '@workspace/editor/components/tiptap-ui/ai-menu/ai-menu-items/ai-menu-items-types';
+// -- Hooks --
+import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
 
 function initializeEditorMenuActions(): Record<
   MenuActionIdentifier,
@@ -62,200 +58,208 @@ function initializeEditorMenuActions(): Record<
 > {
   return {
     adjustTone: {
-      type: "nested",
+      type: 'nested',
       component: ToneSelectionSubmenu,
       filterItems: true,
       icon: <MicAiIcon className="tiptap-button-icon" />,
       items: SUPPORTED_TONES,
-      label: "Adjust tone",
-      value: "adjustTone",
+      label: 'Adjust tone',
+      value: 'adjustTone'
     },
     aiFixSpellingAndGrammar: {
-      type: "executable",
+      type: 'executable',
       icon: <CheckAiIcon className="tiptap-button-icon" />,
-      label: "Fix spelling & grammar",
-      value: "aiFixSpellingAndGrammar",
+      label: 'Fix spelling & grammar',
+      value: 'aiFixSpellingAndGrammar',
       onSelect: ({ editor, options }) => {
-        if (!editor) return
+        if (!editor) return;
 
-        const { insertAt, isSelection, context } = getContextAndInsertAt(editor)
+        const { insertAt, isSelection, context } =
+          getContextAndInsertAt(editor);
         const newOptions: TextOptions = {
           ...options,
           insertAt,
-          regenerate: !isSelection,
-        }
+          regenerate: !isSelection
+        };
 
         if (isSelection) {
-          newOptions.text = context
+          newOptions.text = context;
         }
 
-        editor.chain().aiFixSpellingAndGrammar(newOptions).run()
-      },
+        editor.chain().aiFixSpellingAndGrammar(newOptions).run();
+      }
     },
     aiExtend: {
-      type: "executable",
+      type: 'executable',
       icon: <TextExtendIcon className="tiptap-button-icon" />,
-      label: "Make longer",
-      value: "aiExtend",
+      label: 'Make longer',
+      value: 'aiExtend',
       onSelect: ({ editor, options }) => {
-        if (!editor) return
+        if (!editor) return;
 
-        const { insertAt, isSelection, context } = getContextAndInsertAt(editor)
+        const { insertAt, isSelection, context } =
+          getContextAndInsertAt(editor);
         const newOptions: TextOptions = {
           ...options,
           insertAt,
-          regenerate: !isSelection,
-        }
+          regenerate: !isSelection
+        };
 
         if (isSelection) {
-          newOptions.text = context
+          newOptions.text = context;
         }
 
-        editor.chain().aiExtend(newOptions).run()
-      },
+        editor.chain().aiExtend(newOptions).run();
+      }
     },
     aiShorten: {
-      type: "executable",
+      type: 'executable',
       icon: <TextReduceIcon className="tiptap-button-icon" />,
-      label: "Make shorter",
-      value: "aiShorten",
+      label: 'Make shorter',
+      value: 'aiShorten',
       onSelect: ({ editor, options }) => {
-        if (!editor) return
+        if (!editor) return;
 
-        const { insertAt, isSelection, context } = getContextAndInsertAt(editor)
+        const { insertAt, isSelection, context } =
+          getContextAndInsertAt(editor);
         const newOptions: TextOptions = {
           ...options,
           insertAt,
-          regenerate: !isSelection,
-        }
+          regenerate: !isSelection
+        };
 
         if (isSelection) {
-          newOptions.text = context
+          newOptions.text = context;
         }
 
-        editor.chain().aiShorten(newOptions).run()
-      },
+        editor.chain().aiShorten(newOptions).run();
+      }
     },
     simplifyLanguage: {
-      type: "executable",
+      type: 'executable',
       icon: <Simplify2Icon className="tiptap-button-icon" />,
-      label: "Simplify language",
-      value: "simplifyLanguage",
+      label: 'Simplify language',
+      value: 'simplifyLanguage',
       onSelect: ({ editor, options }) => {
-        if (!editor) return
+        if (!editor) return;
 
-        const { insertAt, isSelection, context } = getContextAndInsertAt(editor)
+        const { insertAt, isSelection, context } =
+          getContextAndInsertAt(editor);
         const newOptions: TextOptions = {
           ...options,
           insertAt,
-          regenerate: !isSelection,
-        }
+          regenerate: !isSelection
+        };
 
         if (isSelection) {
-          newOptions.text = context
+          newOptions.text = context;
         }
 
-        editor.chain().aiSimplify(newOptions).run()
-      },
+        editor.chain().aiSimplify(newOptions).run();
+      }
     },
     improveWriting: {
-      type: "executable",
+      type: 'executable',
       icon: <SmileAiIcon className="tiptap-button-icon" />,
-      label: "Improve writing",
-      value: "improveWriting",
+      label: 'Improve writing',
+      value: 'improveWriting',
       onSelect: ({ editor, options }) => {
-        if (!editor) return
+        if (!editor) return;
 
-        const { insertAt, isSelection, context } = getContextAndInsertAt(editor)
+        const { insertAt, isSelection, context } =
+          getContextAndInsertAt(editor);
         const newOptions: TextOptions = {
           ...options,
           insertAt,
-          regenerate: !isSelection,
-        }
+          regenerate: !isSelection
+        };
 
         if (isSelection) {
-          newOptions.text = context
+          newOptions.text = context;
         }
 
-        editor.chain().aiRephrase(newOptions).run()
-      },
+        editor.chain().aiRephrase(newOptions).run();
+      }
     },
     emojify: {
-      type: "executable",
+      type: 'executable',
       icon: <SmileAiIcon className="tiptap-button-icon" />,
-      label: "Emojify",
-      value: "emojify",
+      label: 'Emojify',
+      value: 'emojify',
       onSelect: ({ editor, options }) => {
-        if (!editor) return
+        if (!editor) return;
 
-        const { insertAt, isSelection, context } = getContextAndInsertAt(editor)
+        const { insertAt, isSelection, context } =
+          getContextAndInsertAt(editor);
         const newOptions: TextOptions = {
           ...options,
           insertAt,
-          regenerate: !isSelection,
-        }
+          regenerate: !isSelection
+        };
 
         if (isSelection) {
-          newOptions.text = context
+          newOptions.text = context;
         }
 
-        editor.chain().aiEmojify(newOptions).run()
-      },
+        editor.chain().aiEmojify(newOptions).run();
+      }
     },
     continueWriting: {
-      type: "executable",
+      type: 'executable',
       icon: <CompleteSentenceIcon className="tiptap-button-icon" />,
-      label: "Continue writing",
-      value: "continueWriting",
+      label: 'Continue writing',
+      value: 'continueWriting',
       onSelect: ({ editor, options }) => {
-        if (!editor) return
+        if (!editor) return;
 
-        const { insertAt, isSelection, context } = getContextAndInsertAt(editor)
+        const { insertAt, isSelection, context } =
+          getContextAndInsertAt(editor);
         const newOptions: TextOptions = {
           ...options,
           insertAt,
-          regenerate: !isSelection,
-        }
+          regenerate: !isSelection
+        };
 
         if (isSelection) {
-          newOptions.text = context
+          newOptions.text = context;
         }
 
-        editor.chain().aiComplete(newOptions).run()
-      },
+        editor.chain().aiComplete(newOptions).run();
+      }
     },
     summarize: {
-      type: "executable",
+      type: 'executable',
       icon: <SummarizeTextIcon className="tiptap-button-icon" />,
-      label: "Add a summary",
-      value: "summarize",
+      label: 'Add a summary',
+      value: 'summarize',
       onSelect: ({ editor, options }) => {
-        if (!editor) return
+        if (!editor) return;
 
-        const { insertAt, isSelection, context } = getContextAndInsertAt(editor)
+        const { insertAt, isSelection, context } =
+          getContextAndInsertAt(editor);
         const newOptions: TextOptions = {
           ...options,
           insertAt,
-          regenerate: !isSelection,
-        }
+          regenerate: !isSelection
+        };
 
         if (isSelection) {
-          newOptions.text = context
+          newOptions.text = context;
         }
 
-        editor.chain().aiSummarize(newOptions).run()
-      },
+        editor.chain().aiSummarize(newOptions).run();
+      }
     },
     translateTo: {
-      type: "nested",
+      type: 'nested',
       component: LanguageSelectionSubmenu,
       filterItems: true,
       icon: <LanguagesIcon className="tiptap-button-icon" />,
       items: SUPPORTED_LANGUAGES,
-      label: "Languages",
-      value: "translateTo",
-    },
-  }
+      label: 'Languages',
+      value: 'translateTo'
+    }
+  };
 }
 
 function mapInteractionContextToActions(
@@ -265,12 +269,12 @@ function mapInteractionContextToActions(
     label: item.label,
     value: item.value,
     icon: item.icon,
-    filterItems: item.type === "nested" ? item.filterItems : undefined,
-  })
+    filterItems: item.type === 'nested' ? item.filterItems : undefined
+  });
 
   const grouped: Action[] = [
     {
-      label: "Edit",
+      label: 'Edit',
       items: Object.values([
         menuActions.adjustTone,
         menuActions.aiFixSpellingAndGrammar,
@@ -278,74 +282,74 @@ function mapInteractionContextToActions(
         menuActions.aiShorten,
         menuActions.simplifyLanguage,
         menuActions.improveWriting,
-        menuActions.emojify,
-      ]).map(convertToMenuAction),
+        menuActions.emojify
+      ]).map(convertToMenuAction)
     },
     {
-      label: "Write",
+      label: 'Write',
       items: Object.values([
         menuActions.continueWriting,
         menuActions.summarize,
-        menuActions.translateTo,
-      ]).map(convertToMenuAction),
-    },
-  ]
+        menuActions.translateTo
+      ]).map(convertToMenuAction)
+    }
+  ];
 
-  return grouped
+  return grouped;
 }
 
 function isExecutableMenuItem(
   item: EditorMenuAction
 ): item is ExecutableMenuAction {
-  return item.type === "executable"
+  return item.type === 'executable';
 }
 
 function isNestedMenuItem(item: EditorMenuAction): item is NestedMenuAction {
-  return item.type === "nested"
+  return item.type === 'nested';
 }
 
 export function LanguageSelectionSubmenu({
-  editor,
+  editor
 }: {
-  editor: Editor | null
+  editor: Editor | null;
 }) {
-  const [searchValue] = useComboboxValueState()
-  const { state, updateState } = useAiMenuState()
+  const [searchValue] = useComboboxValueState();
+  const { state, updateState } = useAiMenuState();
 
   const availableLanguages = useMemo(() => {
     const translationAction = initializeEditorMenuActions()
-      .translateTo as NestedMenuAction
-    const languageOptions = { items: translationAction.items || [] }
-    return filterMenuItems(languageOptions, searchValue)
-  }, [searchValue])
+      .translateTo as NestedMenuAction;
+    const languageOptions = { items: translationAction.items || [] };
+    return filterMenuItems(languageOptions, searchValue);
+  }, [searchValue]);
 
   const handleLanguageSelection = useCallback(
     (selectedLanguageCode: Language) => {
-      if (!editor) return
+      if (!editor) return;
 
-      const { insertAt, isSelection, context } = getContextAndInsertAt(editor)
+      const { insertAt, isSelection, context } = getContextAndInsertAt(editor);
 
-      updateState({ language: selectedLanguageCode })
+      updateState({ language: selectedLanguageCode });
 
       const langOptions: TextOptions = {
         stream: true,
-        format: "rich-text",
+        format: 'rich-text',
         insertAt,
-        regenerate: !isSelection,
-      }
+        regenerate: !isSelection
+      };
 
       if (state.tone) {
-        langOptions.tone = state.tone
+        langOptions.tone = state.tone;
       }
 
       if (isSelection) {
-        langOptions.text = context
+        langOptions.text = context;
       }
 
-      editor.chain().aiTranslate(selectedLanguageCode, langOptions).run()
+      editor.chain().aiTranslate(selectedLanguageCode, langOptions).run();
     },
     [editor, state.tone, updateState]
-  )
+  );
 
   const languageMenuItems = (
     <>
@@ -368,10 +372,10 @@ export function LanguageSelectionSubmenu({
         />
       ))}
     </>
-  )
+  );
 
   if (searchValue) {
-    return languageMenuItems
+    return languageMenuItems;
   }
 
   return (
@@ -399,64 +403,64 @@ export function LanguageSelectionSubmenu({
         </ComboboxList>
       </MenuContent>
     </Menu>
-  )
+  );
 }
 
 export function ToneSelectionSubmenu({ editor }: { editor: Editor | null }) {
-  const [searchValue] = useComboboxValueState()
-  const { state, updateState } = useAiMenuState()
+  const [searchValue] = useComboboxValueState();
+  const { state, updateState } = useAiMenuState();
 
   const availableTones = useMemo(() => {
     const toneAction = initializeEditorMenuActions()
-      .adjustTone as NestedMenuAction
-    const toneOptions = { items: toneAction.items || [] }
-    return filterMenuItems(toneOptions, searchValue)
-  }, [searchValue])
+      .adjustTone as NestedMenuAction;
+    const toneOptions = { items: toneAction.items || [] };
+    return filterMenuItems(toneOptions, searchValue);
+  }, [searchValue]);
 
   const handleToneSelection = useCallback(
     (selectedTone: string) => {
-      if (!editor) return
+      if (!editor) return;
 
-      const { insertAt, isSelection, context } = getContextAndInsertAt(editor)
+      const { insertAt, isSelection, context } = getContextAndInsertAt(editor);
 
       if (!state.tone || state.tone !== selectedTone) {
-        updateState({ tone: selectedTone })
+        updateState({ tone: selectedTone });
       }
 
       const toneOptions: TextOptions = {
         stream: true,
-        format: "rich-text",
+        format: 'rich-text',
         insertAt,
-        regenerate: !isSelection,
-      }
+        regenerate: !isSelection
+      };
 
       if (state.language) {
-        toneOptions.language = state.language
+        toneOptions.language = state.language;
       }
 
       if (isSelection) {
-        toneOptions.text = context
+        toneOptions.text = context;
       }
 
-      editor.chain().aiAdjustTone(selectedTone, toneOptions).run()
+      editor.chain().aiAdjustTone(selectedTone, toneOptions).run();
     },
     [editor, state.language, state.tone, updateState]
-  )
+  );
 
   const toneMenuItems = availableTones.map((tone) => (
     <MenuItem
       key={tone.value}
-      onClick={() => handleToneSelection(tone.value || "")}
+      onClick={() => handleToneSelection(tone.value || '')}
       render={
         <Button data-style="ghost">
           <span className="tiptap-button-text">{tone.label}</span>
         </Button>
       }
     />
-  ))
+  ));
 
   if (searchValue) {
-    return toneMenuItems
+    return toneMenuItems;
   }
 
   return (
@@ -484,39 +488,44 @@ export function ToneSelectionSubmenu({ editor }: { editor: Editor | null }) {
         </ComboboxList>
       </MenuContent>
     </Menu>
-  )
+  );
 }
 
 export function MenuActionRenderer({
   menuItem,
   availableActions,
-  editor,
+  editor
 }: MenuActionRendererProps) {
-  const { state } = useAiMenuState()
+  const { state } = useAiMenuState();
 
   if (!menuItem.value) {
-    return null
+    return null;
   }
 
-  const editorAction = availableActions[menuItem.value]
+  const editorAction = availableActions[menuItem.value];
   if (!editorAction) {
-    return null
+    return null;
   }
 
   if (isNestedMenuItem(editorAction)) {
-    const SubmenuComponent = editorAction.component
-    return <SubmenuComponent key={menuItem.value} editor={editor} />
+    const SubmenuComponent = editorAction.component;
+    return (
+      <SubmenuComponent
+        key={menuItem.value}
+        editor={editor}
+      />
+    );
   }
 
   if (isExecutableMenuItem(editorAction)) {
     const options: TextOptions = {
       stream: true,
-      format: "rich-text",
-      language: state.language,
-    }
+      format: 'rich-text',
+      language: state.language
+    };
 
     if (state.tone) {
-      options.tone = state.tone
+      options.tone = state.tone;
     }
 
     return (
@@ -525,7 +534,7 @@ export function MenuActionRenderer({
         onClick={() =>
           editorAction.onSelect({
             editor,
-            options,
+            options
           })
         }
         render={
@@ -535,40 +544,40 @@ export function MenuActionRenderer({
           </Button>
         }
       />
-    )
+    );
   }
 
-  return null
+  return null;
 }
 
 export function AiMenuItems({
-  editor: providedEditor,
+  editor: providedEditor
 }: {
-  editor?: Editor | null
+  editor?: Editor | null;
 }) {
-  const { editor } = useTiptapEditor(providedEditor)
-  const [searchValue] = useComboboxValueState()
+  const { editor } = useTiptapEditor(providedEditor);
+  const [searchValue] = useComboboxValueState();
 
-  const availableMenuActions = useMemo(() => initializeEditorMenuActions(), [])
+  const availableMenuActions = useMemo(() => initializeEditorMenuActions(), []);
   const contextualActionGroups = useMemo(
     () => mapInteractionContextToActions(availableMenuActions),
     [availableMenuActions]
-  )
+  );
 
   const filteredActionGroups = useMemo(() => {
     return (
       filterMenuGroups(contextualActionGroups, searchValue) ||
       contextualActionGroups
-    )
-  }, [contextualActionGroups, searchValue])
+    );
+  }, [contextualActionGroups, searchValue]);
 
   const wouldActionRenderContent = useCallback(
     (menuItem: Action) => {
-      if (!menuItem.value) return false
+      if (!menuItem.value) return false;
 
       const editorAction =
-        availableMenuActions[menuItem.value as MenuActionIdentifier]
-      if (!editorAction) return false
+        availableMenuActions[menuItem.value as MenuActionIdentifier];
+      if (!editorAction) return false;
 
       // For nested menu items with filterItems=true, check their internal filtering
       if (
@@ -579,28 +588,28 @@ export function AiMenuItems({
         const nestedItems = filterMenuItems(
           { items: editorAction.items || [] },
           searchValue
-        )
-        return nestedItems.length > 0
+        );
+        return nestedItems.length > 0;
       }
 
-      return true
+      return true;
     },
     [availableMenuActions, searchValue]
-  )
+  );
 
   if (!editor) {
-    return null
+    return null;
   }
 
   const renderableGroups = filteredActionGroups
     .map((actionGroup) => ({
       ...actionGroup,
-      items: actionGroup.items?.filter(wouldActionRenderContent) ?? [],
+      items: actionGroup.items?.filter(wouldActionRenderContent) ?? []
     }))
-    .filter((actionGroup) => actionGroup.items.length > 0)
+    .filter((actionGroup) => actionGroup.items.length > 0);
 
   if (renderableGroups.length === 0) {
-    return null
+    return null;
   }
 
   return renderableGroups.map((actionGroup, groupIndex) => (
@@ -620,5 +629,5 @@ export function AiMenuItems({
         <Separator orientation="horizontal" />
       )}
     </Fragment>
-  ))
+  ));
 }

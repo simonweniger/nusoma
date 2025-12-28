@@ -1,64 +1,68 @@
-"use client"
+'use client';
 
-import { fetchAiToken, getUrlParam } from "@workspace/editor/lib/tiptap-collab-utils"
-import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+
+import {
+  fetchAiToken,
+  getUrlParam
+} from '@workspace/editor/lib/tiptap-collab-utils';
 
 export type AiContextValue = {
-  aiToken: string | null
-  hasAi: boolean
-}
+  aiToken: string | null;
+  hasAi: boolean;
+};
 
 export const AiContext = createContext<AiContextValue>({
   hasAi: false,
-  aiToken: null,
-})
+  aiToken: null
+});
 
-export const AiConsumer = AiContext.Consumer
+export const AiConsumer = AiContext.Consumer;
 export const useAi = (): AiContextValue => {
-  const context = useContext(AiContext)
+  const context = useContext(AiContext);
   if (!context) {
-    throw new Error("useAi must be used within an AiProvider")
+    throw new Error('useAi must be used within an AiProvider');
   }
-  return context
-}
+  return context;
+};
 
 export const useAiToken = () => {
-  const [aiToken, setAiToken] = useState<string | null>(null)
-  const [hasAi, setHasAi] = useState<boolean>(true)
+  const [aiToken, setAiToken] = useState<string | null>(null);
+  const [hasAi, setHasAi] = useState<boolean>(true);
 
   useEffect(() => {
-    const noAiParam = getUrlParam("noAi")
-    setHasAi(parseInt(noAiParam || "0") !== 1)
-  }, [])
+    const noAiParam = getUrlParam('noAi');
+    setHasAi(parseInt(noAiParam || '0') !== 1);
+  }, []);
 
   useEffect(() => {
-    if (!hasAi) return
+    if (!hasAi) return;
 
     const getToken = async () => {
-      const token = await fetchAiToken()
-      setAiToken(token)
-    }
+      const token = await fetchAiToken();
+      setAiToken(token);
+    };
 
-    getToken()
-  }, [hasAi])
+    getToken();
+  }, [hasAi]);
 
-  return { aiToken, hasAi }
-}
+  return { aiToken, hasAi };
+};
 
 export function AiProvider({
-  children,
+  children
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
-  const { hasAi, aiToken } = useAiToken()
+  const { hasAi, aiToken } = useAiToken();
 
   const value = useMemo<AiContextValue>(
     () => ({
       hasAi,
-      aiToken,
+      aiToken
     }),
     [hasAi, aiToken]
-  )
+  );
 
-  return <AiContext.Provider value={value}>{children}</AiContext.Provider>
+  return <AiContext.Provider value={value}>{children}</AiContext.Provider>;
 }

@@ -1,22 +1,26 @@
-"use client"
+'use client';
 
-import { useCallback } from "react"
-import type { Editor } from "@tiptap/react"
-import { Button, ButtonGroup } from "@workspace/editor/components/tiptap-ui-primitive/button"
-import { RefreshAiIcon } from "@workspace/editor/components/tiptap-icons/refresh-ai-icon"
-import { XIcon } from "@workspace/editor/components/tiptap-icons/x-icon"
-import { CheckIcon } from "@workspace/editor/components/tiptap-icons/check-icon"
-import type { TextOptions } from "@tiptap-pro/extension-ai"
-import { useUiEditorState } from "@workspace/editor/hooks/use-ui-editor-state"
+import { useCallback } from 'react';
+import type { TextOptions } from '@tiptap-pro/extension-ai';
+import type { Editor } from '@tiptap/react';
 
-import "@workspace/editor/components/tiptap-ui/ai-menu/ai-menu-actions/ai-menu-actions.scss"
+import { CheckIcon } from '@workspace/editor/components/tiptap-icons/check-icon';
+import { RefreshAiIcon } from '@workspace/editor/components/tiptap-icons/refresh-ai-icon';
+import { XIcon } from '@workspace/editor/components/tiptap-icons/x-icon';
+import {
+  Button,
+  ButtonGroup
+} from '@workspace/editor/components/tiptap-ui-primitive/button';
+import { useUiEditorState } from '@workspace/editor/hooks/use-ui-editor-state';
+
+import '@workspace/editor/components/tiptap-ui/ai-menu/ai-menu-actions/ai-menu-actions.scss';
 
 export interface AiMenuActionsProps {
-  editor: Editor | null
-  options: TextOptions
-  onRegenerate?: () => void
-  onAccept?: () => void
-  onReject?: () => void
+  editor: Editor | null;
+  options: TextOptions;
+  onRegenerate?: () => void;
+  onAccept?: () => void;
+  onReject?: () => void;
 }
 
 export function AiMenuActions({
@@ -24,27 +28,27 @@ export function AiMenuActions({
   options,
   onRegenerate,
   onAccept,
-  onReject,
+  onReject
 }: AiMenuActionsProps) {
-  const { aiGenerationIsLoading } = useUiEditorState(editor)
+  const { aiGenerationIsLoading } = useUiEditorState(editor);
 
   const handleRegenerate = useCallback(() => {
-    if (!editor) return
-    editor.chain().focus().aiRegenerate(options).run()
-    onRegenerate?.()
-  }, [editor, onRegenerate, options])
+    if (!editor) return;
+    editor.chain().focus().aiRegenerate(options).run();
+    onRegenerate?.();
+  }, [editor, onRegenerate, options]);
 
   const handleDiscard = useCallback(() => {
-    if (!editor) return
-    editor.chain().focus().aiReject().run()
-    onReject?.()
-  }, [editor, onReject])
+    if (!editor) return;
+    editor.chain().focus().aiReject().run();
+    onReject?.();
+  }, [editor, onReject]);
 
   const handleApply = useCallback(() => {
-    if (!editor) return
-    editor.chain().focus().aiAccept().run()
-    onAccept?.()
-  }, [editor, onAccept])
+    if (!editor) return;
+    editor.chain().focus().aiAccept().run();
+    onAccept?.();
+  }, [editor, onAccept]);
 
   return (
     <div className="tiptap-ai-menu-actions">
@@ -83,5 +87,5 @@ export function AiMenuActions({
         </ButtonGroup>
       </div>
     </div>
-  )
+  );
 }

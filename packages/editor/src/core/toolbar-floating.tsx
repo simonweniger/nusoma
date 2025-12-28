@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { type Editor } from '@tiptap/react';
+
 // --- Icons ---
 import { MoreVerticalIcon } from '@workspace/editor/components/tiptap-icons/more-vertical-icon';
 // --- Node ---
@@ -23,7 +25,10 @@ import { ColorTextPopover } from '@workspace/editor/components/tiptap-ui/color-t
 import { ImproveDropdown } from '@workspace/editor/components/tiptap-ui/improve-dropdown';
 import { LinkPopover } from '@workspace/editor/components/tiptap-ui/link-popover';
 import type { Mark } from '@workspace/editor/components/tiptap-ui/mark-button';
-import { canToggleMark, MarkButton } from '@workspace/editor/components/tiptap-ui/mark-button';
+import {
+  canToggleMark,
+  MarkButton
+} from '@workspace/editor/components/tiptap-ui/mark-button';
 import type { TextAlign } from '@workspace/editor/components/tiptap-ui/text-align-button';
 import {
   canSetTextAlign,
@@ -37,7 +42,6 @@ import { useTiptapEditor } from '@workspace/editor/hooks/use-tiptap-editor';
 import { useUiEditorState } from '@workspace/editor/hooks/use-ui-editor-state';
 // --- Utils ---
 import { isSelectionValid } from '@workspace/editor/lib/tiptap-collab-utils';
-import { type Editor } from '@tiptap/react';
 
 export function NusomaToolbarFloating() {
   const { editor } = useTiptapEditor();

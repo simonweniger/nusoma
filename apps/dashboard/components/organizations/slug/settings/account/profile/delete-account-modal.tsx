@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
 import { AlertCircleIcon } from 'lucide-react';
-import { Form, type SubmitHandler } from 'react-hook-form';
+import { type SubmitHandler } from 'react-hook-form';
 
 import { authClient } from '@workspace/auth/client';
 import { replaceOrgSlug, routes } from '@workspace/routes';
@@ -28,6 +28,7 @@ import {
   DrawerTitle
 } from '@workspace/ui/components/drawer';
 import {
+  Form,
   FormControl,
   FormField,
   FormItem,
