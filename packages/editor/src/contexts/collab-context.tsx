@@ -5,8 +5,8 @@ import { Doc as YDoc } from 'yjs';
 import {
   fetchCollabToken,
   getUrlParam,
-  TIPTAP_COLLAB_APP_ID,
-  TIPTAP_COLLAB_DOC_PREFIX
+  NEXT_PUBLIC_TIPTAP_COLLAB_APP_ID,
+  NEXT_PUBLIC_TIPTAP_COLLAB_DOC_PREFIX
 } from '@workspace/editor/lib/tiptap-collab-utils';
 
 export type CollabContextValue = {
@@ -55,9 +55,9 @@ export const useCollaboration = (room: string) => {
   useEffect(() => {
     if (!hasCollab || !collabToken) return;
 
-    const docPrefix = TIPTAP_COLLAB_DOC_PREFIX;
+    const docPrefix = NEXT_PUBLIC_TIPTAP_COLLAB_DOC_PREFIX;
     const documentName = room ? `${docPrefix}${room}` : docPrefix;
-    const appId = TIPTAP_COLLAB_APP_ID;
+    const appId = NEXT_PUBLIC_TIPTAP_COLLAB_APP_ID;
 
     const newProvider = new TiptapCollabProvider({
       name: documentName,

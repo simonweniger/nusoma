@@ -8,14 +8,14 @@ import { keys } from '../../keys';
 const env = keys();
 
 // TipTap Collaboration
-export const TIPTAP_COLLAB_DOC_PREFIX =
-  env.NEXT_PUBLIC_TIPTAP_COLLAB_DOC_PREFIX || '';
-export const TIPTAP_COLLAB_APP_ID = env.NEXT_PUBLIC_TIPTAP_COLLAB_APP_ID || '';
-export const TIPTAP_COLLAB_TOKEN = env.NEXT_PUBLIC_TIPTAP_COLLAB_TOKEN || '';
+export const NEXT_PUBLIC_TIPTAP_COLLAB_DOC_PREFIX =
+  env.NEXT_PUBLIC_NEXT_PUBLIC_TIPTAP_COLLAB_DOC_PREFIX || '';
+export const NEXT_PUBLIC_TIPTAP_COLLAB_APP_ID = env.NEXT_PUBLIC_NEXT_PUBLIC_TIPTAP_COLLAB_APP_ID || '';
+export const NEXT_PUBLIC_TIPTAP_COLLAB_TOKEN = env.NEXT_PUBLIC_NEXT_PUBLIC_TIPTAP_COLLAB_TOKEN || '';
 
 // TipTap AI
-export const TIPTAP_AI_APP_ID = env.NEXT_PUBLIC_TIPTAP_AI_APP_ID || '';
-export const TIPTAP_AI_TOKEN = env.NEXT_PUBLIC_TIPTAP_AI_TOKEN || '';
+export const NEXT_PUBLIC_TIPTAP_AI_APP_ID = env.NEXT_PUBLIC_TIPTAP_AI_APP_ID || '';
+export const NEXT_PUBLIC_TIPTAP_AI_TOKEN = env.NEXT_PUBLIC_TIPTAP_AI_TOKEN || '';
 
 export const USE_JWT_TOKEN_API_ENDPOINT =
   env.NEXT_PUBLIC_TIPTAP_USE_JWT_TOKEN_API_ENDPOINT || '';
@@ -220,11 +220,11 @@ export const fetchCollabToken = async () => {
   // endpoint that generates a new JWT token in the server. Then, call that API
   // endpoint from this function.
   // When you've implemented the API endpoint, remove the code below.
-  if (!TIPTAP_COLLAB_TOKEN) {
+  if (!NEXT_PUBLIC_TIPTAP_COLLAB_TOKEN) {
     alert(`Set up your environment variables to connect to Tiptap Cloud:
-- NEXT_PUBLIC_TIPTAP_COLLAB_DOC_PREFIX - Prefix for identifying collaborative documents
-- NEXT_PUBLIC_TIPTAP_COLLAB_APP_ID - Your Document Server App ID
-- NEXT_PUBLIC_TIPTAP_COLLAB_TOKEN - JWT token for accessing Collaboration services (do not use in production)
+- NEXT_PUBLIC_NEXT_PUBLIC_TIPTAP_COLLAB_DOC_PREFIX - Prefix for identifying collaborative documents
+- NEXT_PUBLIC_NEXT_PUBLIC_TIPTAP_COLLAB_APP_ID - Your Document Server App ID
+- NEXT_PUBLIC_NEXT_PUBLIC_TIPTAP_COLLAB_TOKEN - JWT token for accessing Collaboration services (do not use in production)
 - NEXT_PUBLIC_TIPTAP_AI_APP_ID - Your AI App ID
 - NEXT_PUBLIC_TIPTAP_AI_TOKEN - JWT token for accessing AI services (do not use in production)
 Follow this guide: https://tiptap.dev/docs/ui-components/templates/nusoma-editor`);
@@ -236,7 +236,7 @@ Follow this guide: https://tiptap.dev/docs/ui-components/templates/nusoma-editor
 
   // A hardcoded token for demonstration purposes.
   // TODO: remove this in production and use the API endpoint instead
-  return TIPTAP_COLLAB_TOKEN;
+  return NEXT_PUBLIC_TIPTAP_COLLAB_TOKEN;
 };
 
 /**
@@ -271,11 +271,11 @@ export const fetchAiToken = async () => {
   // endpoint that generates a new JWT token in the server. Then, call that API
   // endpoint from this function.
   // When you've implemented the API endpoint, remove the code below.
-  if (!TIPTAP_AI_TOKEN) {
+  if (!NEXT_PUBLIC_TIPTAP_AI_TOKEN) {
     alert(`Set up your environment variables to connect to Tiptap Cloud:
-- NEXT_PUBLIC_TIPTAP_COLLAB_DOC_PREFIX - Prefix for identifying collaborative documents
-- NEXT_PUBLIC_TIPTAP_COLLAB_APP_ID - Your Document Server App ID
-- NEXT_PUBLIC_TIPTAP_COLLAB_TOKEN - JWT token for accessing Collaboration services (do not use in production)
+- NEXT_PUBLIC_NEXT_PUBLIC_TIPTAP_COLLAB_DOC_PREFIX - Prefix for identifying collaborative documents
+- NEXT_PUBLIC_NEXT_PUBLIC_TIPTAP_COLLAB_APP_ID - Your Document Server App ID
+- NEXT_PUBLIC_NEXT_PUBLIC_TIPTAP_COLLAB_TOKEN - JWT token for accessing Collaboration services (do not use in production)
 - NEXT_PUBLIC_TIPTAP_AI_APP_ID - Your AI App ID
 - NEXT_PUBLIC_TIPTAP_AI_TOKEN - JWT token for accessing AI services (do not use in production)
 Follow this guide: https://tiptap.dev/docs/ui-components/templates/nusoma-editor`);
@@ -287,5 +287,5 @@ Follow this guide: https://tiptap.dev/docs/ui-components/templates/nusoma-editor
 
   // A hardcoded token for demonstration purposes.
   // TODO: remove this in production and use the API endpoint instead
-  return TIPTAP_AI_TOKEN;
+  return NEXT_PUBLIC_TIPTAP_AI_TOKEN;
 };

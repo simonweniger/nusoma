@@ -74,7 +74,7 @@ import {
   useCollab
 } from '@workspace/editor/contexts/collab-context';
 import { UserProvider, useUser } from '@workspace/editor/contexts/user-context';
-import { TIPTAP_AI_APP_ID } from '@workspace/editor/lib/tiptap-collab-utils';
+import { NEXT_PUBLIC_TIPTAP_AI_APP_ID } from '@workspace/editor/lib/tiptap-collab-utils';
 // --- Lib ---
 import {
   handleImageUpload,
@@ -270,7 +270,7 @@ export function EditorProvider(props: EditorProviderProps) {
       Typography,
       UiState,
       Ai.configure({
-        appId: TIPTAP_AI_APP_ID,
+        appId: NEXT_PUBLIC_TIPTAP_AI_APP_ID,
         token: aiToken || undefined,
         autocompletion: false,
         showDecorations: true,
