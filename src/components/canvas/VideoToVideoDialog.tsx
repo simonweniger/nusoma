@@ -163,7 +163,7 @@ export const VideoToVideoDialog: React.FC<VideoToVideoDialogProps> = ({
             <Button type="button" onClick={onClose} disabled={isConverting}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" disabled={isConverting}>
+            <Button type="submit" variant="default" disabled={isConverting}>
               {isConverting ? (
                 <>
                   <SpinnerIcon className="mr-2 h-4 w-4 animate-spin text-white" />

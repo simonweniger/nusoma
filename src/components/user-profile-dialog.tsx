@@ -335,7 +335,7 @@ export default function UserProfileDialog({
               }
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a language" />
+                <SelectValue>Select a language</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {languages.map((lang) => (

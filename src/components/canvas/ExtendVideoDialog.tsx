@@ -209,7 +209,7 @@ export const ExtendVideoDialog: React.FC<ExtendVideoDialogProps> = ({
             <Button type="button" onClick={onClose} disabled={isExtending}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" disabled={isExtending}>
+            <Button type="submit" variant="default" disabled={isExtending}>
               {isExtending ? (
                 <>
                   <SpinnerIcon className="mr-2 h-4 w-4 animate-spin text-white" />

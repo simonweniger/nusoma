@@ -203,14 +203,7 @@ function DropdownMenuRadioItem({
 function DropdownMenuSub({
   ...props
 }: React.ComponentProps<typeof BaseMenu.SubmenuRoot>) {
-  return (
-    <BaseMenu.SubmenuRoot
-      closeDelay={0}
-      delay={0}
-      data-slot="dropdown-menu-sub"
-      {...props}
-    />
-  );
+  return <BaseMenu.SubmenuRoot data-slot="dropdown-menu-sub" {...props} />;
 }
 
 function DropdownMenuSubTrigger({

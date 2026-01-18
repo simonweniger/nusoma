@@ -6,7 +6,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-import { DOCS_LINKS } from "~/components/marketing-links";
+import { DOCS_LINKS } from "@/components/landing/marketing-links";
 
 export type DocsPagerProps = {
   doc: Doc;

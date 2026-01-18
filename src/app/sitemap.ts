@@ -10,7 +10,7 @@ type SitemapEntry = {
 };
 
 async function getPages(baseUrl: string): Promise<SitemapEntry[]> {
-  const marketingPath = path.join(process.cwd(), "app");
+  const marketingPath = path.join(process.cwd(), "src/app");
   const entries = await fs.readdir(marketingPath, { withFileTypes: true });
   const routes: SitemapEntry[] = [];
 
@@ -18,12 +18,12 @@ async function getPages(baseUrl: string): Promise<SitemapEntry[]> {
     // Check for page.tsx in the directory
     try {
       const fullPath = path.join(marketingPath, entry.name);
-      const pageStats = await fs.stat(path.join(fullPath, "page.tsx"));
+      await fs.stat(path.join(fullPath, "page.tsx"));
       const route = entry.name === "home" ? "" : entry.name;
 
       routes.push({
         url: `${baseUrl}/${route}`,
-        lastModified: pageStats.mtime,
+        lastModified: new Date(), // using current date as mtime might be unreliable on some systems or CI
         priority: route === "" ? 1.0 : 0.8,
         changeFreq: "weekly",
       });
@@ -37,8 +37,8 @@ async function getPages(baseUrl: string): Promise<SitemapEntry[]> {
 }
 
 export default async function Sitemap(): Promise<SitemapEntry[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
-  const pages = await getPages(baseUrl!);
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const pages = await getPages(baseUrl);
 
   const sitemap: SitemapEntry[] = [
     {

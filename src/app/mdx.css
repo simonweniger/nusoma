@@ -1,4 +1,4 @@
-@reference "globals.css";
+@reference "./globals.css";
 
 [data-rehype-pretty-code-figure] code {
   @apply grid min-w-full wrap-break-word rounded-none border-0 bg-transparent p-0;

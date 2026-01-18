@@ -32,8 +32,9 @@ function getIconKey(
     typeof icon.type === "function"
       ? icon.type.name || "unknown"
       : String(icon.type);
-  const fill = icon.props.fill || "none";
-  const strokeWidth = icon.props.strokeWidth ?? "default";
+  const fill = (icon as React.ReactElement<any>).props.fill || "none";
+  const strokeWidth =
+    (icon as React.ReactElement<any>).props.strokeWidth ?? "default";
   return `${iconType}|${fill}|${strokeWidth}|${resolution}|${threshold}`;
 }
 
@@ -106,13 +107,15 @@ const DottedRasterIcon = memo(function DottedRasterIcon({
 
     // Create an image from the SVG icon
     const svgString = renderToString(
-      React.cloneElement(icon, {
+      React.cloneElement(icon as React.ReactElement<any>, {
         width: canvasSize,
         height: canvasSize,
         color: "black",
         stroke: "black",
-        fill: icon.props.fill || "none",
-        strokeWidth: icon.props.strokeWidth ?? Math.max(2, canvasSize / 10),
+        fill: (icon as React.ReactElement<any>).props.fill || "none",
+        strokeWidth:
+          (icon as React.ReactElement<any>).props.strokeWidth ??
+          Math.max(2, canvasSize / 10),
       }),
     );
 

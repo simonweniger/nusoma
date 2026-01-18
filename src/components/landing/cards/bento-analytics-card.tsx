@@ -68,7 +68,6 @@ export function BentoAnalyticsCard({
               <Area
                 type="monotone"
                 dataKey="value"
-                label="Leads"
                 stroke="var(--primary)"
                 fill="url(#gradient)"
                 strokeWidth={2}

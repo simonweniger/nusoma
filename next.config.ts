@@ -49,4 +49,6 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
 };
 
-export default withBotId(withContentCollections(nextConfig));
+export default withContentCollections(nextConfig).then((config) =>
+  withBotId(config as NextConfig),
+);

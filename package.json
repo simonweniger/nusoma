@@ -147,5 +147,18 @@
     "**/*.{json,md}": [
       "prettier --write --cache"
     ]
-  }
+  },
+  "trustedDependencies": [
+    "@parcel/watcher",
+    "@tailwindcss/oxide",
+    "@vercel/speed-insights",
+    "bufferutil",
+    "canvas",
+    "core-js",
+    "esbuild",
+    "keccak",
+    "sharp",
+    "unrs-resolver",
+    "utf-8-validate"
+  ]
 }

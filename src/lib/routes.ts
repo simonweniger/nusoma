@@ -2,7 +2,8 @@
 // - Everything lowercase is an object
 // - Everything uppercase is a string (the route)
 
-export const baseUrl = process.env.NEXT_PUBLIC_APP_URL!;
+export const baseUrl =
+  process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 export const routes = {
   index: `${baseUrl}/`,

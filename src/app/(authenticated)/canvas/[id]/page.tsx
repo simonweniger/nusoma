@@ -1632,7 +1632,10 @@ export default function OverlayPage() {
   };
 
   // Handle selection
-  const handleSelect = (id: string, e: Konva.KonvaEventObject<MouseEvent>) => {
+  const handleSelect = (
+    id: string,
+    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+  ) => {
     if (e.evt.shiftKey || e.evt.metaKey || e.evt.ctrlKey) {
       setSelectedIds((prev) =>
         prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],

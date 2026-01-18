@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/command";
 import { type DialogProps } from "@/components/ui/dialog";
 
-import { DOCS_LINKS } from "~/components/marketing-links";
+import { DOCS_LINKS } from "@/components/landing/marketing-links";
 
 export function DocsSearch(props: DialogProps): React.JSX.Element {
   const router = useRouter();

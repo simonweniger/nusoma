@@ -59,7 +59,9 @@ export const metadata: Metadata = {
     telephone: false,
   },
   manifest: `${process.env.NEXT_PUBLIC_APP_URL}/manifest`,
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL!),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  ),
   alternates: {
     canonical: "/",
   },

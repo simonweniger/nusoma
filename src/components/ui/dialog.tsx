@@ -206,6 +206,8 @@ function DialogDescription({
   );
 }
 
+export type DialogProps = React.ComponentProps<typeof BaseDialog.Root>;
+
 export {
   Dialog,
   DialogPortal,
