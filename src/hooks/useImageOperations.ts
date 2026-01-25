@@ -43,7 +43,15 @@ export function useImageOperations({
     for (const img of sortedImages) {
       const imgElement = new window.Image();
       imgElement.crossOrigin = "anonymous";
-      imgElement.src = img.src;
+
+      // Use proxy for S3 URLs to bypass CORS
+      const needsProxy =
+        img.src.includes("instant-storage.s3.amazonaws.com") ||
+        img.src.includes("storage.googleapis.com");
+
+      imgElement.src = needsProxy
+        ? `/api/proxy-image?url=${encodeURIComponent(img.src)}`
+        : img.src;
       await new Promise((resolve) => {
         imgElement.onload = resolve;
       });

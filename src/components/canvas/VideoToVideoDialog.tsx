@@ -17,9 +17,9 @@ import {
 } from "./VideoModelComponents";
 import {
   getVideoModelById,
-  getDefaultVideoModel,
+  getVideoModelForCategory,
   type VideoModelConfig,
-} from "@/lib/video-models";
+} from "@/lib/models-config";
 import { ChevronRight, X } from "lucide-react";
 
 interface VideoToVideoDialogProps {
@@ -37,7 +37,7 @@ export const VideoToVideoDialog: React.FC<VideoToVideoDialogProps> = ({
   videoUrl,
   isConverting,
 }) => {
-  const defaultModel = getDefaultVideoModel("video-to-video");
+  const defaultModel = getVideoModelForCategory("video-to-video");
   const [selectedModelId, setSelectedModelId] = useState(
     defaultModel?.id || "seedance-pro",
   );

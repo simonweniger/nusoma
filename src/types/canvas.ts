@@ -33,6 +33,7 @@ export interface GenerationSettings {
   prompt: string;
   loraUrl: string;
   styleId?: string;
+  imageSize?: ImageSizeType;
 }
 
 export interface VideoGenerationSettings {
@@ -50,10 +51,19 @@ export interface VideoGenerationSettings {
   [key: string]: any; // Allow additional model-specific fields
 }
 
+export type ImageSizeType =
+  | "landscape_16_9"
+  | "landscape_4_3"
+  | "square_hd"
+  | "square"
+  | "portrait_4_3"
+  | "portrait_16_9";
+
 export interface ActiveGeneration {
   imageUrl?: string; // Optional - undefined for text-to-image, present for image-to-image
   prompt: string;
   loraUrl?: string;
+  imageSize?: ImageSizeType;
   state?: "submitting" | "running" | "success"; // Track generation state
 }
 

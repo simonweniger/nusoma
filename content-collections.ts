@@ -36,7 +36,7 @@ export const authors = defineCollection({
   schema: z.object({
     ref: z.string(),
     name: z.string().default("Anonymous"),
-    avatar: z.string().url().default(""),
+    avatar: z.url().default(""),
     content: z.string(),
   }),
 });

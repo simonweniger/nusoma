@@ -22,7 +22,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { styleModels } from "@/lib/models";
+import { styleActions, getDefaultStyle } from "@/lib/prompt-actions";
 import { useToast } from "@/hooks/use-toast";
 
 // Import extracted components
@@ -37,7 +37,7 @@ import { ImageToVideoDialog } from "@/components/canvas/ImageToVideoDialog";
 import { VideoToVideoDialog } from "@/components/canvas/VideoToVideoDialog";
 import { ExtendVideoDialog } from "@/components/canvas/ExtendVideoDialog";
 import { RemoveVideoBackgroundDialog } from "@/components/canvas/VideoModelComponents";
-import { getVideoModelById } from "@/lib/video-models";
+import { getVideoModelById } from "@/lib/models-config";
 
 // Import types
 import type {
@@ -99,17 +99,17 @@ export default function OverlayPage() {
   // const [visibleIndicators, setVisibleIndicators] = useState<Set<string>>(
   //   new Set(),
   // );
-  const simpsonsStyle = styleModels.find((m) => m.id === "simpsons");
+  const defaultStyle = getDefaultStyle();
   const toast = useToast();
 
   const [generationSettings, setGenerationSettings] =
     useState<GenerationSettings>({
-      prompt: simpsonsStyle?.prompt || "",
-      loraUrl: simpsonsStyle?.loraUrl || "",
-      styleId: simpsonsStyle?.id || "simpsons",
+      prompt: defaultStyle.prompt,
+      loraUrl: defaultStyle.loraUrl || "",
+      styleId: defaultStyle.id,
     });
   const [previousStyleId, setPreviousStyleId] = useState<string>(
-    simpsonsStyle?.id || "simpsons",
+    defaultStyle.id,
   );
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeGenerations, setActiveGenerations] = useState<
@@ -312,7 +312,7 @@ export default function OverlayPage() {
       // Get video model name for toast display
       let modelName = "Video Model";
       const modelId = settings.modelId || "ltx-video";
-      const { getVideoModelById } = await import("@/lib/video-models");
+      const { getVideoModelById } = await import("@/lib/models-config");
       const model = getVideoModelById(modelId);
       if (model) {
         modelName = model.name;
@@ -408,7 +408,7 @@ export default function OverlayPage() {
       // Get video model name for toast display
       let modelName = "Video Model";
       const modelId = settings.modelId || "seedance-pro";
-      const { getVideoModelById } = await import("@/lib/video-models");
+      const { getVideoModelById } = await import("@/lib/models-config");
       const model = getVideoModelById(modelId);
       if (model) {
         modelName = model.name;
@@ -500,7 +500,7 @@ export default function OverlayPage() {
       // Get video model name for toast display
       let modelName = "Video Model";
       const modelId = settings.modelId || "seedance-pro";
-      const { getVideoModelById } = await import("@/lib/video-models");
+      const { getVideoModelById } = await import("@/lib/models-config");
       const model = getVideoModelById(modelId);
       if (model) {
         modelName = model.name;
@@ -1357,7 +1357,15 @@ export default function OverlayPage() {
         }, "image/png");
       };
       img.onerror = () => reject(new Error("Failed to load image"));
-      img.src = imageSrc;
+
+      // Use proxy for S3 URLs to bypass CORS
+      const needsProxy =
+        imageSrc.includes("instant-storage.s3.amazonaws.com") ||
+        imageSrc.includes("storage.googleapis.com");
+
+      img.src = needsProxy
+        ? `/api/proxy-image?url=${encodeURIComponent(imageSrc)}`
+        : imageSrc;
     });
   };
 
@@ -1963,7 +1971,16 @@ export default function OverlayPage() {
       // Process the image to get the cropped/processed version
       const imgElement = new window.Image();
       imgElement.crossOrigin = "anonymous"; // Enable CORS
-      imgElement.src = image.src;
+
+      // Use proxy for S3 URLs to bypass CORS
+      const needsProxy =
+        image.src.includes("instant-storage.s3.amazonaws.com") ||
+        image.src.includes("storage.googleapis.com");
+
+      imgElement.src = needsProxy
+        ? `/api/proxy-image?url=${encodeURIComponent(image.src)}`
+        : image.src;
+
       await new Promise((resolve) => {
         imgElement.onload = resolve;
       });
@@ -3179,7 +3196,6 @@ export default function OverlayPage() {
                       ? "submitting" // Default to submitting when generation just started
                       : "running"
               }
-              previousStyleId={previousStyleId}
               handleRun={handleRun}
               handleFileUpload={handleFileUpload}
               toast={toast}
@@ -3259,39 +3275,41 @@ export default function OverlayPage() {
                   </button>
 
                   {/* Predefined styles */}
-                  {styleModels.map((model) => (
+                  {styleActions.map((action) => (
                     <button
-                      key={model.id}
+                      key={action.id}
                       onClick={() => {
                         setGenerationSettings({
                           ...generationSettings,
-                          loraUrl: model.loraUrl || "",
-                          prompt: model.prompt,
-                          styleId: model.id,
+                          loraUrl: action.loraUrl || "",
+                          prompt: action.prompt,
+                          styleId: action.id,
                         });
                         setIsStyleDialogOpen(false);
                       }}
                       className={cn(
                         "group relative flex flex-col items-center gap-2 p-3 rounded-xl border",
-                        generationSettings.styleId === model.id
+                        generationSettings.styleId === action.id
                           ? "border-primary bg-primary/10"
                           : "border-border hover:border-primary/50",
                       )}
                     >
                       <div className="relative w-full aspect-square rounded-lg overflow-hidden">
-                        <Image
-                          src={model.imageSrc}
-                          alt={model.name}
-                          width={200}
-                          height={200}
-                          className="w-full h-full object-cover"
-                        />
-                        {generationSettings.styleId === model.id && (
+                        {action.previewImage && (
+                          <Image
+                            src={action.previewImage}
+                            alt={action.name}
+                            width={200}
+                            height={200}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        {generationSettings.styleId === action.id && (
                           <div className="absolute inset-0 bg-primary/20 flex items-center justify-center"></div>
                         )}
                       </div>
                       <span className="text-sm font-medium text-center">
-                        {model.name}
+                        {action.name}
                       </span>
                     </button>
                   ))}

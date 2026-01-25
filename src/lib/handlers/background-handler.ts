@@ -47,7 +47,15 @@ export const handleRemoveBackground = async (deps: BackgroundHandlerDeps) => {
       // Process the image to get the cropped/processed version
       const imgElement = new window.Image();
       imgElement.crossOrigin = "anonymous"; // Enable CORS
-      imgElement.src = image.src;
+
+      // Use proxy for S3 URLs to bypass CORS
+      const needsProxy =
+        image.src.includes("instant-storage.s3.amazonaws.com") ||
+        image.src.includes("storage.googleapis.com");
+
+      imgElement.src = needsProxy
+        ? `/api/proxy-image?url=${encodeURIComponent(image.src)}`
+        : image.src;
       await new Promise((resolve) => {
         imgElement.onload = resolve;
       });

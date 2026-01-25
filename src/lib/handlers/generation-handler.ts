@@ -157,8 +157,35 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
     const viewportCenterY =
       (canvasSize.height / 2 - viewport.y) / viewport.scale;
 
-    const width = 512;
-    const height = 512;
+    // Calculate dimensions based on selected image size
+    const baseSize = 512;
+    let width = baseSize;
+    let height = baseSize;
+
+    const imageSize = generationSettings.imageSize || "landscape_16_9";
+    switch (imageSize) {
+      case "landscape_16_9":
+        width = baseSize;
+        height = Math.round(baseSize * (9 / 16));
+        break;
+      case "landscape_4_3":
+        width = baseSize;
+        height = Math.round(baseSize * (3 / 4));
+        break;
+      case "square_hd":
+      case "square":
+        width = baseSize;
+        height = baseSize;
+        break;
+      case "portrait_4_3":
+        width = Math.round(baseSize * (3 / 4));
+        height = baseSize;
+        break;
+      case "portrait_16_9":
+        width = Math.round(baseSize * (9 / 16));
+        height = baseSize;
+        break;
+    }
 
     // Add placeholder image
     setImages((prev) => [
@@ -183,6 +210,7 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
         imageUrl: undefined, // No source image for text-to-image
         prompt: generationSettings.prompt,
         loraUrl: generationSettings.loraUrl,
+        imageSize: generationSettings.imageSize,
         state: "submitting", // Initial state
       }),
     );
@@ -206,10 +234,18 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
       const cropWidth = img.cropWidth || 1;
       const cropHeight = img.cropHeight || 1;
 
-      // Load the image
+      // Load the image - use proxy for S3 URLs to bypass CORS
       const imgElement = new window.Image();
       imgElement.crossOrigin = "anonymous"; // Enable CORS
-      imgElement.src = img.src;
+
+      // Check if the image is from S3 (InstantDB storage) and needs proxying
+      const needsProxy =
+        img.src.includes("instant-storage.s3.amazonaws.com") ||
+        img.src.includes("storage.googleapis.com");
+
+      imgElement.src = needsProxy
+        ? `/api/proxy-image?url=${encodeURIComponent(img.src)}`
+        : img.src;
       await new Promise((resolve) => {
         imgElement.onload = resolve;
       });

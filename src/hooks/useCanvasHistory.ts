@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { db } from "@/lib/db";
 import { id } from "@instantdb/react";
 import type { PlacedImage, PlacedVideo } from "@/types/canvas";
@@ -26,6 +26,15 @@ export function useCanvasHistory({
   onRestore,
 }: UseCanvasHistoryProps) {
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(-1);
+  const prevProjectIdRef = useRef<string | null>(null);
+
+  // Reset history index when projectId changes
+  useEffect(() => {
+    if (prevProjectIdRef.current !== projectId) {
+      setCurrentHistoryIndex(-1);
+      prevProjectIdRef.current = projectId;
+    }
+  }, [projectId]);
 
   const { data: historyData } = db.useQuery(
     projectId
@@ -40,16 +49,25 @@ export function useCanvasHistory({
       : { canvasHistory: { $: { where: { id: "__none__" } } } },
   );
 
-  const history =
-    historyData?.canvasHistory?.map((snapshot: any) => ({
-      ...(snapshot.snapshotData as HistoryState),
-      timestamp: snapshot.timestamp,
-    })) || [];
+  // Memoize history array to avoid recreating on every render
+  const history = useMemo(
+    () =>
+      historyData?.canvasHistory?.map((snapshot: any) => ({
+        id: snapshot.id,
+        order: snapshot.order,
+        ...(snapshot.snapshotData as HistoryState),
+        timestamp: snapshot.timestamp,
+      })) || [],
+    [historyData?.canvasHistory],
+  );
 
-  const historyIndex =
-    currentHistoryIndex === -1 && history.length > 0
-      ? history.length - 1
-      : currentHistoryIndex;
+  const historyIndex = useMemo(
+    () =>
+      currentHistoryIndex === -1 && history.length > 0
+        ? history.length - 1
+        : currentHistoryIndex,
+    [currentHistoryIndex, history.length],
+  );
 
   const saveToHistory = useCallback(async () => {
     if (!projectId) return;
@@ -61,41 +79,33 @@ export function useCanvasHistory({
     };
 
     try {
-      const existingSnapshots = await db.queryOnce({
-        canvasHistory: {
-          $: {
-            where: { "project.id": projectId },
-            order: { order: "asc" },
-          },
-        },
-      });
-
-      const currentHistory = existingSnapshots.data.canvasHistory;
+      // Use existing history data instead of querying again
+      const currentHistory = historyData?.canvasHistory || [];
       const currentIndex =
         currentHistoryIndex >= 0
           ? currentHistoryIndex
           : currentHistory.length - 1;
 
+      // Collect all transactions to batch them
+      const transactions: any[] = [];
+
       // Truncate history if we're not at the end (removing "redo" items)
       if (currentIndex < currentHistory.length - 1) {
         const toDelete = currentHistory.slice(currentIndex + 1);
-        if (toDelete.length > 0) {
-          const deleteTxs = toDelete.map((snapshot: any) =>
-            db.tx.canvasHistory[snapshot.id].delete(),
-          );
-          await db.transact(deleteTxs);
+        for (const snapshot of toDelete) {
+          transactions.push(db.tx.canvasHistory[snapshot.id].delete());
         }
       }
 
       // Limit history to last 50 snapshots to avoid excessive data
       const MAX_HISTORY_SNAPSHOTS = 50;
-      const remainingHistory = currentHistory.slice(0, currentIndex + 1);
-      if (remainingHistory.length >= MAX_HISTORY_SNAPSHOTS) {
-        const toRemove = remainingHistory.length - MAX_HISTORY_SNAPSHOTS + 1;
-        const deleteTxs = remainingHistory
-          .slice(0, toRemove)
-          .map((snapshot: any) => db.tx.canvasHistory[snapshot.id].delete());
-        await db.transact(deleteTxs);
+      const remainingCount = currentIndex + 1;
+      if (remainingCount >= MAX_HISTORY_SNAPSHOTS) {
+        const toRemove = remainingCount - MAX_HISTORY_SNAPSHOTS + 1;
+        const snapshotsToRemove = currentHistory.slice(0, toRemove);
+        for (const snapshot of snapshotsToRemove) {
+          transactions.push(db.tx.canvasHistory[snapshot.id].delete());
+        }
       }
 
       // Add new snapshot
@@ -103,21 +113,32 @@ export function useCanvasHistory({
       const newOrder =
         Math.max(...currentHistory.map((s: any) => s.order || 0), -1) + 1;
 
-      await db.transact([
+      transactions.push(
         db.tx.canvasHistory[snapshotId].update({
           snapshotData: newState,
           timestamp: new Date(),
           order: newOrder,
         }),
         db.tx.canvasHistory[snapshotId].link({ project: projectId }),
-      ]);
+      );
 
-      // Update current index to point to the new snapshot
-      setCurrentHistoryIndex(newOrder);
+      // Execute all transactions in a single batch
+      await db.transact(transactions);
+
+      // Update current index to point to the end (new snapshot will be last)
+      // Use -1 to let it auto-resolve to the latest on next render
+      setCurrentHistoryIndex(-1);
     } catch (error) {
       console.error("Failed to save history:", error);
     }
-  }, [images, videos, selectedIds, projectId, currentHistoryIndex]);
+  }, [
+    images,
+    videos,
+    selectedIds,
+    projectId,
+    currentHistoryIndex,
+    historyData?.canvasHistory,
+  ]);
 
   // Undo - just update the index and restore state from InstantDB history
   const undo = useCallback(() => {
@@ -162,9 +183,17 @@ export function useCanvasHistory({
     }
   }, [history.length, currentHistoryIndex]);
 
-  // Save initial state
+  // Track if we've saved the initial state for this project
+  const initialSaveRef = useRef<string | null>(null);
+
+  // Save initial state only once per project
   useEffect(() => {
-    if (history.length === 0 && projectId) {
+    if (
+      history.length === 0 &&
+      projectId &&
+      initialSaveRef.current !== projectId
+    ) {
+      initialSaveRef.current = projectId;
       saveToHistory();
     }
   }, [history.length, projectId, saveToHistory]);

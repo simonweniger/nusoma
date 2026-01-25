@@ -17,9 +17,9 @@ import {
 } from "./VideoModelComponents";
 import {
   getVideoModelById,
-  getDefaultVideoModel,
+  getVideoModelForCategory,
   type VideoModelConfig,
-} from "@/lib/video-models";
+} from "@/lib/models-config";
 import { ChevronRight, X } from "lucide-react";
 
 interface ExtendVideoDialogProps {
@@ -37,7 +37,7 @@ export const ExtendVideoDialog: React.FC<ExtendVideoDialogProps> = ({
   videoUrl,
   isExtending,
 }) => {
-  const defaultModel = getDefaultVideoModel("video-extension");
+  const defaultModel = getVideoModelForCategory("video-extension");
   const [selectedModelId, setSelectedModelId] = useState(
     defaultModel?.id || "ltx-video-extend",
   );

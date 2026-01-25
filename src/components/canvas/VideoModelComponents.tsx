@@ -15,7 +15,7 @@ import {
   formatPricingMessage,
   type VideoModelConfig,
   type VideoModelOption,
-} from "@/lib/video-models";
+} from "@/lib/models-config";
 import { Radio } from "@base-ui-components/react/radio";
 import { RadioGroup as BaseRadioGroup } from "@base-ui-components/react/radio-group";
 import { cn } from "@/lib/utils";

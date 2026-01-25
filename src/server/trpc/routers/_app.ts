@@ -3,6 +3,12 @@ import { rateLimitedProcedure, publicProcedure, router } from "../init";
 import { tracked } from "@trpc/server";
 import { createFalClient } from "@fal-ai/client";
 import sharp from "sharp";
+import {
+  getVideoModelById,
+  VIDEO_MODELS,
+  getImageModelForContext,
+  buildImageModelInput,
+} from "@/lib/models-config";
 
 const fal = createFalClient({
   credentials: () => process.env.FAL_KEY as string,
@@ -66,13 +72,11 @@ async function downloadImage(url: string): Promise<Buffer> {
   return Buffer.from(await response.arrayBuffer());
 }
 
-import { getVideoModelById, VIDEO_MODELS } from "@/lib/video-models";
-
 export const appRouter = router({
   transformVideo: publicProcedure
     .input(
       z.object({
-        videoUrl: z.string().url(),
+        videoUrl: z.url(),
         prompt: z.string().optional(),
         styleId: z.string().optional(),
         apiKey: z.string().optional(),
@@ -167,7 +171,7 @@ export const appRouter = router({
     .input(
       z
         .object({
-          imageUrl: z.string().url(),
+          imageUrl: z.url(),
           prompt: z.string().optional(),
           duration: z.number().optional().default(5),
           modelId: z.string().optional(),
@@ -179,7 +183,7 @@ export const appRouter = router({
           seed: z.number().optional().default(-1),
           apiKey: z.string().optional(),
         })
-        .passthrough(), // Allow additional fields for different models
+        .loose(), // Allow additional fields for different models
     )
     .subscription(async function* ({ input, signal, ctx }) {
       try {
@@ -631,7 +635,7 @@ export const appRouter = router({
   removeBackground: publicProcedure
     .input(
       z.object({
-        imageUrl: z.string().url(),
+        imageUrl: z.url(),
         apiKey: z.string().optional(),
       }),
     )
@@ -665,7 +669,7 @@ export const appRouter = router({
   isolateObject: publicProcedure
     .input(
       z.object({
-        imageUrl: z.string().url(),
+        imageUrl: z.url(),
         textInput: z.string(),
         apiKey: z.string().optional(),
       }),
@@ -834,13 +838,14 @@ export const appRouter = router({
     .input(
       z.object({
         prompt: z.string(),
-        loraUrl: z.string().url().optional(),
+        loraUrl: z.url().optional(),
         seed: z.number().optional(),
         imageSize: z
           .enum([
             "landscape_4_3",
             "portrait_4_3",
             "square",
+            "square_hd",
             "landscape_16_9",
             "portrait_16_9",
           ])
@@ -852,24 +857,23 @@ export const appRouter = router({
       try {
         const falClient = await getFalClient(input.apiKey, ctx);
 
-        const loras = input.loraUrl ? [{ path: input.loraUrl, scale: 1 }] : [];
+        const hasLora = !!input.loraUrl;
+        const model = getImageModelForContext(false, hasLora);
 
-        const result = await falClient.subscribe(
-          "fal-ai/flux-kontext-lora/text-to-image",
-          {
-            input: {
-              prompt: input.prompt,
-              image_size: input.imageSize || "square",
-              num_inference_steps: 30,
-              guidance_scale: 2.5,
-              num_images: 1,
-              enable_safety_checker: true,
-              output_format: "png",
-              seed: input.seed,
-              loras,
-            },
-          },
-        );
+        // Build input using model config
+        const subscribeInput = buildImageModelInput(model, {
+          prompt: input.prompt,
+          loraUrl: input.loraUrl,
+          seed: input.seed,
+          imageSize: input.imageSize,
+        });
+
+        console.log(`Calling ${model.endpoint} with:`, subscribeInput);
+
+        const result = await falClient.subscribe(model.endpoint, {
+          input: subscribeInput,
+          logs: true,
+        });
 
         // Handle different possible response structures
         const resultData = (result as any).data || result;
@@ -894,70 +898,60 @@ export const appRouter = router({
   generateImageStream: publicProcedure
     .input(
       z.object({
-        imageUrl: z.string().url().optional(),
+        imageUrl: z.url().optional(),
         prompt: z.string(),
-        loraUrl: z.string().url().optional(),
+        loraUrl: z.url().optional(),
         seed: z.number().optional(),
+        imageSize: z
+          .enum([
+            "landscape_4_3",
+            "portrait_4_3",
+            "square",
+            "square_hd",
+            "landscape_16_9",
+            "portrait_16_9",
+          ])
+          .optional(),
         lastEventId: z.string().optional(),
         apiKey: z.string().optional(),
       }),
     )
-    .subscription(async function* ({ input, signal, ctx }) {
+    .subscription(async function* ({ input, ctx }) {
       try {
         const falClient = await getFalClient(input.apiKey, ctx);
 
-        const loras = input.loraUrl ? [{ path: input.loraUrl, scale: 1 }] : [];
+        const hasImageSelected = !!input.imageUrl;
+        const hasLora = !!input.loraUrl;
+        const model = getImageModelForContext(hasImageSelected, hasLora);
 
         // Create a unique ID for this generation
         const generationId = `gen_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-        // Choose endpoint and params based on whether we have a source image
-        const isTextToImage = !input.imageUrl;
-        const endpoint = isTextToImage
-          ? "fal-ai/flux-lora"
-          : "fal-ai/flux-kontext-lora";
-
-        const streamInput: any = {
+        // Build input using model config
+        const subscribeInput = buildImageModelInput(model, {
           prompt: input.prompt,
-          num_inference_steps: 30,
-          guidance_scale: isTextToImage ? 3.5 : 2.5,
-          num_images: 1,
-          enable_safety_checker: true,
+          imageUrl: input.imageUrl,
+          loraUrl: input.loraUrl,
           seed: input.seed,
-          loras,
-        };
-
-        // Add image-specific params only for image-to-image
-        if (!isTextToImage) {
-          streamInput.image_url = input.imageUrl;
-          streamInput.resolution_mode = "match_input";
-        } else {
-          streamInput.image_size = "square";
-        }
-
-        // Start streaming from fal.ai
-        const stream = await falClient.stream(endpoint, {
-          input: streamInput,
+          imageSize: input.imageSize,
         });
 
-        let eventIndex = 0;
+        console.log(`Calling ${model.endpoint} with:`, subscribeInput);
 
-        // Stream events as they come
-        for await (const event of stream) {
-          if (signal?.aborted) {
-            break;
-          }
+        // Yield initial progress
+        yield tracked(`${generationId}_start`, {
+          type: "progress",
+          data: { status: "Starting image generation..." },
+        });
 
-          const eventId = `${generationId}_${eventIndex++}`;
-
-          yield tracked(eventId, {
-            type: "progress",
-            data: event,
-          });
-        }
-
-        // Get the final result
-        const result = await stream.done();
+        // Use subscribe instead of stream (flux-2-pro doesn't support streaming)
+        const result = await falClient.subscribe(model.endpoint, {
+          input: subscribeInput,
+          logs: true,
+          onQueueUpdate: (update) => {
+            console.log("Queue update:", update.status);
+          },
+        });
 
         // Handle different possible response structures
         const resultData = (result as any).data || result;
@@ -976,8 +970,18 @@ export const appRouter = router({
           imageUrl: images[0].url,
           seed: resultData.seed,
         });
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error in image generation stream:", error);
+
+        // Log detailed error info from Fal API
+        if (error.body || error.status) {
+          console.error("Fal API Error Details:", {
+            status: error.status,
+            body: error.body,
+            message: error.message,
+          });
+        }
+
         yield tracked(`error_${Date.now()}`, {
           type: "error",
           error:

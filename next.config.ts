@@ -12,7 +12,6 @@ const nextConfig: NextConfig = {
     return config;
   },
   images: {
-    domains: ["fal.ai", "storage.googleapis.com", "randomuser.me"],
     remotePatterns: [
       {
         protocol: "https",
@@ -24,7 +23,19 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "fal.ai",
+      },
+      {
+        protocol: "https",
         hostname: "randomuser.me",
+      },
+      {
+        protocol: "https",
+        hostname: "storage.googleapis.com",
+      },
+      {
+        protocol: "https",
+        hostname: "instant-storage.s3.amazonaws.com",
       },
     ],
   },

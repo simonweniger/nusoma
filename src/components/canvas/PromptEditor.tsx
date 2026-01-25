@@ -23,10 +23,18 @@ import {
   Sparkles,
   X,
   Upload,
+  RectangleHorizontal,
+  RectangleVertical,
+  Square,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { styleModels } from "@/lib/models";
-import { promptTemplates, PromptTemplate } from "@/lib/prompt-templates";
+import {
+  styleActions,
+  templateActions,
+  getCategoryIcon,
+  type PromptAction,
+  type PromptActionCategory,
+} from "@/lib/prompt-actions";
 import {
   type GenerationType,
   generationTypeConfigs,
@@ -36,14 +44,18 @@ import {
 } from "@/lib/generation-types";
 import { checkOS } from "@/utils/os-utils";
 import { ShortcutBadge } from "@/components/canvas/ShortcutBadge";
-import type { GenerationSettings, PlacedImage } from "@/types/canvas";
+import type {
+  GenerationSettings,
+  PlacedImage,
+  ImageSizeType,
+} from "@/types/canvas";
 import {
   TooltipTrigger,
   TooltipContent,
   Tooltip,
 } from "@/components/ui/tooltip";
 import { Dialog, DottedDialogContent } from "@/components/ui/dialog";
-import { Matrix, loader, pulse } from "@/components/ui/matrix";
+import { Matrix, loader, pulse, wave } from "@/components/ui/matrix";
 import { Button } from "@/components/ui/button";
 
 type GenerationState = "submitting" | "running" | "success";
@@ -55,25 +67,14 @@ interface PromptEditorProps {
   images: PlacedImage[];
   isGenerating: boolean;
   generationState?: GenerationState;
-  previousStyleId: string;
   handleRun: () => void;
   handleFileUpload: (files: FileList | null) => void;
   toast: any;
 }
 
-const getCategoryIcon = (category: PromptTemplate["category"]) => {
-  switch (category) {
-    case "camera":
-      return <Camera className="h-4 w-4" />;
-    case "lighting":
-      return <Lightbulb className="h-4 w-4" />;
-    case "composition":
-      return <Grid3x3 className="h-4 w-4" />;
-    case "mood":
-      return <Palette className="h-4 w-4" />;
-    case "effects":
-      return <Sparkles className="h-4 w-4" />;
-  }
+const renderCategoryIcon = (category: PromptActionCategory) => {
+  const IconComponent = getCategoryIcon(category);
+  return <IconComponent className="h-4 w-4" />;
 };
 
 // Custom chip node component
@@ -94,16 +95,8 @@ const ChipNodeView = ({ node, deleteNode }: any) => {
         <span className="shrink-0 opacity-70 inline-flex">
           {chipType === "style" ? (
             <Wand2 className="h-4 w-4" />
-          ) : icon === "camera" ? (
-            <Camera className="h-4 w-4" />
-          ) : icon === "lighting" ? (
-            <Lightbulb className="h-4 w-4" />
-          ) : icon === "composition" ? (
-            <Grid3x3 className="h-4 w-4" />
-          ) : icon === "mood" ? (
-            <Palette className="h-4 w-4" />
           ) : (
-            <Sparkles className="h-4 w-4" />
+            renderCategoryIcon(icon as PromptActionCategory)
           )}
         </span>
         <span className="font-medium">{title}</span>
@@ -267,9 +260,104 @@ const TactileButtonGroup = memo(function TactileButtonGroup({
   );
 });
 
+// Size options for image and video modes
+interface ImageSizeOption {
+  id: ImageSizeType;
+  label: string;
+  ratio: string;
+  icon: React.ReactNode;
+}
+
+interface VideoSizeOption {
+  id: string;
+  label: string;
+  ratio: string;
+  icon: React.ReactNode;
+}
+
+const imageSizeOptions: ImageSizeOption[] = [
+  {
+    id: "landscape_16_9",
+    label: "16:9 Landscape",
+    ratio: "16:9",
+    icon: <RectangleHorizontal />,
+  },
+  {
+    id: "landscape_4_3",
+    label: "4:3 Landscape",
+    ratio: "4:3",
+    icon: <RectangleHorizontal />,
+  },
+  { id: "square_hd", label: "Square HD", ratio: "1:1", icon: <Square /> },
+  {
+    id: "portrait_4_3",
+    label: "4:3 Portrait",
+    ratio: "3:4",
+    icon: <RectangleVertical />,
+  },
+  {
+    id: "portrait_16_9",
+    label: "16:9 Portrait",
+    ratio: "9:16",
+    icon: <RectangleVertical />,
+  },
+];
+
+const videoSizeOptions: VideoSizeOption[] = [
+  {
+    id: "16:9",
+    label: "16:9 Landscape",
+    ratio: "16:9",
+    icon: <RectangleHorizontal />,
+  },
+  { id: "1:1", label: "1:1 Square", ratio: "1:1", icon: <Square /> },
+  {
+    id: "9:16",
+    label: "9:16 Portrait",
+    ratio: "9:16",
+    icon: <RectangleVertical />,
+  },
+];
+
+// Tactile Momentary Button - shows active style only while pressed
+const TactileMomentaryButton = memo(function TactileMomentaryButton({
+  onClick,
+  icon,
+  disabled,
+}: {
+  onClick: () => void;
+  icon: React.ReactNode;
+  disabled?: boolean;
+}) {
+  const [isPressed, setIsPressed] = useState(false);
+
+  return (
+    <button
+      onClick={onClick}
+      onMouseDown={() => setIsPressed(true)}
+      onMouseUp={() => setIsPressed(false)}
+      onMouseLeave={() => setIsPressed(false)}
+      onBlur={() => setIsPressed(false)}
+      disabled={disabled}
+      className={cn(
+        "tactile-btn relative",
+        "size-9 rounded-md",
+        "transition-all duration-150 ease-out",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+        disabled && "opacity-40 cursor-not-allowed",
+        isPressed ? "tactile-btn--pressed" : "tactile-btn--inactive",
+      )}
+    >
+      <span className="tactile-btn__icon absolute inset-0 flex items-center justify-center [&_svg]:size-4">
+        {icon}
+      </span>
+    </button>
+  );
+});
+
 // Matrix toolbar constants
 const MATRIX_ROWS = 10;
-const MATRIX_COLS = 110;
+const MATRIX_COLS = 90;
 const MATRIX_DOT_SIZE = 2;
 const MATRIX_GAP = 2;
 
@@ -284,11 +372,13 @@ const MatrixToolbar = memo(function MatrixToolbar({
   state,
   generationType,
   hasInputAsset,
+  sizeOption,
 }: {
   isGenerating: boolean;
   state: GenerationState;
   generationType: GenerationType;
   hasInputAsset: boolean;
+  sizeOption: ImageSizeOption | VideoSizeOption;
 }) {
   // Get the current generation mode based on context
   const currentMode = getGenerationModeForContext(
@@ -317,7 +407,7 @@ const MatrixToolbar = memo(function MatrixToolbar({
 
   return (
     <div
-      className="relative w-full flex items-center px-6 justify-start"
+      className="relative w-full flex items-center px-10 justify-between"
       style={{
         height: toolbarHeight,
         minWidth: toolbarWidth,
@@ -335,28 +425,40 @@ const MatrixToolbar = memo(function MatrixToolbar({
         className="absolute inset-0 m-auto"
       />
 
-      {/* Content overlay - centered */}
+      {/* Left: Status content */}
       <div className="relative z-10 flex items-center gap-4">
         {/* Animated icon */}
-        <Matrix
-          rows={7}
-          cols={7}
-          frames={isGenerating ? (state === "success" ? pulse : loader) : pulse}
-          fps={isGenerating ? (state === "success" ? 16 : 12) : 10}
-          autoplay
-          loop
-          size={MATRIX_DOT_SIZE}
-          gap={MATRIX_GAP}
-          palette={{ on: color, off: "transparent" }}
-          brightness={1}
-        />
+        {isGenerating && (
+          <Matrix
+            rows={7}
+            cols={7}
+            frames={state === "success" ? pulse : wave}
+            fps={isGenerating ? (state === "success" ? 16 : 12) : 10}
+            autoplay
+            loop
+            size={MATRIX_DOT_SIZE}
+            gap={MATRIX_GAP}
+            palette={{ on: color, off: "transparent" }}
+            brightness={1}
+          />
+        )}
 
         {/* Text label */}
         <span
-          className="text-lg font-extrabold font-dotted tracking-wide"
+          className="font-extrabold font-dotted tracking-wide"
           style={{ color }}
         >
           {statusText}
+        </span>
+      </div>
+
+      {/* Right: Size display */}
+      <div className="relative z-10 flex items-center gap-2">
+        <span
+          className="font-extrabold font-dotted tracking-wide tabular-nums"
+          style={{ color }}
+        >
+          {sizeOption.ratio}
         </span>
       </div>
     </div>
@@ -370,7 +472,6 @@ export const PromptEditor = memo(function PromptEditor({
   images,
   isGenerating,
   generationState = "running",
-  previousStyleId,
   handleRun,
   handleFileUpload,
   toast,
@@ -379,6 +480,8 @@ export const PromptEditor = memo(function PromptEditor({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [generationType, setGenerationType] = useState<GenerationType>("image");
+  const [imageSizeIndex, setImageSizeIndex] = useState(0);
+  const [videoSizeIndex, setVideoSizeIndex] = useState(0);
   const slashPositionRef = useRef<number | null>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -387,6 +490,16 @@ export const PromptEditor = memo(function PromptEditor({
 
   // Memoize whether we're in image mode
   const isImageMode = selectedIds.length > 0;
+
+  // Sync imageSize to generationSettings when index changes or on mount
+  useEffect(() => {
+    if (!generationSettings.imageSize) {
+      setGenerationSettings({
+        ...generationSettings,
+        imageSize: imageSizeOptions[imageSizeIndex].id,
+      });
+    }
+  }, []);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -506,7 +619,7 @@ export const PromptEditor = memo(function PromptEditor({
     [showMenu, generationSettings, setGenerationSettings],
   );
 
-  const insertStyleChip = (style: any) => {
+  const insertStyleChip = (action: PromptAction) => {
     if (!editor || slashPositionRef.current === null) return;
 
     // Remove any existing style chips
@@ -525,10 +638,10 @@ export const PromptEditor = memo(function PromptEditor({
         type: "chip",
         attrs: {
           chipType: "style",
-          title: style.name,
-          value: style.prompt,
-          styleId: style.id,
-          loraUrl: style.loraUrl || "",
+          title: action.name,
+          value: action.prompt,
+          styleId: action.id,
+          loraUrl: action.loraUrl || "",
         },
       })
       .insertContent(" ") // Add space after chip
@@ -537,8 +650,8 @@ export const PromptEditor = memo(function PromptEditor({
 
     setGenerationSettings({
       ...generationSettings,
-      styleId: style.id,
-      loraUrl: style.loraUrl || "",
+      styleId: action.id,
+      loraUrl: action.loraUrl || "",
     });
 
     // Reset menu state
@@ -547,7 +660,7 @@ export const PromptEditor = memo(function PromptEditor({
     setSearchQuery("");
   };
 
-  const insertTemplateChip = (template: any) => {
+  const insertTemplateChip = (action: PromptAction) => {
     if (!editor || slashPositionRef.current === null) return;
 
     // Delete the slash and search query
@@ -559,9 +672,9 @@ export const PromptEditor = memo(function PromptEditor({
         type: "chip",
         attrs: {
           chipType: "template",
-          title: template.name,
-          value: template.content,
-          icon: template.category,
+          title: action.name,
+          value: action.prompt,
+          icon: action.category,
         },
       })
       .insertContent(" ") // Add space after chip
@@ -575,25 +688,26 @@ export const PromptEditor = memo(function PromptEditor({
   };
 
   const menuItems = [
-    ...styleModels.map((style) => ({
-      id: `style-${style.id}`,
-      title: style.name,
-      subtitle: style.prompt,
+    ...styleActions.map((action) => ({
+      id: `style-${action.id}`,
+      title: action.name,
+      subtitle: action.description,
+      previewImage: action.previewImage,
       category: "🎨 Styles",
       icon: <Wand2 className="h-4 w-4" />,
       action: () => {
-        insertStyleChip(style);
+        insertStyleChip(action);
         setShowMenu(false);
       },
     })),
-    ...promptTemplates.map((template) => ({
-      id: `template-${template.id}`,
-      title: template.name,
-      subtitle: template.description,
-      category: `✨ Templates: ${template.category.charAt(0).toUpperCase() + template.category.slice(1)}`,
-      icon: getCategoryIcon(template.category),
+    ...templateActions.map((action) => ({
+      id: `template-${action.id}`,
+      title: action.name,
+      subtitle: action.description,
+      category: `✨ Templates: ${action.category.charAt(0).toUpperCase() + action.category.slice(1)}`,
+      icon: renderCategoryIcon(action.category),
       action: () => {
-        insertTemplateChip(template);
+        insertTemplateChip(action);
         setShowMenu(false);
       },
     })),
@@ -670,7 +784,7 @@ export const PromptEditor = memo(function PromptEditor({
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 md:absolute md:bottom-4 md:left-1/2 md:transform md:-translate-x-1/2 z-20 p-2 md:p-0 md:pb-0 md:max-w-[648px]">
+      <div className="fixed bottom-0 left-0 right-0 md:absolute md:bottom-1 md:left-1/2 md:transform md:-translate-x-1/2 z-20 p-2 md:p-0 md:pb-0 md:max-w-[648px]">
         <div
           className="p-4 transition-all ease-in-out duration-100"
           style={{
@@ -759,11 +873,53 @@ export const PromptEditor = memo(function PromptEditor({
                   state={deferredGenerationState}
                   generationType={generationType}
                   hasInputAsset={isImageMode}
+                  sizeOption={
+                    generationType === "video"
+                      ? videoSizeOptions[videoSizeIndex]
+                      : imageSizeOptions[imageSizeIndex]
+                  }
                 />
               </div>
 
               {/* Right: Action buttons */}
               <div className="flex items-center gap-1.5">
+                {/* Size toggle button */}
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <TactileMomentaryButton
+                        onClick={() => {
+                          if (generationType === "video") {
+                            const newIndex =
+                              (videoSizeIndex + 1) % videoSizeOptions.length;
+                            setVideoSizeIndex(newIndex);
+                          } else {
+                            const newIndex =
+                              (imageSizeIndex + 1) % imageSizeOptions.length;
+                            setImageSizeIndex(newIndex);
+                            setGenerationSettings({
+                              ...generationSettings,
+                              imageSize: imageSizeOptions[newIndex].id,
+                            });
+                          }
+                        }}
+                        icon={
+                          generationType === "video"
+                            ? videoSizeOptions[videoSizeIndex].icon
+                            : imageSizeOptions[imageSizeIndex].icon
+                        }
+                      />
+                    }
+                  />
+                  <TooltipContent>
+                    <span>
+                      {generationType === "video"
+                        ? videoSizeOptions[videoSizeIndex].label
+                        : imageSizeOptions[imageSizeIndex].label}
+                    </span>
+                  </TooltipContent>
+                </Tooltip>
+
                 {/* Upload button */}
                 <Tooltip>
                   <TooltipTrigger
@@ -1031,7 +1187,7 @@ export const PromptEditor = memo(function PromptEditor({
           color: rgba(255, 255, 255, 0.65);
         }
 
-        /* ---- ACTIVE STATE (pressed) ---- */
+        /* ---- ACTIVE STATE (toggled on) ---- */
         .tactile-btn--active {
           transform: translateY(1px);
           background: linear-gradient(180deg, #28282e 0%, #1e1e24 100%);
@@ -1052,6 +1208,21 @@ export const PromptEditor = memo(function PromptEditor({
                 color-mix(in srgb, var(--tactile-glow-color) 60%, transparent)
             );
           animation: tactile-glow 2.5s ease-in-out infinite;
+        }
+
+        /* ---- PRESSED STATE (momentary press) ---- */
+        .tactile-btn--pressed {
+          transform: translateY(1px);
+          background: linear-gradient(180deg, #28282e 0%, #1e1e24 100%);
+          box-shadow:
+            inset 0 2px 4px rgba(0, 0, 0, 0.4),
+            inset 0 1px 2px rgba(0, 0, 0, 0.3),
+            0 1px 1px rgba(0, 0, 0, 0.2);
+          border-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .tactile-btn--pressed .tactile-btn__icon {
+          color: rgba(255, 255, 255, 0.85);
         }
 
         @keyframes tactile-glow {
