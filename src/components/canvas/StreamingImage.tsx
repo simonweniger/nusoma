@@ -14,6 +14,7 @@ interface StreamingImageProps {
     state: "submitting" | "running" | "success",
   ) => void;
   apiKey?: string;
+  userId?: string;
 }
 
 export const StreamingImage: React.FC<StreamingImageProps> = ({
@@ -24,6 +25,7 @@ export const StreamingImage: React.FC<StreamingImageProps> = ({
   onStreamingUpdate,
   onStateChange,
   apiKey,
+  userId,
 }) => {
   const [hasStartedStreaming, setHasStartedStreaming] = React.useState(false);
 
@@ -35,6 +37,7 @@ export const StreamingImage: React.FC<StreamingImageProps> = ({
         ...(generation.loraUrl ? { loraUrl: generation.loraUrl } : {}),
         ...(generation.imageSize ? { imageSize: generation.imageSize } : {}),
         ...(apiKey ? { apiKey } : {}),
+        ...(userId ? { userId } : {}),
       },
       {
         enabled: true,

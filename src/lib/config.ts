@@ -26,7 +26,7 @@ export const appConfig = {
     /**
      * Polar Meter Slug for recording usage
      */
-    meterSlug: "₦ credit usage ",
+    meterSlug: "₦ credit usage",
   },
 
   /**
