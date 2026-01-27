@@ -12,8 +12,7 @@ const _schema = i.schema({
       email: i.string().unique().indexed(),
     }),
     userProfiles: i.entity({
-      credits: i.number().optional(),
-      hasPurchasedCredits: i.boolean().optional(),
+      externalCustomerId: i.string().optional(), // Polar customer ID
       name: i.string().optional(),
       username: i.string().unique().indexed().optional(),
       language: i.string().optional(),

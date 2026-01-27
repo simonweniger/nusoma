@@ -25,6 +25,8 @@ import hotkeys from "hotkeys-js";
 import { AppSchema } from "@/instant.schema";
 import { InstaQLEntity, id } from "@instantdb/react";
 import NumberFlow from "@number-flow/react";
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
 import PlansDialog from "../plans-dialog";
 import FolderDialog from "./FolderDialog";
 import UserProfileDialog from "../user-profile-dialog";
@@ -100,6 +102,16 @@ export default function AppLayout({
         }
       : (null as any),
   );
+
+  // Query user credits from Polar
+  const trpc = useTRPC();
+  const { data: creditsData } = useQuery(
+    trpc.getUserCredits.queryOptions(
+      { userId: user?.id || "" },
+      { enabled: !!user?.id },
+    ),
+  );
+  const userCredits = creditsData?.credits ?? 0;
 
   const folders = (foldersData?.folders || []) as Folder[];
   const allProjects = (projectsData?.canvasProjects || []) as Project[];
@@ -385,23 +397,19 @@ export default function AppLayout({
         {/* Credits section */}
         <div className="flex flex-col gap-2 border border-border bg-muted/50 rounded-md p-2 w-full mt-1 divide-y divide-border">
           <div className="flex flex-row gap-2 items-center justify-between pb-2">
-            <div className="flex flex-row gap-1 items-center">
+            <div className="flex flex-row gap-1.5 items-center">
               <DiamondsFourIcon
-                size={12}
+                size={14}
                 weight="fill"
-                className="text-teal-9 group-hover:text-sage-12 transition-colors duration-300"
+                className="text-teal-9"
               />
-              {user ? (
+              <div className="flex items-baseline gap-1">
                 <NumberFlow
-                  value={user && profile?.credits ? profile?.credits : 100}
-                  className="text-xs font-semibold text-sage-12 dark:text-sage-12"
+                  value={userCredits}
+                  className="text-sm font-semibold text-sage-12"
                 />
-              ) : (
-                <NumberFlow
-                  value={0}
-                  className="text-xs font-semibold text-sage-12 dark:text-sage-12"
-                />
-              )}
+                <span className="text-xs text-sage-10">credits</span>
+              </div>
             </div>
             {user && <PlansDialog />}
           </div>

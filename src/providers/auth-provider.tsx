@@ -43,13 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
 
         if (!profile) {
+          // Create a new user profile (credits are managed by Polar, not stored locally)
           const profileId = id();
           await db.transact(
-            db.tx.userProfiles[profileId]
-              .update({
-                credits: 200,
-              })
-              .link({ user: user?.id }),
+            db.tx.userProfiles[profileId].update({}).link({ user: user?.id }),
           );
         }
       } else {

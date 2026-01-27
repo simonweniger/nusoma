@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
@@ -7,10 +9,35 @@ import { Plus, Image } from "lucide-react";
 import { useCanvasOperations } from "@/hooks/useCanvasOperations";
 import { CanvasCard } from "@/components/dashboard/CanvasCard";
 import { EmptyState } from "@/components/dashboard/EmptyState";
+import { toastManager } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { createCanvas } = useCanvasOperations();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const hasShownCheckoutToast = useRef(false);
+
+  // Show success toast when returning from checkout
+  useEffect(() => {
+    if (
+      searchParams.get("checkout") === "success" &&
+      !hasShownCheckoutToast.current
+    ) {
+      hasShownCheckoutToast.current = true;
+      // Defer toast to avoid flushSync error during React rendering
+      const timeoutId = setTimeout(() => {
+        toastManager.add({
+          title: "Payment successful!",
+          description: "Your credits have been added to your account.",
+          type: "success",
+        });
+      }, 0);
+      // Clean up the URL
+      router.replace("/dashboard", { scroll: false });
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchParams, router]);
 
   // Query all canvas projects with their folders
   const { data, isLoading } = db.useQuery({

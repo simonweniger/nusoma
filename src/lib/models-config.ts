@@ -494,6 +494,55 @@ export const IMAGE_MODELS: Record<string, ImageModelConfig> = {
 };
 
 // -----------------------------------------------------------------------------
+// Utility Model Types (Background Removal, Object Isolation, etc.)
+// -----------------------------------------------------------------------------
+
+export type UtilityModelType = "background-removal" | "object-isolation";
+
+export interface UtilityModelConfig {
+  id: string;
+  name: string;
+  endpoint: string;
+  type: UtilityModelType;
+  pricing: {
+    costPerUnit: number;
+    currency: string;
+    unit: string;
+  };
+}
+
+export const UTILITY_MODELS: Record<string, UtilityModelConfig> = {
+  backgroundRemoval: {
+    id: "bria-background-remove",
+    name: "Bria Background Removal",
+    endpoint: "fal-ai/bria/background/remove",
+    type: "background-removal",
+    pricing: {
+      costPerUnit: 0.01,
+      currency: "USD",
+      unit: "image",
+    },
+  },
+  objectIsolation: {
+    id: "evf-sam-object-isolation",
+    name: "EVF-SAM Object Isolation",
+    endpoint: "fal-ai/evf-sam",
+    type: "object-isolation",
+    pricing: {
+      costPerUnit: 0.02,
+      currency: "USD",
+      unit: "image",
+    },
+  },
+};
+
+export function getUtilityModelById(
+  id: string,
+): UtilityModelConfig | undefined {
+  return UTILITY_MODELS[id];
+}
+
+// -----------------------------------------------------------------------------
 // Video Model Types
 // -----------------------------------------------------------------------------
 

@@ -12,7 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Plus, Undo, Redo, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import NumberFlow from "@number-flow/react";
+import { DiamondsFourIcon } from "@phosphor-icons/react";
 import { useRef, useEffect } from "react";
 import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import {
@@ -233,6 +235,15 @@ export default function OverlayPage() {
   const falClient = useFalClient();
 
   const trpc = useTRPC();
+
+  // Query user credits from Polar
+  const { data: creditsData } = useQuery(
+    trpc.getUserCredits.queryOptions(
+      { userId: user?.id || "" },
+      { enabled: !!user?.id, refetchInterval: 30000 },
+    ),
+  );
+  const userCredits = creditsData?.credits ?? 0;
 
   // Direct FAL upload function using proxy
   const { mutateAsync: removeBackground } = useMutation(
@@ -3047,6 +3058,28 @@ export default function OverlayPage() {
 
             {/* Undo/Redo and Settings - Top Right */}
             <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+              {/* Credit Badge */}
+              {user && (
+                <div
+                  className={cn(
+                    "rounded-xl overflow-clip flex items-center gap-1.5 px-3 py-1.5 border border-border",
+                    "shadow-[0_0_0_1px_rgba(50,50,50,0.12),0_4px_8px_-0.5px_rgba(50,50,50,0.04),0_8px_16px_-2px_rgba(50,50,50,0.02)]",
+                    "bg-card/95 backdrop-blur-lg",
+                  )}
+                  title="Available credits"
+                >
+                  <DiamondsFourIcon
+                    size={14}
+                    weight="fill"
+                    className="text-teal-500"
+                  />
+                  <NumberFlow
+                    value={userCredits}
+                    className="text-sm font-semibold tabular-nums"
+                  />
+                </div>
+              )}
+
               <div
                 className={cn(
                   "rounded-xl overflow-clip flex items-center border border-border",

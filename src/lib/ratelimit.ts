@@ -1,5 +1,5 @@
 import { Ratelimit } from "@upstash/ratelimit";
-import { kv } from "@vercel/kv";
+import { Redis } from "@upstash/redis";
 
 export type RateLimiter = {
   perMinute: Ratelimit;
@@ -7,12 +7,17 @@ export type RateLimiter = {
   perDay: Ratelimit;
 };
 
+// Create Redis instance from environment variables
+// Uses UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
+const redis = Redis.fromEnv();
+
 export const createRateLimiter = (tokens: number, window: string) => {
   console.log(`[DEBUG] Creating rate limiter: ${tokens} tokens per ${window}`);
   return new Ratelimit({
-    redis: kv,
+    redis,
     limiter: Ratelimit.slidingWindow(tokens, window as any),
     analytics: true,
+    prefix: "@upstash/ratelimit",
   });
 };
 
@@ -31,14 +36,14 @@ type LimitResult =
   | { shouldLimitRequest: true; period: LimitPeriod };
 
 export const IS_RATE_LIMITER_ENABLED =
-  process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN;
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN;
 
 console.log(`[DEBUG] Rate limiter enabled: ${IS_RATE_LIMITER_ENABLED}`);
 console.log(
-  `[DEBUG] KV_REST_API_URL present: ${!!process.env.KV_REST_API_URL}`,
+  `[DEBUG] UPSTASH_REDIS_REST_URL present: ${!!process.env.UPSTASH_REDIS_REST_URL}`,
 );
 console.log(
-  `[DEBUG] KV_REST_API_TOKEN present: ${!!process.env.KV_REST_API_TOKEN}`,
+  `[DEBUG] UPSTASH_REDIS_REST_TOKEN present: ${!!process.env.UPSTASH_REDIS_REST_TOKEN}`,
 );
 
 export async function shouldLimitRequest(

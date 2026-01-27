@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { rateLimitedProcedure, publicProcedure, router } from "../init";
+import { publicProcedure, router } from "../init";
 import { tracked } from "@trpc/server";
 import { createFalClient } from "@fal-ai/client";
 import sharp from "sharp";
@@ -8,7 +8,14 @@ import {
   VIDEO_MODELS,
   getImageModelForContext,
   buildImageModelInput,
+  UTILITY_MODELS,
 } from "@/lib/models-config";
+import {
+  checkCreditsForGeneration,
+  processGenerationCharge,
+  getUserCredits,
+  BillingUser,
+} from "@/server/billing";
 
 const fal = createFalClient({
   credentials: () => process.env.FAL_KEY as string,
@@ -80,10 +87,39 @@ export const appRouter = router({
         prompt: z.string().optional(),
         styleId: z.string().optional(),
         apiKey: z.string().optional(),
+        // Billing context
+        userId: z.string().optional(),
+        sessionId: z.string().optional(),
       }),
     )
     .subscription(async function* ({ input, signal, ctx }) {
       try {
+        const videoModel = VIDEO_MODELS["stable-video-diffusion"];
+        const useCustomApiKey = !!input.apiKey;
+
+        // Billing: Check credits before generation
+        const billingUser: BillingUser = {
+          userId: input.userId,
+          sessionId: input.sessionId,
+        };
+
+        const billingCheck = await checkCreditsForGeneration(
+          billingUser,
+          videoModel.endpoint,
+          1,
+          useCustomApiKey,
+        );
+
+        if (!billingCheck.canProceed) {
+          yield tracked(`error_billing`, {
+            type: "error",
+            error: billingCheck.error || "Insufficient credits",
+            creditsRequired: billingCheck.costEstimate.totalCredits,
+            currentCredits: billingCheck.currentCredits,
+          });
+          return;
+        }
+
         const falClient = await getFalClient(input.apiKey, ctx, true);
 
         // Create a unique ID for this transformation
@@ -150,11 +186,31 @@ export const appRouter = router({
           return;
         }
 
+        // Billing: Charge credits after successful generation
+        let billingResult;
+        if (!useCustomApiKey && billingUser.userId) {
+          billingResult = await processGenerationCharge(
+            billingUser,
+            billingCheck.costEstimate,
+            {
+              generation_type: "video-transformation",
+              model: videoModel.id,
+              prompt: (input.prompt || "").substring(0, 100),
+            },
+          );
+
+          if (!billingResult.success) {
+            console.error("Failed to charge credits:", billingResult.error);
+          }
+        }
+
         // Send the final video
         yield tracked(`${transformationId}_complete`, {
           type: "complete",
           videoUrl: videoUrl,
           duration: (result as any).duration || 3, // Default to 3 seconds if not provided
+          creditsCharged: billingResult?.creditsCharged,
+          remainingCredits: billingResult?.newBalance,
         });
       } catch (error) {
         console.error("Error in video transformation:", error);
@@ -182,11 +238,44 @@ export const appRouter = router({
           cameraFixed: z.boolean().optional().default(false),
           seed: z.number().optional().default(-1),
           apiKey: z.string().optional(),
+          // Billing context
+          userId: z.string().optional(),
+          sessionId: z.string().optional(),
         })
         .loose(), // Allow additional fields for different models
     )
     .subscription(async function* ({ input, signal, ctx }) {
       try {
+        const modelId = input.modelId || "ltx-video";
+        const model = getVideoModelById(modelId);
+        if (!model) {
+          throw new Error(`Unknown model ID: ${modelId}`);
+        }
+        const useCustomApiKey = !!input.apiKey;
+
+        // Billing: Check credits before generation
+        const billingUser: BillingUser = {
+          userId: input.userId,
+          sessionId: input.sessionId,
+        };
+
+        const billingCheck = await checkCreditsForGeneration(
+          billingUser,
+          model.endpoint,
+          1,
+          useCustomApiKey,
+        );
+
+        if (!billingCheck.canProceed) {
+          yield tracked(`error_billing`, {
+            type: "error",
+            error: billingCheck.error || "Insufficient credits",
+            creditsRequired: billingCheck.costEstimate.totalCredits,
+            currentCredits: billingCheck.currentCredits,
+          });
+          return;
+        }
+
         const falClient = await getFalClient(input.apiKey, ctx, true);
 
         // Create a unique ID for this generation
@@ -215,12 +304,7 @@ export const appRouter = router({
         const prompt =
           input.prompt || "A smooth animation of the image with natural motion";
 
-        // Determine model from modelId or use default
-        const modelId = input.modelId || "ltx-video"; // Default to ltx-video
-        const model = getVideoModelById(modelId);
-        if (!model) {
-          throw new Error(`Unknown model ID: ${modelId}`);
-        }
+        // Model endpoint from earlier check
         const modelEndpoint = model.endpoint;
 
         // Build input parameters based on model configuration
@@ -518,11 +602,31 @@ export const appRouter = router({
         // Extract duration from response or use input value
         const videoDuration = result.data?.duration || input.duration || 5;
 
+        // Billing: Charge credits after successful generation
+        let billingResult;
+        if (!useCustomApiKey && billingUser.userId) {
+          billingResult = await processGenerationCharge(
+            billingUser,
+            billingCheck.costEstimate,
+            {
+              generation_type: "image-to-video",
+              model: modelId,
+              prompt: (input.prompt || "").substring(0, 100),
+            },
+          );
+
+          if (!billingResult.success) {
+            console.error("Failed to charge credits:", billingResult.error);
+          }
+        }
+
         // Send the final video
         yield tracked(`${generationId}_complete`, {
           type: "complete",
           videoUrl: videoUrl,
           duration: videoDuration,
+          creditsCharged: billingResult?.creditsCharged,
+          remainingCredits: billingResult?.newBalance,
         });
       } catch (error) {
         console.error("Error in image-to-video conversion:", error);
@@ -543,10 +647,39 @@ export const appRouter = router({
         duration: z.number().optional().default(3),
         styleId: z.string().optional(),
         apiKey: z.string().optional(),
+        // Billing context
+        userId: z.string().optional(),
+        sessionId: z.string().optional(),
       }),
     )
     .subscription(async function* ({ input, signal, ctx }) {
       try {
+        const videoModel = VIDEO_MODELS["stable-video-diffusion"];
+        const useCustomApiKey = !!input.apiKey;
+
+        // Billing: Check credits before generation
+        const billingUser: BillingUser = {
+          userId: input.userId,
+          sessionId: input.sessionId,
+        };
+
+        const billingCheck = await checkCreditsForGeneration(
+          billingUser,
+          videoModel.endpoint,
+          1,
+          useCustomApiKey,
+        );
+
+        if (!billingCheck.canProceed) {
+          yield tracked(`error_billing`, {
+            type: "error",
+            error: billingCheck.error || "Insufficient credits",
+            creditsRequired: billingCheck.costEstimate.totalCredits,
+            currentCredits: billingCheck.currentCredits,
+          });
+          return;
+        }
+
         const falClient = await getFalClient(input.apiKey, ctx, true);
 
         // Create a unique ID for this generation
@@ -560,22 +693,19 @@ export const appRouter = router({
         });
 
         // Start streaming from fal.ai
-        const stream = await falClient.stream(
-          VIDEO_MODELS["stable-video-diffusion"].endpoint,
-          {
-            input: {
-              prompt: input.prompt,
-              num_frames: Math.floor(input.duration * 24), // Convert seconds to frames at 24fps
-              num_inference_steps: 25,
-              guidance_scale: 7.5,
-              width: 576,
-              height: 320,
-              fps: 24,
-              motion_bucket_id: 127, // Higher values = more motion
-              seed: Math.floor(Math.random() * 2147483647),
-            },
+        const stream = await falClient.stream(videoModel.endpoint, {
+          input: {
+            prompt: input.prompt,
+            num_frames: Math.floor(input.duration * 24), // Convert seconds to frames at 24fps
+            num_inference_steps: 25,
+            guidance_scale: 7.5,
+            width: 576,
+            height: 320,
+            fps: 24,
+            motion_bucket_id: 127, // Higher values = more motion
+            seed: Math.floor(Math.random() * 2147483647),
           },
-        );
+        });
 
         let eventIndex = 0;
 
@@ -617,11 +747,31 @@ export const appRouter = router({
           return;
         }
 
+        // Billing: Charge credits after successful generation
+        let billingResult;
+        if (!useCustomApiKey && billingUser.userId) {
+          billingResult = await processGenerationCharge(
+            billingUser,
+            billingCheck.costEstimate,
+            {
+              generation_type: "text-to-video",
+              model: videoModel.id,
+              prompt: input.prompt.substring(0, 100),
+            },
+          );
+
+          if (!billingResult.success) {
+            console.error("Failed to charge credits:", billingResult.error);
+          }
+        }
+
         // Send the final video
         yield tracked(`${generationId}_complete`, {
           type: "complete",
           videoUrl: videoUrl,
           duration: input.duration,
+          creditsCharged: billingResult?.creditsCharged,
+          remainingCredits: billingResult?.newBalance,
         });
       } catch (error) {
         console.error("Error in text-to-video generation:", error);
@@ -637,24 +787,59 @@ export const appRouter = router({
       z.object({
         imageUrl: z.url(),
         apiKey: z.string().optional(),
+        // Billing context
+        userId: z.string().optional(),
+        sessionId: z.string().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
       try {
+        const utilityModel = UTILITY_MODELS.backgroundRemoval;
+        const useCustomApiKey = !!input.apiKey;
+
+        // Billing: Check credits before generation
+        const billingUser: BillingUser = {
+          userId: input.userId,
+          sessionId: input.sessionId,
+        };
+
+        const billingCheck = await checkCreditsForGeneration(
+          billingUser,
+          utilityModel.endpoint,
+          1,
+          useCustomApiKey,
+        );
+
+        if (!billingCheck.canProceed) {
+          throw new Error(billingCheck.error || "Insufficient credits");
+        }
+
         const falClient = await getFalClient(input.apiKey, ctx);
 
-        const result = await falClient.subscribe(
-          "fal-ai/bria/background/remove",
-          {
-            input: {
-              image_url: input.imageUrl,
-              sync_mode: true,
-            },
+        const result = await falClient.subscribe(utilityModel.endpoint, {
+          input: {
+            image_url: input.imageUrl,
+            sync_mode: true,
           },
-        );
+        });
+
+        // Billing: Charge credits after successful generation
+        let billingResult;
+        if (!useCustomApiKey && billingUser.userId) {
+          billingResult = await processGenerationCharge(
+            billingUser,
+            billingCheck.costEstimate,
+            {
+              generation_type: "remove-background",
+              model: utilityModel.id,
+            },
+          );
+        }
 
         return {
           url: result.data.image.url,
+          creditsCharged: billingResult?.creditsCharged,
+          remainingCredits: billingResult?.newBalance,
         };
       } catch (error) {
         console.error("Error removing background:", error);
@@ -672,10 +857,33 @@ export const appRouter = router({
         imageUrl: z.url(),
         textInput: z.string(),
         apiKey: z.string().optional(),
+        // Billing context
+        userId: z.string().optional(),
+        sessionId: z.string().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
       try {
+        const utilityModel = UTILITY_MODELS.objectIsolation;
+        const useCustomApiKey = !!input.apiKey;
+
+        // Billing: Check credits before generation
+        const billingUser: BillingUser = {
+          userId: input.userId,
+          sessionId: input.sessionId,
+        };
+
+        const billingCheck = await checkCreditsForGeneration(
+          billingUser,
+          utilityModel.endpoint,
+          1,
+          useCustomApiKey,
+        );
+
+        if (!billingCheck.canProceed) {
+          throw new Error(billingCheck.error || "Insufficient credits");
+        }
+
         const falClient = await getFalClient(input.apiKey, ctx);
 
         // Use the FAL client with EVF-SAM2 for segmentation
@@ -687,7 +895,7 @@ export const appRouter = router({
         });
 
         // Use EVF-SAM2 to get the segmentation mask
-        const result = await falClient.subscribe("fal-ai/evf-sam", {
+        const result = await falClient.subscribe(utilityModel.endpoint, {
           input: {
             image_url: input.imageUrl,
             prompt: input.textInput,
@@ -800,9 +1008,25 @@ export const appRouter = router({
         console.log("Returning segmented image URL:", uploadResult);
         console.log("Original mask URL:", result.data.image.url);
 
+        // Billing: Charge credits after successful generation
+        let billingResult;
+        if (!useCustomApiKey && billingUser.userId) {
+          billingResult = await processGenerationCharge(
+            billingUser,
+            billingCheck.costEstimate,
+            {
+              generation_type: "object-isolation",
+              model: utilityModel.id,
+              prompt: input.textInput.substring(0, 100),
+            },
+          );
+        }
+
         return {
           url: uploadResult,
           maskUrl: result.data.image.url, // Also return mask URL for reference
+          creditsCharged: billingResult?.creditsCharged,
+          remainingCredits: billingResult?.newBalance,
         };
       } catch (error: any) {
         console.error("Error isolating object:", error);
@@ -851,14 +1075,34 @@ export const appRouter = router({
           ])
           .optional(),
         apiKey: z.string().optional(),
+        userId: z.string().optional(),
+        sessionId: z.string().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
       try {
-        const falClient = await getFalClient(input.apiKey, ctx);
-
         const hasLora = !!input.loraUrl;
         const model = getImageModelForContext(false, hasLora);
+        const useCustomApiKey = !!input.apiKey;
+
+        // Billing: Check credits before generation
+        const billingUser: BillingUser = {
+          userId: input.userId,
+          sessionId: input.sessionId,
+        };
+
+        const billingCheck = await checkCreditsForGeneration(
+          billingUser,
+          model.endpoint,
+          1,
+          useCustomApiKey,
+        );
+
+        if (!billingCheck.canProceed) {
+          throw new Error(billingCheck.error || "Insufficient credits");
+        }
+
+        const falClient = await getFalClient(input.apiKey, ctx);
 
         // Build input using model config
         const subscribeInput = buildImageModelInput(model, {
@@ -881,11 +1125,27 @@ export const appRouter = router({
           throw new Error("No image generated");
         }
 
+        // Billing: Charge credits after successful generation
+        let billingResult;
+        if (!useCustomApiKey && billingUser.userId) {
+          billingResult = await processGenerationCharge(
+            billingUser,
+            billingCheck.costEstimate,
+            {
+              generation_type: "text-to-image",
+              model: model.id,
+              prompt: input.prompt.substring(0, 100),
+            },
+          );
+        }
+
         return {
           url: resultData.images[0].url,
           width: resultData.images[0].width,
           height: resultData.images[0].height,
           seed: resultData.seed,
+          creditsCharged: billingResult?.creditsCharged,
+          remainingCredits: billingResult?.newBalance,
         };
       } catch (error) {
         console.error("Error in text-to-image generation:", error);
@@ -914,15 +1174,42 @@ export const appRouter = router({
           .optional(),
         lastEventId: z.string().optional(),
         apiKey: z.string().optional(),
+        // Billing context
+        userId: z.string().optional(),
+        sessionId: z.string().optional(),
       }),
     )
     .subscription(async function* ({ input, ctx }) {
       try {
-        const falClient = await getFalClient(input.apiKey, ctx);
-
         const hasImageSelected = !!input.imageUrl;
         const hasLora = !!input.loraUrl;
         const model = getImageModelForContext(hasImageSelected, hasLora);
+        const useCustomApiKey = !!input.apiKey;
+
+        // Billing: Check credits before generation
+        const billingUser: BillingUser = {
+          userId: input.userId,
+          sessionId: input.sessionId,
+        };
+
+        const billingCheck = await checkCreditsForGeneration(
+          billingUser,
+          model.endpoint,
+          1,
+          useCustomApiKey,
+        );
+
+        if (!billingCheck.canProceed) {
+          yield tracked(`error_billing`, {
+            type: "error",
+            error: billingCheck.error || "Insufficient credits",
+            creditsRequired: billingCheck.costEstimate.totalCredits,
+            currentCredits: billingCheck.currentCredits,
+          });
+          return;
+        }
+
+        const falClient = await getFalClient(input.apiKey, ctx);
 
         // Create a unique ID for this generation
         const generationId = `gen_${Date.now()}_${Math.random().toString(36).substring(7)}`;
@@ -964,11 +1251,32 @@ export const appRouter = router({
           return;
         }
 
+        // Billing: Charge credits after successful generation (only if not using custom API key)
+        let billingResult;
+        if (!useCustomApiKey && billingUser.userId) {
+          billingResult = await processGenerationCharge(
+            billingUser,
+            billingCheck.costEstimate,
+            {
+              generation_type: "image",
+              model: model.id,
+              prompt: input.prompt.substring(0, 100), // Truncate for metadata
+            },
+          );
+
+          if (!billingResult.success) {
+            console.error("Failed to charge credits:", billingResult.error);
+            // Still return the image since generation succeeded
+          }
+        }
+
         // Send the final image
         yield tracked(`${generationId}_complete`, {
           type: "complete",
           imageUrl: images[0].url,
           seed: resultData.seed,
+          creditsCharged: billingResult?.creditsCharged,
+          remainingCredits: billingResult?.newBalance,
         });
       } catch (error: any) {
         console.error("Error in image generation stream:", error);
@@ -987,6 +1295,110 @@ export const appRouter = router({
           error:
             error instanceof Error ? error.message : "Failed to generate image",
         });
+      }
+    }),
+
+  // ============================================================================
+  // Billing Procedures
+  // ============================================================================
+
+  /**
+   * Get user's current credit balance from Polar
+   */
+  getUserCredits: publicProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const credits = await getUserCredits({ userId: input.userId });
+      return { credits };
+    }),
+
+  /**
+   * Get available credit packages from Polar
+   */
+  getCreditPackages: publicProcedure.query(async () => {
+    const { api } = await import("@/lib/polar");
+
+    try {
+      const products = await api.products.list({
+        isArchived: false,
+      });
+
+      // Filter and map products to credit packages format
+      const packages = products.result.items
+        .filter((product) => !product.isRecurring)
+        .map((product) => {
+          // Get price info (type-safe)
+          const price = product.prices[0];
+          const priceAmount =
+            price?.amountType === "fixed" ? price.priceAmount : 0;
+          const priceCurrency =
+            price?.amountType === "fixed" ? price.priceCurrency : "usd";
+
+          // Find meter_credit benefit to get credits amount
+          const creditBenefit = product.benefits.find(
+            (b) => b.type === "meter_credit",
+          );
+          const credits =
+            creditBenefit?.type === "meter_credit"
+              ? creditBenefit.properties.units
+              : 0;
+
+          return {
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            priceAmount,
+            priceCurrency,
+            credits,
+          };
+        })
+        .filter((pkg) => pkg.credits > 0);
+
+      return packages;
+    } catch (error) {
+      console.error("Failed to fetch credit packages from Polar:", error);
+      throw new Error("Failed to load credit packages");
+    }
+  }),
+
+  /**
+   * Create a checkout session for purchasing credits
+   */
+  createCheckoutSession: publicProcedure
+    .input(
+      z.object({
+        productId: z.string(),
+        userId: z.string(),
+        userEmail: z.string().email().optional(),
+        successUrl: z.string().url().optional(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const { api } = await import("@/lib/polar");
+
+      try {
+        const checkout = await api.checkouts.create({
+          products: [input.productId],
+          customerEmail: input.userEmail,
+          externalCustomerId: input.userId, // Set external ID directly so we can look up the customer later
+          successUrl:
+            input.successUrl ||
+            `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?checkout=success`,
+          embedOrigin: process.env.NEXT_PUBLIC_APP_URL,
+        });
+
+        return {
+          checkoutId: checkout.id,
+          checkoutUrl: checkout.url,
+          clientSecret: checkout.clientSecret,
+        };
+      } catch (error) {
+        console.error("Failed to create checkout session:", error);
+        throw new Error("Failed to create checkout session");
       }
     }),
 });
