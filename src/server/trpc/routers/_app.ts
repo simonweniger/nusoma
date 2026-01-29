@@ -16,10 +16,41 @@ import {
   getUserCredits,
   BillingUser,
 } from "@/server/billing";
+import {
+  createRateLimiter,
+  shouldLimitRequest,
+  RateLimiter,
+} from "@/lib/ratelimit";
 
 const fal = createFalClient({
   credentials: () => process.env.FAL_KEY as string,
 });
+
+// Lazy-loaded rate limiters (only created when first generation is requested)
+let imageLimiter: RateLimiter | null = null;
+let videoLimiter: RateLimiter | null = null;
+
+function getImageLimiter(): RateLimiter {
+  if (!imageLimiter) {
+    imageLimiter = {
+      perMinute: createRateLimiter(5, "60 s"),
+      perHour: createRateLimiter(15, "60 m"),
+      perDay: createRateLimiter(50, "24 h"),
+    };
+  }
+  return imageLimiter;
+}
+
+function getVideoLimiter(): RateLimiter {
+  if (!videoLimiter) {
+    videoLimiter = {
+      perMinute: createRateLimiter(2, "60 s"),
+      perHour: createRateLimiter(4, "60 m"),
+      perDay: createRateLimiter(8, "24 h"),
+    };
+  }
+  return videoLimiter;
+}
 
 // Helper function to check rate limits or use custom API key
 async function getFalClient(
@@ -33,22 +64,8 @@ async function getFalClient(
     });
   }
 
-  // Apply rate limiting when using default key
-  const { shouldLimitRequest } = await import("@/lib/ratelimit");
-  const { createRateLimiter } = await import("@/lib/ratelimit");
-
-  // Different rate limits for video vs regular operations
-  const limiter = isVideo
-    ? {
-        perMinute: createRateLimiter(2, "60 s"),
-        perHour: createRateLimiter(4, "60 m"),
-        perDay: createRateLimiter(8, "24 h"),
-      }
-    : {
-        perMinute: createRateLimiter(5, "60 s"),
-        perHour: createRateLimiter(15, "60 m"),
-        perDay: createRateLimiter(50, "24 h"),
-      };
+  // Apply rate limiting when using default key (lazy-load limiter)
+  const limiter = isVideo ? getVideoLimiter() : getImageLimiter();
 
   const ip =
     ctx.req?.headers.get?.("x-forwarded-for") ||
@@ -58,7 +75,7 @@ async function getFalClient(
   const limiterResult = await shouldLimitRequest(
     limiter,
     ip,
-    isVideo ? "video" : undefined,
+    isVideo ? "video" : "image",
   );
   if (limiterResult.shouldLimitRequest) {
     const errorMessage = isVideo

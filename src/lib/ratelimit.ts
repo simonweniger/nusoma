@@ -7,8 +7,6 @@ export type RateLimiter = {
   perDay: Ratelimit;
 };
 
-// Create Redis instance from environment variables
-// Uses UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
 const redis = Redis.fromEnv();
 
 export const createRateLimiter = (tokens: number, window: string) => {
@@ -60,35 +58,27 @@ export async function shouldLimitRequest(
     return { shouldLimitRequest: false };
   }
 
-  // Use different keys for different types of rate limits
   const rateLimitKey = keyPrefix ? `${keyPrefix}:${ip}` : ip;
+  const limits = ["perDay", "perHour", "perMinute"] as const;
 
-  const limits = ["perMinute", "perHour", "perDay"] as const;
-  const results = await Promise.all(
-    limits.map(async (limit) => {
-      const result = await limiter[limit].limit(rateLimitKey);
-      console.log(`[DEBUG] ${limit} limit result for key ${rateLimitKey}:`, {
-        success: result.success,
-        remaining: result.remaining,
-        reset: result.reset,
-        limit: result.limit,
-      });
-      return result;
-    }),
-  );
+  for (const limit of limits) {
+    const result = await limiter[limit].limit(rateLimitKey);
+    console.log(`[DEBUG] ${limit} limit result for key ${rateLimitKey}:`, {
+      success: result.success,
+      remaining: result.remaining,
+      reset: result.reset,
+      limit: result.limit,
+    });
 
-  const limitRequestIndex = results.findIndex((result) => !result.success);
-  const shouldLimit = limitRequestIndex >= 0;
-
-  console.log(`[DEBUG] Should limit request: ${shouldLimit}`);
-  if (shouldLimit) {
-    console.log(
-      `[DEBUG] Rate limit exceeded for period: ${limits[limitRequestIndex]}`,
-    );
+    if (!result.success) {
+      console.log(`[DEBUG] Rate limit exceeded for period: ${limit}`);
+      return {
+        shouldLimitRequest: true,
+        period: limit,
+      };
+    }
   }
 
-  return {
-    shouldLimitRequest: shouldLimit,
-    period: limits[limitRequestIndex],
-  };
+  console.log(`[DEBUG] All rate limits passed`);
+  return { shouldLimitRequest: false };
 }

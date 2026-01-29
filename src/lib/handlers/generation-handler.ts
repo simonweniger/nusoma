@@ -1,13 +1,22 @@
 import type {
   PlacedImage,
+  PlacedVideo,
   GenerationSettings,
   ActiveGeneration,
 } from "@/types/canvas";
 import type { FalClient } from "@fal-ai/client";
 import { id } from "@instantdb/react";
 
+interface BoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 interface GenerationHandlerDeps {
   images: PlacedImage[];
+  videos: PlacedVideo[];
   selectedIds: string[];
   generationSettings: GenerationSettings;
   canvasSize: { width: number; height: number };
@@ -26,6 +35,103 @@ interface GenerationHandlerDeps {
   }) => void;
   generateTextToImage: (params: any) => Promise<any>;
 }
+
+/**
+ * Check if two bounding boxes overlap
+ */
+const boxesOverlap = (
+  a: BoundingBox,
+  b: BoundingBox,
+  padding = 10,
+): boolean => {
+  return !(
+    a.x + a.width + padding <= b.x ||
+    b.x + b.width + padding <= a.x ||
+    a.y + a.height + padding <= b.y ||
+    b.y + b.height + padding <= a.y
+  );
+};
+
+/**
+ * Find a non-overlapping position for a new asset
+ * Starts at the preferred position and searches for a free spot
+ */
+const findNonOverlappingPosition = (
+  preferredX: number,
+  preferredY: number,
+  width: number,
+  height: number,
+  existingAssets: BoundingBox[],
+  maxAttempts = 50,
+): { x: number; y: number } => {
+  const newBox: BoundingBox = { x: preferredX, y: preferredY, width, height };
+
+  // Check if preferred position is free
+  const hasOverlap = existingAssets.some((asset) =>
+    boxesOverlap(newBox, asset),
+  );
+  if (!hasOverlap) {
+    return { x: preferredX, y: preferredY };
+  }
+
+  // Try positions in a spiral pattern: right, down, left, up
+  const gap = 20;
+  let attempt = 0;
+  let offsetX = 0;
+  let offsetY = 0;
+  let direction = 0; // 0=right, 1=down, 2=left, 3=up
+  let stepsInDirection = 1;
+  let stepsTaken = 0;
+  let directionChanges = 0;
+
+  while (attempt < maxAttempts) {
+    // Move in current direction
+    switch (direction) {
+      case 0:
+        offsetX += width + gap;
+        break; // right
+      case 1:
+        offsetY += height + gap;
+        break; // down
+      case 2:
+        offsetX -= width + gap;
+        break; // left
+      case 3:
+        offsetY -= height + gap;
+        break; // up
+    }
+    stepsTaken++;
+    attempt++;
+
+    const testBox: BoundingBox = {
+      x: preferredX + offsetX,
+      y: preferredY + offsetY,
+      width,
+      height,
+    };
+
+    const overlaps = existingAssets.some((asset) =>
+      boxesOverlap(testBox, asset),
+    );
+    if (!overlaps) {
+      return { x: testBox.x, y: testBox.y };
+    }
+
+    // Change direction after completing steps
+    if (stepsTaken >= stepsInDirection) {
+      stepsTaken = 0;
+      direction = (direction + 1) % 4;
+      directionChanges++;
+      // Increase steps every 2 direction changes (completing a half-spiral)
+      if (directionChanges % 2 === 0) {
+        stepsInDirection++;
+      }
+    }
+  }
+
+  // Fallback: just offset down if no free spot found
+  return { x: preferredX, y: preferredY + height + gap };
+};
 
 export const uploadImageDirect = async (
   dataUrl: string,
@@ -80,15 +186,25 @@ export const uploadImageDirect = async (
 
 export const generateImage = (
   imageUrl: string,
-  x: number,
-  y: number,
+  preferredX: number,
+  preferredY: number,
   groupId: string,
   generationSettings: GenerationSettings,
   setImages: GenerationHandlerDeps["setImages"],
   setActiveGenerations: GenerationHandlerDeps["setActiveGenerations"],
   width: number = 300,
   height: number = 300,
+  existingAssets: BoundingBox[] = [],
 ) => {
+  // Find a non-overlapping position
+  const { x, y } = findNonOverlappingPosition(
+    preferredX,
+    preferredY,
+    width,
+    height,
+    existingAssets,
+  );
+
   const placeholderId = id(); // Use UUID from InstantDB
   setImages((prev) => [
     ...prev,
@@ -121,6 +237,7 @@ export const generateImage = (
 export const handleRun = async (deps: GenerationHandlerDeps) => {
   const {
     images,
+    videos,
     selectedIds,
     generationSettings,
     canvasSize,
@@ -131,7 +248,6 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
     setActiveGenerations,
     setIsGenerating,
     toast,
-    generateTextToImage,
   } = deps;
 
   if (!generationSettings.prompt) {
@@ -142,6 +258,22 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
     });
     return;
   }
+
+  // Collect all existing assets as bounding boxes for collision detection
+  const existingAssets: BoundingBox[] = [
+    ...images.map((img) => ({
+      x: img.x,
+      y: img.y,
+      width: img.width,
+      height: img.height,
+    })),
+    ...videos.map((vid) => ({
+      x: vid.x,
+      y: vid.y,
+      width: vid.width,
+      height: vid.height,
+    })),
+  ];
 
   setIsGenerating(true);
   const selectedImages = images.filter((img) => selectedIds.includes(img.id));
@@ -187,14 +319,25 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
         break;
     }
 
+    // Find non-overlapping position for text-to-image
+    const preferredX = viewportCenterX - width / 2;
+    const preferredY = viewportCenterY - height / 2;
+    const { x, y } = findNonOverlappingPosition(
+      preferredX,
+      preferredY,
+      width,
+      height,
+      existingAssets,
+    );
+
     // Add placeholder image
     setImages((prev) => [
       ...prev,
       {
         id: imageId,
         src: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-        x: viewportCenterX - width / 2,
-        y: viewportCenterY - height / 2,
+        x,
+        y,
         width,
         height,
         rotation: 0,
@@ -326,16 +469,37 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
       }
 
       const groupId = id(); // Use UUID from InstantDB
+
+      // Find non-overlapping position for the new image
+      const preferredX = img.x + img.width + 20;
+      const preferredY = img.y;
+      const { x: newX, y: newY } = findNonOverlappingPosition(
+        preferredX,
+        preferredY,
+        img.width,
+        img.height,
+        existingAssets,
+      );
+
+      // Add the new position to existingAssets so subsequent generations don't overlap
+      existingAssets.push({
+        x: newX,
+        y: newY,
+        width: img.width,
+        height: img.height,
+      });
+
       generateImage(
         uploadResult.url,
-        img.x + img.width + 20,
-        img.y,
+        newX,
+        newY,
         groupId,
         generationSettings,
         setImages,
         setActiveGenerations,
         img.width,
         img.height,
+        existingAssets,
       );
       successCount++;
     } catch (error) {

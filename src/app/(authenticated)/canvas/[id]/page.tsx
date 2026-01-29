@@ -1728,6 +1728,7 @@ export default function OverlayPage() {
   const handleRun = async () => {
     await handleRunHandler({
       images,
+      videos,
       selectedIds,
       generationSettings,
       canvasSize,

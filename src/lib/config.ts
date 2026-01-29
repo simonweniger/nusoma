@@ -1,6 +1,13 @@
-// Global App Configuration
-
 export const appConfig = {
+  app: {
+    /**
+     * Application Name
+     */
+    name: "nusoma",
+    description: "A powerful AI image and video generation platform.",
+    supportEmail: "support@nusoma.com",
+    contactEmail: "hello@nusoma.com",
+  },
   /**
    * Billing Configuration
    */
@@ -36,12 +43,10 @@ export const appConfig = {
     /**
      * Default estimate type for pricing calculations
      * "unit_price" - Calculate based on billing units (images, videos)
-     * "historical_api_price" - Use past usage patterns
      */
     estimateType: "unit_price" as const,
   },
 } as const;
 
-// Type exports for external use
 export type AppConfig = typeof appConfig;
 export type BillingConfig = typeof appConfig.billing;
