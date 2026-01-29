@@ -76,7 +76,10 @@ import { CanvasLeftSidebar } from "@/components/canvas/CanvasLeftSidebar";
 //import { CanvasRightSidebar } from "@/components/canvas/CanvasRightSidebar";
 import { VideoOverlays } from "@/components/canvas/VideoOverlays";
 import { DimensionDisplay } from "@/components/canvas/DimensionDisplay";
-import { PromptEditor } from "@/components/canvas/PromptEditor";
+import {
+  PromptEditor,
+  PromptEditorHandle,
+} from "@/components/canvas/PromptEditor";
 import { GeneratingPlaceholder } from "@/components/canvas/GeneratingPlaceholder";
 import { SettingsDialog } from "@/components/canvas/SettingsDialog";
 import Image from "next/image";
@@ -150,6 +153,9 @@ export default function OverlayPage() {
     scale: 1,
   });
   const stageRef = useRef<Konva.Stage>(null);
+  const promptEditorRef = useRef<PromptEditorHandle>(null);
+  // Track sync source to avoid infinite loops in bidirectional sync
+  const syncSourceRef = useRef<"canvas" | "prompt" | null>(null);
   const [isolateTarget, setIsolateTarget] = useState<string | null>(null);
   const [isolateInputValue, setIsolateInputValue] = useState("");
   const [isIsolating, setIsIsolating] = useState(false);
@@ -1309,15 +1315,8 @@ export default function OverlayPage() {
           const img = new window.Image();
           img.crossOrigin = "anonymous"; // Enable CORS
           img.onload = () => {
-            const aspectRatio = img.width / img.height;
-            const maxSize = 300;
-            let width = maxSize;
-            let height = maxSize / aspectRatio;
-
-            if (height > maxSize) {
-              height = maxSize;
-              width = maxSize * aspectRatio;
-            }
+            const width = img.naturalWidth;
+            const height = img.naturalHeight;
 
             // Place image at position or center of current viewport
             let x, y;
@@ -1569,13 +1568,50 @@ export default function OverlayPage() {
     id: string,
     e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
   ) => {
+    syncSourceRef.current = "canvas";
+
+    const image = images.find((img) => img.id === id);
+    const isImage = !!image;
+
     if (e.evt.shiftKey || e.evt.metaKey || e.evt.ctrlKey) {
-      setSelectedIds((prev) =>
-        prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-      );
+      // Multi-select toggle
+      const isCurrentlySelected = selectedIds.includes(id);
+      const newSelection = isCurrentlySelected
+        ? selectedIds.filter((i) => i !== id)
+        : [...selectedIds, id];
+
+      // Sync to prompt editor for images only
+      if (isImage && promptEditorRef.current) {
+        if (isCurrentlySelected) {
+          promptEditorRef.current.removeImageReference(id);
+        } else {
+          promptEditorRef.current.insertImageReference(image);
+        }
+      }
+
+      setSelectedIds(newSelection);
     } else {
+      // Single select - clear others, select this one
+      // Remove old image references
+      if (promptEditorRef.current) {
+        const currentRefs = promptEditorRef.current.getReferencedImageIds();
+        currentRefs.forEach((refId) => {
+          if (refId !== id) {
+            promptEditorRef.current?.removeImageReference(refId);
+          }
+        });
+        // Add new reference if it's an image and not already referenced
+        if (isImage && !currentRefs.includes(id)) {
+          promptEditorRef.current.insertImageReference(image);
+        }
+      }
       setSelectedIds([id]);
     }
+
+    // Reset sync source after a tick
+    setTimeout(() => {
+      syncSourceRef.current = null;
+    }, 0);
   };
 
   // Handle drag selection and panning
@@ -1623,7 +1659,19 @@ export default function OverlayPage() {
           endY: canvasPos.y,
           visible: true,
         });
+
+        // Clear all image references when clicking empty canvas
+        syncSourceRef.current = "canvas";
+        if (promptEditorRef.current) {
+          const currentRefs = promptEditorRef.current.getReferencedImageIds();
+          currentRefs.forEach((refId) => {
+            promptEditorRef.current?.removeImageReference(refId);
+          });
+        }
         setSelectedIds([]);
+        setTimeout(() => {
+          syncSourceRef.current = null;
+        }, 0);
       }
     }
   };
@@ -3130,6 +3178,7 @@ export default function OverlayPage() {
 
             {/* Prompt Editor */}
             <PromptEditor
+              ref={promptEditorRef}
               generationSettings={generationSettings}
               setGenerationSettings={setGenerationSettings}
               selectedIds={selectedIds}
@@ -3151,6 +3200,18 @@ export default function OverlayPage() {
               handleRun={handleRun}
               handleFileUpload={handleFileUpload}
               toast={toast}
+              onImageReferencesChange={(imageIds) => {
+                // Only sync if the change came from the prompt editor, not from canvas
+                if (syncSourceRef.current === "canvas") return;
+
+                syncSourceRef.current = "prompt";
+                // Sync canvas selection when @ image references change in prompt
+                setSelectedIds(imageIds);
+                // Reset sync source after a tick
+                setTimeout(() => {
+                  syncSourceRef.current = null;
+                }, 0);
+              }}
             />
 
             {/* Mini-map -- Disabled for now

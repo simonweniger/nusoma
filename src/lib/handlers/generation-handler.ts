@@ -185,7 +185,7 @@ export const uploadImageDirect = async (
 };
 
 export const generateImage = (
-  imageUrl: string,
+  imageUrl: string | undefined,
   preferredX: number,
   preferredY: number,
   groupId: string,
@@ -195,6 +195,7 @@ export const generateImage = (
   width: number = 300,
   height: number = 300,
   existingAssets: BoundingBox[] = [],
+  imageUrls?: string[], // Optional array for multi-image generation
 ) => {
   // Find a non-overlapping position
   const { x, y } = findNonOverlappingPosition(
@@ -227,6 +228,7 @@ export const generateImage = (
   setActiveGenerations((prev) =>
     new Map(prev).set(placeholderId, {
       imageUrl,
+      imageUrls, // Multiple images for @ references
       prompt: generationSettings.prompt,
       loraUrl: generationSettings.loraUrl,
       state: "submitting", // Initial state
@@ -277,6 +279,73 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
 
   setIsGenerating(true);
   const selectedImages = images.filter((img) => selectedIds.includes(img.id));
+
+  // Check if there are referenced images via @ syntax
+  const referencedImageIds = generationSettings.referencedImageIds || [];
+  const referencedImages = referencedImageIds
+    .map((refId) => images.find((img) => img.id === refId))
+    .filter((img): img is PlacedImage => !!img);
+
+  // If there are @ referenced images, handle multi-image generation
+  // Server will fetch images directly (no CORS issues on backend)
+  if (referencedImages.length > 0) {
+    // Create placeholder image
+    const imageId = id();
+
+    // Place at center of viewport
+    const viewportCenterX =
+      (canvasSize.width / 2 - viewport.x) / viewport.scale;
+    const viewportCenterY =
+      (canvasSize.height / 2 - viewport.y) / viewport.scale;
+
+    // Use first referenced image dimensions as base
+    const firstImg = referencedImages[0];
+    const width = firstImg.width;
+    const height = firstImg.height;
+
+    const preferredX = viewportCenterX - width / 2;
+    const preferredY = viewportCenterY - height / 2;
+    const { x, y } = findNonOverlappingPosition(
+      preferredX,
+      preferredY,
+      width,
+      height,
+      existingAssets,
+    );
+
+    setImages((prev) => [
+      ...prev,
+      {
+        id: imageId,
+        src: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+        x,
+        y,
+        width,
+        height,
+        rotation: 0,
+        isGenerated: true,
+        generationPrompt: generationSettings.prompt,
+        creditsConsumed: undefined,
+      },
+    ]);
+
+    // Pass image source URLs - server will fetch them (no CORS on backend)
+    const imageSrcs = referencedImages.map((img) => img.src);
+
+    // Add to active generations - server handles fetching and uploading
+    setActiveGenerations((prev) =>
+      new Map(prev).set(imageId, {
+        imageSrcs, // Server will fetch these URLs directly
+        prompt: generationSettings.prompt,
+        loraUrl: generationSettings.loraUrl,
+        imageSize: generationSettings.imageSize,
+        state: "submitting",
+      }),
+    );
+
+    setSelectedIds([imageId]);
+    return;
+  }
 
   // If no images are selected, do text-to-image generation
   if (selectedImages.length === 0) {

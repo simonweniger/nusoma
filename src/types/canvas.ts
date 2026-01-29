@@ -34,6 +34,7 @@ export interface GenerationSettings {
   loraUrl: string;
   styleId?: string;
   imageSize?: ImageSizeType;
+  referencedImageIds?: string[]; // Image IDs referenced via @ syntax
 }
 
 export interface VideoGenerationSettings {
@@ -61,6 +62,8 @@ export type ImageSizeType =
 
 export interface ActiveGeneration {
   imageUrl?: string; // Optional - undefined for text-to-image, present for image-to-image
+  imageUrls?: string[]; // Multiple image URLs for multi-image generation (@ references)
+  imageSrcs?: string[]; // Image URLs to fetch on server (no CORS issues)
   prompt: string;
   loraUrl?: string;
   imageSize?: ImageSizeType;

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../init";
 import { tracked } from "@trpc/server";
-import { createFalClient } from "@fal-ai/client";
+import { createFalClient, FalClient } from "@fal-ai/client";
 import sharp from "sharp";
 import {
   getVideoModelById,
@@ -10,6 +10,7 @@ import {
   buildImageModelInput,
   UTILITY_MODELS,
 } from "@/lib/models-config";
+import { db as instantAdmin } from "@/lib/instant-admin";
 import {
   checkCreditsForGeneration,
   processGenerationCharge,
@@ -94,6 +95,37 @@ async function downloadImage(url: string): Promise<Buffer> {
     throw new Error(`Failed to download image: ${response.statusText}`);
   }
   return Buffer.from(await response.arrayBuffer());
+}
+
+// Helper function to fetch images from URLs and upload to fal storage
+// This runs on the server, so no CORS issues with InstantDB/S3 URLs
+async function fetchAndUploadImages(
+  imageSrcs: string[],
+  falClient: FalClient,
+): Promise<string[]> {
+  const uploadedUrls: string[] = [];
+
+  for (const src of imageSrcs) {
+    try {
+      // Download the image directly (no CORS issues on server)
+      const imageBuffer = await downloadImage(src);
+
+      // Create a Blob from the buffer for fal upload
+      const blob = new Blob([imageBuffer as unknown as BlobPart], { type: "image/png" });
+
+      // Upload to fal storage
+      const uploadResult = await falClient.storage.upload(blob);
+
+      if (uploadResult) {
+        uploadedUrls.push(uploadResult);
+        console.log(`Uploaded image to fal: ${uploadResult}`);
+      }
+    } catch (error) {
+      console.error(`Failed to fetch/upload image from ${src}:`, error);
+    }
+  }
+
+  return uploadedUrls;
 }
 
 export const appRouter = router({
@@ -1176,6 +1208,8 @@ export const appRouter = router({
     .input(
       z.object({
         imageUrl: z.url().optional(),
+        imageUrls: z.array(z.url()).max(3).optional(), // Multiple pre-uploaded fal URLs
+        imageSrcs: z.array(z.string()).max(3).optional(), // Image URLs to fetch on server (no CORS)
         prompt: z.string(),
         loraUrl: z.url().optional(),
         seed: z.number().optional(),
@@ -1198,7 +1232,10 @@ export const appRouter = router({
     )
     .subscription(async function* ({ input, ctx }) {
       try {
-        const hasImageSelected = !!input.imageUrl;
+        // Check if we have images (single, multiple fal URLs, or URLs to fetch)
+        const hasImageSrcs = input.imageSrcs !== undefined && input.imageSrcs.length > 0;
+        const hasImageUrls = input.imageUrls !== undefined && input.imageUrls.length > 0;
+        const hasImageSelected = !!input.imageUrl || hasImageUrls || hasImageSrcs;
         const hasLora = !!input.loraUrl;
         const model = getImageModelForContext(hasImageSelected, hasLora);
         const useCustomApiKey = !!input.apiKey;
@@ -1231,10 +1268,26 @@ export const appRouter = router({
         // Create a unique ID for this generation
         const generationId = `gen_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
+        // If imageSrcs are provided, fetch on server (no CORS) and upload to fal
+        let resolvedImageUrls = input.imageUrls;
+        if (hasImageSrcs && input.imageSrcs) {
+          console.log(`Fetching ${input.imageSrcs.length} images on server...`);
+          resolvedImageUrls = await fetchAndUploadImages(input.imageSrcs, falClient);
+          if (resolvedImageUrls.length === 0) {
+            yield tracked(`${generationId}_error`, {
+              type: "error",
+              error: "Failed to fetch referenced images",
+            });
+            return;
+          }
+          console.log(`Successfully uploaded ${resolvedImageUrls.length} images to fal`);
+        }
+
         // Build input using model config
         const subscribeInput = buildImageModelInput(model, {
           prompt: input.prompt,
           imageUrl: input.imageUrl,
+          imageUrls: resolvedImageUrls, // Use resolved URLs (either from input or fetched)
           loraUrl: input.loraUrl,
           seed: input.seed,
           imageSize: input.imageSize,

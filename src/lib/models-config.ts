@@ -1427,7 +1427,7 @@ export function getImageGenerationType(
  * Build the input parameters for an image generation API call.
  * Uses the model's defaults and overrides with provided options.
  * @param model - The image model configuration
- * @param options - Override options (prompt, imageUrl, loraUrl, seed, imageSize)
+ * @param options - Override options (prompt, imageUrl, imageUrls, loraUrl, seed, imageSize)
  * @returns The formatted input object for the FAL API
  */
 export function buildImageModelInput(
@@ -1435,6 +1435,7 @@ export function buildImageModelInput(
   options: {
     prompt: string;
     imageUrl?: string;
+    imageUrls?: string[]; // Multiple images for @ references
     loraUrl?: string;
     seed?: number;
     imageSize?: string;
@@ -1463,8 +1464,12 @@ export function buildImageModelInput(
     console.log("Building input for image-to-image:", {
       type: model.type,
       imageUrl: options.imageUrl,
+      imageUrls: options.imageUrls,
     });
-    if (options.imageUrl) {
+    // Prefer imageUrls array, fall back to single imageUrl
+    if (options.imageUrls && options.imageUrls.length > 0) {
+      input.image_urls = options.imageUrls.slice(0, 3); // Max 3 per fal.ai
+    } else if (options.imageUrl) {
       input.image_urls = [options.imageUrl];
     }
   }
