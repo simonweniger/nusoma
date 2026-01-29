@@ -111,7 +111,9 @@ async function fetchAndUploadImages(
       const imageBuffer = await downloadImage(src);
 
       // Create a Blob from the buffer for fal upload
-      const blob = new Blob([imageBuffer as unknown as BlobPart], { type: "image/png" });
+      const blob = new Blob([imageBuffer as unknown as BlobPart], {
+        type: "image/png",
+      });
 
       // Upload to fal storage
       const uploadResult = await falClient.storage.upload(blob);
@@ -1233,9 +1235,12 @@ export const appRouter = router({
     .subscription(async function* ({ input, ctx }) {
       try {
         // Check if we have images (single, multiple fal URLs, or URLs to fetch)
-        const hasImageSrcs = input.imageSrcs !== undefined && input.imageSrcs.length > 0;
-        const hasImageUrls = input.imageUrls !== undefined && input.imageUrls.length > 0;
-        const hasImageSelected = !!input.imageUrl || hasImageUrls || hasImageSrcs;
+        const hasImageSrcs =
+          input.imageSrcs !== undefined && input.imageSrcs.length > 0;
+        const hasImageUrls =
+          input.imageUrls !== undefined && input.imageUrls.length > 0;
+        const hasImageSelected =
+          !!input.imageUrl || hasImageUrls || hasImageSrcs;
         const hasLora = !!input.loraUrl;
         const model = getImageModelForContext(hasImageSelected, hasLora);
         const useCustomApiKey = !!input.apiKey;
@@ -1272,7 +1277,10 @@ export const appRouter = router({
         let resolvedImageUrls = input.imageUrls;
         if (hasImageSrcs && input.imageSrcs) {
           console.log(`Fetching ${input.imageSrcs.length} images on server...`);
-          resolvedImageUrls = await fetchAndUploadImages(input.imageSrcs, falClient);
+          resolvedImageUrls = await fetchAndUploadImages(
+            input.imageSrcs,
+            falClient,
+          );
           if (resolvedImageUrls.length === 0) {
             yield tracked(`${generationId}_error`, {
               type: "error",
@@ -1280,7 +1288,9 @@ export const appRouter = router({
             });
             return;
           }
-          console.log(`Successfully uploaded ${resolvedImageUrls.length} images to fal`);
+          console.log(
+            `Successfully uploaded ${resolvedImageUrls.length} images to fal`,
+          );
         }
 
         // Build input using model config
