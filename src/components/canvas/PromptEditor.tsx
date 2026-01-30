@@ -13,7 +13,7 @@ import React, {
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
-import { Node, mergeAttributes } from "@tiptap/core";
+import { Node, mergeAttributes, InputRule } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import {
   PlayIcon,
@@ -185,6 +185,84 @@ const ImageRefNode = Node.create({
 
   addNodeView() {
     return ReactNodeViewRenderer(ImageRefNodeView);
+  },
+});
+
+// Color Badge Node View
+const ColorRefNodeView = ({ node, deleteNode }: any) => {
+  const { color } = node.attrs;
+
+  return (
+    <NodeViewWrapper className="inline-block">
+      <span
+        className={cn(
+          "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-sm font-medium transition-all cursor-default mx-1",
+          "bg-muted border border-border select-none",
+        )}
+        contentEditable={false}
+      >
+        <span
+          className="h-3 w-3 rounded-full border border-black/10 dark:border-white/10 shadow-xs shrink-0"
+          style={{ backgroundColor: color }}
+        />
+        <span className="font-mono text-xs">{color}</span>
+        <button
+          onClick={deleteNode}
+          className="shrink-0 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5 transition-colors"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      </span>
+    </NodeViewWrapper>
+  );
+};
+
+// Color Reference Node
+const ColorRefNode = Node.create({
+  name: "colorRef",
+  group: "inline",
+  inline: true,
+  atom: true,
+
+  addAttributes() {
+    return {
+      color: {
+        default: "#000000",
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: "span[data-color-ref]",
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return ["span", mergeAttributes(HTMLAttributes, { "data-color-ref": "" })];
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(ColorRefNodeView);
+  },
+
+  addInputRules() {
+    return [
+      new InputRule({
+        find: /(?:^|\s)(#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}))\s$/,
+        handler: ({ state, range, match }) => {
+          const attributes = { color: match[1] };
+          const { tr } = state;
+          const start = range.from;
+          const end = range.to;
+
+          tr.replaceWith(start, end, this.type.create(attributes));
+          tr.insertText(" "); // Add a space after the node
+        },
+      }),
+    ];
   },
 });
 
@@ -602,6 +680,7 @@ export const PromptEditor = memo(
         }),
         ChipNode,
         ImageRefNode,
+        ColorRefNode,
         Placeholder.configure({
           placeholder: `Type / for commands, @ for images... (${checkOS("Win") || checkOS("Linux") ? "Ctrl" : "⌘"}+Enter to run)`,
         }),
@@ -640,6 +719,9 @@ export const PromptEditor = memo(
             // Keep @imageN in prompt for fal.ai, also track the imageId
             parts.push(`@${node.attrs.label}`);
             imageRefs.push(node.attrs.imageId);
+          } else if (node.type === "colorRef") {
+            // Keep hex code in prompt
+            parts.push(node.attrs.color);
           } else if (node.type === "text") {
             // Add text content (trim to avoid extra spaces)
             const text = node.text?.trim();
