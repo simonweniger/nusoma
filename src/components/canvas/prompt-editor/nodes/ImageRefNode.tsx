@@ -1,36 +1,20 @@
 import React from "react";
 import { Node, mergeAttributes } from "@tiptap/core";
-import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
-import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ReactNodeViewRenderer } from "@tiptap/react";
+import { PromptPill } from "@/components/canvas/prompt-editor/ui/PromptPill";
 
 // Image reference node component for @ mentions
-const ImageRefNodeView = ({ node, deleteNode }: any) => {
+const ImageRefNodeView = ({ node, deleteNode, selected }: any) => {
   const { label, src } = node.attrs;
 
   return (
-    <NodeViewWrapper as="span" className="inline-flex align-middle mx-1">
-      <span
-        className={cn(
-          "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-sm font-medium transition-all cursor-default",
-          "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30",
-        )}
-        contentEditable={false}
-      >
-        <img
-          src={src}
-          alt={label}
-          className="h-5 w-5 rounded object-cover shrink-0"
-        />
-        <span className="font-medium">@{label}</span>
-        <button
-          onClick={deleteNode}
-          className="shrink-0 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5 transition-colors"
-        >
-          <X className="h-3 w-3" />
-        </button>
-      </span>
-    </NodeViewWrapper>
+    <PromptPill
+      label={label}
+      imageSrc={src}
+      onDelete={deleteNode}
+      selected={selected}
+      className="text-cyan-600 dark:text-cyan-400"
+    />
   );
 };
 

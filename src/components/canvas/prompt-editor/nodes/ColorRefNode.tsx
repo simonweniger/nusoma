@@ -1,35 +1,20 @@
 import React from "react";
 import { Node, mergeAttributes, InputRule } from "@tiptap/core";
-import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
-import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ReactNodeViewRenderer } from "@tiptap/react";
+import { PromptPill } from "@/components/canvas/prompt-editor/ui/PromptPill";
 
 // Color Badge Node View
-const ColorRefNodeView = ({ node, deleteNode }: any) => {
+const ColorRefNodeView = ({ node, deleteNode, selected }: any) => {
   const { color } = node.attrs;
 
   return (
-    <NodeViewWrapper as="span" className="inline-flex align-middle mx-1">
-      <span
-        className={cn(
-          "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-sm font-medium transition-all cursor-default",
-          "bg-muted border border-border select-none",
-        )}
-        contentEditable={false}
-      >
-        <span
-          className="h-3 w-3 rounded-full border border-black/10 dark:border-white/10 shadow-xs shrink-0"
-          style={{ backgroundColor: color }}
-        />
-        <span className="font-mono text-xs">{color}</span>
-        <button
-          onClick={deleteNode}
-          className="shrink-0 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5 transition-colors"
-        >
-          <X className="h-3 w-3" />
-        </button>
-      </span>
-    </NodeViewWrapper>
+    <PromptPill
+      label={color}
+      color={color}
+      onDelete={deleteNode}
+      selected={selected}
+      className="text-foreground"
+    />
   );
 };
 

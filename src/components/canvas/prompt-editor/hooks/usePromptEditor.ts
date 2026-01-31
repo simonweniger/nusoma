@@ -237,7 +237,7 @@ export function usePromptEditor({
     ],
     editorProps: {
       attributes: {
-        class: "outline-none min-h-20 p-2 pr-36",
+        class: "outline-none min-h-20 p-2",
         style: "font-size: 16px",
       },
     },
