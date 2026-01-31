@@ -1,14 +1,14 @@
-import { APP_NAME } from "@/lib/common";
+import { appConfig } from "@/lib/config";
 
 export function createTitle(title: string, addSuffix: boolean = true): string {
   if (!addSuffix) {
     return title;
   }
   if (!title) {
-    return APP_NAME;
+    return appConfig.info.name;
   }
 
-  return `${title} | ${APP_NAME}`;
+  return `${title} | ${appConfig.info.name}`;
 }
 
 export function capitalize(str: string): string {

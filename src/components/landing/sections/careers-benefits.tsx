@@ -1,7 +1,7 @@
 import * as React from "react";
 import { BriefcaseBusinessIcon, Users2Icon, ZapIcon } from "lucide-react";
 
-import { APP_NAME } from "@/lib/common";
+import { appConfig } from "@/lib/config";
 
 import { GridSection } from "../fragments/grid-section";
 import { SiteHeading } from "../fragments/site-heading";
@@ -35,7 +35,7 @@ export function CareersBenefits(): React.JSX.Element {
           <SiteHeading
             badge="Careers"
             title="Join our team"
-            description={`Work remotely from wherever you want and help us build the future of ${APP_NAME}`}
+            description={`Work remotely from wherever you want and help us build the future of ${appConfig.info.name}`}
           />
         </div>
         <div className="grid divide-y border-t border-dashed md:grid-cols-3 md:divide-x md:divide-y-0">

@@ -29,13 +29,10 @@ export const StreamingImage: React.FC<StreamingImageProps> = ({
 }) => {
   const [hasStartedStreaming, setHasStartedStreaming] = React.useState(false);
 
-  const subscription = useSubscription(
+  useSubscription(
     useTRPC().generateImageStream.subscriptionOptions(
       {
         ...(generation.imageUrl ? { imageUrl: generation.imageUrl } : {}),
-        ...(generation.imageUrls && generation.imageUrls.length > 0
-          ? { imageUrls: generation.imageUrls }
-          : {}),
         ...(generation.imageSrcs && generation.imageSrcs.length > 0
           ? { imageSrcs: generation.imageSrcs }
           : {}),

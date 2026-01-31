@@ -1,16 +1,14 @@
 export const appConfig = {
-  app: {
-    /**
-     * Application Name
-     */
+  info: {
     name: "nusoma",
     description: "A powerful AI image and video generation platform.",
     supportEmail: "support@nusoma.com",
     contactEmail: "hello@nusoma.com",
+    startUrl: "/",
+    display: "standalone",
+    backgroundColor: "#000000",
+    themeColor: "#000000",
   },
-  /**
-   * Billing Configuration
-   */
   billing: {
     /**
      * Margin percentage added on top of FAL costs

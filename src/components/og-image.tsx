@@ -1,8 +1,5 @@
 import * as React from "react";
-
-const APP_DESCRIPTION =
-  "Create and share on your own creative canvas with GenAI.";
-const APP_NAME = "nusoma";
+import { appConfig } from "@/lib/config";
 
 export function OgImage(): React.JSX.Element {
   return (
@@ -52,7 +49,7 @@ export function OgImage(): React.JSX.Element {
             textShadow: "0 4px 8px rgba(0, 0, 0, 0.5)",
           }}
         >
-          {APP_NAME}
+          {appConfig.info.name}
         </div>
 
         <div
@@ -64,7 +61,7 @@ export function OgImage(): React.JSX.Element {
             color: "rgba(255, 255, 255, 0.75)",
           }}
         >
-          {APP_DESCRIPTION}
+          {appConfig.info.description}
         </div>
       </div>
 

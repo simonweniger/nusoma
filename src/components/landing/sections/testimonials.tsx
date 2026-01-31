@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Star } from "lucide-react";
 import { motion } from "motion/react";
 
-import { APP_NAME } from "@/lib/common";
+import { appConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 import { GridSection } from "../fragments/grid-section";
@@ -18,7 +18,8 @@ const DATA = [
     img: "",
     description: (
       <p>
-        {APP_NAME} has revolutionized how we manage customer relationships.{" "}
+        {appConfig.info.name} has revolutionized how we manage customer
+        relationships.{" "}
         <strong>
           Our team efficiency has improved by 75% since implementation.
         </strong>{" "}
@@ -32,8 +33,8 @@ const DATA = [
     img: "",
     description: (
       <p>
-        {APP_NAME}'s customer prediction model has drastically improved our
-        targeting strategy.{" "}
+        {appConfig.info.name}'s customer prediction model has drastically
+        improved our targeting strategy.{" "}
         <strong>We've seen a 50% increase in conversion rates!</strong> Their
         marketing automation features are unmatched.
       </p>
@@ -45,8 +46,8 @@ const DATA = [
     img: "",
     description: (
       <p>
-        As a startup, we needed a system that could scale with us. {APP_NAME}{" "}
-        delivers perfectly.{" "}
+        As a startup, we needed a system that could scale with us.{" "}
+        {appConfig.info.name} delivers perfectly.{" "}
         <strong>Our sales pipeline visibility has improved tenfold.</strong>{" "}
         Essential tool for any growing business.
       </p>
@@ -58,8 +59,8 @@ const DATA = [
     img: "",
     description: (
       <p>
-        {APP_NAME}'s multi-language support has made managing global customers
-        effortless.{" "}
+        {appConfig.info.name}'s multi-language support has made managing global
+        customers effortless.{" "}
         <strong>
           Customer communication is now seamless across all regions.
         </strong>{" "}
@@ -73,8 +74,8 @@ const DATA = [
     img: "",
     description: (
       <p>
-        {APP_NAME}'s analytics dashboard gives us unprecedented insights into
-        customer behavior.{" "}
+        {appConfig.info.name}'s analytics dashboard gives us unprecedented
+        insights into customer behavior.{" "}
         <strong>
           Our customer retention has increased by 40% using their predictive
           analytics.
@@ -89,8 +90,8 @@ const DATA = [
     img: "",
     description: (
       <p>
-        {APP_NAME}'s integration with our existing tools has streamlined our
-        entire operation.{" "}
+        {appConfig.info.name}'s integration with our existing tools has
+        streamlined our entire operation.{" "}
         <strong>Customer service response times have been cut in half.</strong>{" "}
         The automation features are exceptional.
       </p>
@@ -102,8 +103,8 @@ const DATA = [
     img: "",
     description: (
       <p>
-        {APP_NAME}'s sustainability tracking features help us monitor our
-        environmental impact.{" "}
+        {appConfig.info.name}'s sustainability tracking features help us monitor
+        our environmental impact.{" "}
         <strong>
           Perfect for managing eco-conscious customer relationships.
         </strong>{" "}
@@ -117,8 +118,8 @@ const DATA = [
     img: "",
     description: (
       <p>
-        {APP_NAME}'s customer segmentation tools have transformed our marketing
-        approach.{" "}
+        {appConfig.info.name}'s customer segmentation tools have transformed our
+        marketing approach.{" "}
         <strong>
           Our targeted campaigns now see 85% higher engagement rates.
         </strong>{" "}
@@ -132,8 +133,8 @@ const DATA = [
     img: "",
     description: (
       <p>
-        {APP_NAME}'s HIPAA-compliant features make it perfect for healthcare
-        providers.{" "}
+        {appConfig.info.name}'s HIPAA-compliant features make it perfect for
+        healthcare providers.{" "}
         <strong>
           Secure patient relationship management has never been easier.
         </strong>{" "}
@@ -147,8 +148,8 @@ const DATA = [
     img: "",
     description: (
       <p>
-        {APP_NAME}'s education-focused features have doubled our student
-        engagement rates.{" "}
+        {appConfig.info.name}'s education-focused features have doubled our
+        student engagement rates.{" "}
         <strong>
           Perfect for managing student and institution relationships.
         </strong>{" "}
@@ -162,9 +163,10 @@ const DATA = [
     img: "",
     description: (
       <p>
-        {APP_NAME}'s enterprise-grade security features give us complete peace
-        of mind. <strong>The most secure CRM solution we've ever used.</strong>{" "}
-        Setting new standards in data protection.
+        {appConfig.info.name}'s enterprise-grade security features give us
+        complete peace of mind.{" "}
+        <strong>The most secure CRM solution we've ever used.</strong> Setting
+        new standards in data protection.
       </p>
     ),
   },
@@ -174,8 +176,8 @@ const DATA = [
     img: "",
     description: (
       <p>
-        {APP_NAME}'s project management integration has streamlined our creative
-        workflow.{" "}
+        {appConfig.info.name}'s project management integration has streamlined
+        our creative workflow.{" "}
         <strong>Client communication has never been more efficient.</strong>{" "}
         Perfect for creative agencies.
       </p>
@@ -187,8 +189,8 @@ const DATA = [
     img: "",
     description: (
       <p>
-        {APP_NAME}'s startup-friendly pricing and scalability made it an easy
-        choice.{" "}
+        {appConfig.info.name}'s startup-friendly pricing and scalability made it
+        an easy choice.{" "}
         <strong>The perfect CRM solution that grows with your business.</strong>{" "}
         Essential for modern startups.
       </p>

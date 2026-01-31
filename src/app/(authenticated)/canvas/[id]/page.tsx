@@ -3272,7 +3272,6 @@ export default function OverlayPage() {
               setViewport={setViewport}
               canvasSize={canvasSize}
             />
-            {/* <GithubBadge /> */}
 
             {/* Dimension display for selected images */}
             <DimensionDisplay

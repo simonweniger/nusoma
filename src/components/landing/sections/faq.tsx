@@ -1,7 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
 
-import { APP_NAME } from "@/lib/common";
+import { appConfig } from "@/lib/config";
 import { routes } from "@/lib/routes";
 import {
   Accordion,
@@ -14,12 +14,12 @@ import { GridSection } from "../fragments/grid-section";
 
 const DATA = [
   {
-    question: `What does ${APP_NAME} do?`,
-    answer: `This is a demo application built with Achromatic. It will save you time and effort building your next SaaS. Here you would write something like "${APP_NAME} helps you manage customer relationships, organize sales activities and improve service delivery to make your business more efficient and successful."`,
+    question: `What does ${appConfig.info.name} do?`,
+    answer: `This is a demo application built with Achromatic. It will save you time and effort building your next SaaS. Here you would write something like "${appConfig.info.name} helps you manage customer relationships, organize sales activities and improve service delivery to make your business more efficient and successful."`,
   },
   {
     question: "How will this benefit my business?",
-    answer: `By centralizing your customer data and automating tasks, ${APP_NAME} makes it easier to track leads, manage your sales pipeline and collaborate with your team, saving you time and boosting your productivity.`,
+    answer: `By centralizing your customer data and automating tasks, ${appConfig.info.name} makes it easier to track leads, manage your sales pipeline and collaborate with your team, saving you time and boosting your productivity.`,
   },
   {
     question: "Is my data safe?",
@@ -28,7 +28,7 @@ const DATA = [
   },
   {
     question: "What kind of integrations are available?",
-    answer: `${APP_NAME} supports integration with various business tools, including CRMs, email marketing software and collaboration platforms. Connect with Salesforce, HubSpot and more to create a seamless workflow.`,
+    answer: `${appConfig.info.name} supports integration with various business tools, including CRMs, email marketing software and collaboration platforms. Connect with Salesforce, HubSpot and more to create a seamless workflow.`,
   },
   {
     question: "How easy is it to onboard my team?",
@@ -37,7 +37,7 @@ const DATA = [
   },
   {
     question: "What types of businesses can use this?",
-    answer: `${APP_NAME} is suitable for businesses of all sizes and industries, from startups to large enterprises, looking to streamline their customer relationship management.`,
+    answer: `${appConfig.info.name} is suitable for businesses of all sizes and industries, from startups to large enterprises, looking to streamline their customer relationship management.`,
   },
   {
     question: "Can I customize this to fit my business needs?",

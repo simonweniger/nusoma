@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 
-import { APP_NAME } from "@/lib/common";
+import { appConfig } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -84,7 +84,8 @@ export function Footer(): React.JSX.Element {
         <div className="mt-8 border-t pt-8">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} {APP_NAME}. All rights reserved.
+              © {new Date().getFullYear()} {appConfig.info.name}. All rights
+              reserved.
             </p>
             <div className="flex flex-row items-center gap-4">
               {SOCIAL_LINKS.map((link) => (

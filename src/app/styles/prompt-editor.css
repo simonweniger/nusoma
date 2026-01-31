@@ -1,0 +1,122 @@
+/* Tiptap Overrides */
+.ProseMirror {
+    outline: none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: hsl(var(--muted-foreground));
+    opacity: 0.5;
+    pointer-events: none;
+    height: 0;
+}
+
+/* ========================================
+    Tactile Button Styles
+    ======================================== */
+
+/* Container */
+.tactile-group {
+    background: linear-gradient(180deg, #2a2a30 0%, #1a1a1f 100%);
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.05),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+        0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Button base */
+.tactile-btn {
+    position: relative;
+    cursor: pointer;
+    background: linear-gradient(180deg, #3a3a42 0%, #2a2a32 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Icon styling */
+.tactile-btn__icon {
+    z-index: 10;
+    pointer-events: none;
+    transition: all 0.15s ease;
+}
+
+/* ---- INACTIVE STATE ---- */
+.tactile-btn--inactive {
+    transform: translateY(0);
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.3),
+        0 4px 8px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.tactile-btn--inactive .tactile-btn__icon {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.tactile-btn--inactive:hover {
+    background: linear-gradient(180deg, #424249 0%, #32323a 100%);
+}
+
+.tactile-btn--inactive:hover .tactile-btn__icon {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+/* ---- ACTIVE STATE (toggled on) ---- */
+.tactile-btn--active {
+    transform: translateY(1px);
+    background: linear-gradient(180deg, #28282e 0%, #1e1e24 100%);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.4),
+        inset 0 1px 2px rgba(0, 0, 0, 0.3),
+        0 1px 1px rgba(0, 0, 0, 0.2);
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Glowing icon */
+.tactile-btn--active .tactile-btn__icon {
+    color: var(--tactile-glow-color, hsl(var(--primary)));
+    filter: drop-shadow(0 0 3px var(--tactile-glow-color)) drop-shadow(0 0 6px var(--tactile-glow-color)) drop-shadow(0 0 10px color-mix(in srgb, var(--tactile-glow-color) 60%, transparent));
+    animation: tactile-glow 2.5s ease-in-out infinite;
+}
+
+/* ---- PRESSED STATE (momentary press) ---- */
+.tactile-btn--pressed {
+    transform: translateY(1px);
+    background: linear-gradient(180deg, #28282e 0%, #1e1e24 100%);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.4),
+        inset 0 1px 2px rgba(0, 0, 0, 0.3),
+        0 1px 1px rgba(0, 0, 0, 0.2);
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.tactile-btn--pressed .tactile-btn__icon {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+@keyframes tactile-glow {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 2px var(--tactile-glow-color)) drop-shadow(0 0 4px var(--tactile-glow-color)) drop-shadow(0 0 8px color-mix(in srgb,
+                    var(--tactile-glow-color) 50%,
+                    transparent));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 4px var(--tactile-glow-color)) drop-shadow(0 0 8px var(--tactile-glow-color)) drop-shadow(0 0 14px color-mix(in srgb,
+                    var(--tactile-glow-color) 70%,
+                    transparent));
+    }
+}
+
+@media (prefers-reduced-motion) {
+    .tactile-btn {
+        transition: none !important;
+    }
+
+    .tactile-btn--active .tactile-btn__icon {
+        animation: none !important;
+        filter: drop-shadow(0 0 4px var(--tactile-glow-color));
+    }
+}

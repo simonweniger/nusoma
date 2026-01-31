@@ -605,7 +605,7 @@ export const VIDEO_MODELS: Record<string, VideoModelConfig> = {
     endpoint: "fal-ai/kling-video/v2.6/pro/text-to-video",
     category: "text-to-video",
     pricing: {
-      costPerVideo: 0.15, // Approximate
+      costPerVideo: 0.15,
       currency: "USD",
       unit: "video",
     },
@@ -1005,4 +1005,86 @@ export function formatPricingMessage(model: VideoModelConfig): string {
   return `Your request will cost $${model.pricing.costPerVideo.toFixed(2)} per ${
     model.pricing.unit
   }. For $1 you can run this model approximately ${approximateTimes} times.`;
+}
+
+export function getDefaultVideoModel(): VideoModelConfig | undefined {
+  return Object.values(VIDEO_MODELS).find((model) => model.isDefault);
+}
+
+// -----------------------------------------------------------------------------
+// Helper Functions - Common
+// -----------------------------------------------------------------------------
+
+export interface CommonSizeOption {
+  id: string;
+  label: string;
+  ratio: string;
+  icon?: string;
+}
+
+/**
+ * Get the available size options for a given model.
+ * Normalizes options from both image and video models into a common format.
+ */
+export function getModelSizeOptions(modelId?: string): CommonSizeOption[] {
+  // Default options if no model is selected or found (fallback to image defaults)
+  const defaultImageOptions: CommonSizeOption[] = [
+    { id: "landscape_16_9", label: "16:9 Landscape", ratio: "16:9" },
+    { id: "landscape_4_3", label: "4:3 Landscape", ratio: "4:3" },
+    { id: "square_hd", label: "Square HD", ratio: "1:1" },
+    { id: "portrait_4_3", label: "4:3 Portrait", ratio: "3:4" },
+    { id: "portrait_16_9", label: "16:9 Portrait", ratio: "9:16" },
+  ];
+
+  if (!modelId) return defaultImageOptions;
+
+  // Check if it's a video model
+  const videoModel = VIDEO_MODELS[modelId];
+  if (videoModel) {
+    const aspectRatioOption = videoModel.options.aspect_ratio;
+    if (aspectRatioOption && aspectRatioOption.options) {
+      return aspectRatioOption.options.map((opt) => {
+        // Parse ratio from label or value if possible, or mapping
+        let ratio = "16:9"; // default
+        if (opt.value === "16:9") ratio = "16:9";
+        else if (opt.value === "9:16") ratio = "9:16";
+        else if (opt.value === "1:1") ratio = "1:1";
+
+        return {
+          id: String(opt.value),
+          label: opt.label,
+          ratio: ratio,
+        };
+      });
+    }
+  }
+
+  // Check if it's an image model
+  const imageModel = IMAGE_MODELS[modelId];
+  if (imageModel) {
+    const imageSizeOption = imageModel.options.image_size;
+    if (imageSizeOption && imageSizeOption.options) {
+      return imageSizeOption.options
+        .filter((opt) => opt.value !== "auto") // Filter out auto for manual selection if desired, or handle it
+        .map((opt) => {
+          let ratio = "1:1";
+          if (String(opt.value).includes("16_9")) ratio = "16:9";
+          else if (String(opt.value).includes("4_3")) ratio = "4:3";
+
+          // Swap ratio for portraits
+          if (String(opt.value).includes("portrait")) {
+            const parts = ratio.split(":");
+            ratio = `${parts[1]}:${parts[0]}`;
+          }
+
+          return {
+            id: String(opt.value),
+            label: opt.label,
+            ratio: ratio,
+          };
+        });
+    }
+  }
+
+  return defaultImageOptions;
 }

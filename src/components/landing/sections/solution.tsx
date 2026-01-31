@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CircleCheckBigIcon } from "lucide-react";
 
-import { APP_NAME } from "@/lib/common";
+import { appConfig } from "@/lib/config";
 
 import { AiAdvisorCard } from "@/components/landing/cards/ai-advisor-card";
 import { BentoAnalyticsCard } from "@/components/landing/cards/bento-analytics-card";
@@ -22,9 +22,9 @@ export function Solution(): React.JSX.Element {
                 The next-gen SaaS
               </h2>
               <p className="mt-1 max-w-2xl text-muted-foreground md:mt-6">
-                {APP_NAME} is the engine that builds, scales and grows your
-                company to the next level. Reminder that this is a demo and some
-                of the features below don't exists.
+                {appConfig.info.name} is the engine that builds, scales and
+                grows your company to the next level. Reminder that this is a
+                demo and some of the features below don't exists.
               </p>
             </div>
             <div className="mx-auto xl:container xl:rounded-xl xl:bg-neutral-50 xl:p-6 dark:xl:bg-neutral-900">

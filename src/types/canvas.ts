@@ -63,6 +63,8 @@ export type ImageSizeType =
   | "portrait_4_3"
   | "portrait_16_9";
 
+export type GenerationState = "submitting" | "running" | "success";
+
 export interface ActiveGeneration {
   imageUrl?: string; // Optional - undefined for text-to-image, present for image-to-image
   referencedAssetIds?: string[]; // Multiple asset IDs for multi-modal generation (@ references)
@@ -70,7 +72,7 @@ export interface ActiveGeneration {
   prompt: string;
   loraUrl?: string;
   imageSize?: ImageSizeType;
-  state?: "submitting" | "running" | "success"; // Track generation state
+  state?: GenerationState; // Track generation state
 }
 
 export interface ActiveVideoGeneration {

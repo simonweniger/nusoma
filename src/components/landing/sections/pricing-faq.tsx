@@ -1,7 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
 
-import { APP_NAME } from "@/lib/common";
+import { appConfig } from "@/lib/config";
 import { routes } from "@/lib/routes";
 import {
   Accordion,
@@ -14,7 +14,7 @@ import { GridSection } from "../fragments/grid-section";
 
 const DATA = [
   {
-    question: `What pricing plans does ${APP_NAME} offer?`,
+    question: `What pricing plans does ${appConfig.info.name} offer?`,
     answer: (
       <div>
         We offer three plans:
@@ -92,8 +92,8 @@ const DATA = [
     question: "Is there a setup fee?",
     answer: (
       <p>
-        No, there are no setup fees. You can start using {APP_NAME} immediately
-        after signing up.
+        No, there are no setup fees. You can start using {appConfig.info.name}
+        immediately after signing up.
       </p>
     ),
   },

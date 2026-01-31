@@ -171,7 +171,7 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
 
   return (
     <div
-      className={`flex flex-col bg-background border border-border rounded-lg shadow-sm dark:shadow-none p-1.5 z-[60] ${className}`}
+      className={`flex flex-col bg-background border border-border rounded-lg shadow-sm dark:shadow-none p-1.5 z-60 ${className}`}
       onClick={(e) => e.stopPropagation()} // Prevent clicks from bubbling to canvas
     >
       {/* Seek bar with time display */}

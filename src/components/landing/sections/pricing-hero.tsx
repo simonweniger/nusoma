@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { APP_NAME } from "@/lib/common";
+import { appConfig } from "@/lib/config";
 
 import { GridSection } from "../fragments/grid-section";
 import { SiteHeading } from "../fragments/site-heading";
@@ -14,7 +14,7 @@ export function PricingHero(): React.JSX.Element {
         <SiteHeading
           badge="Pricing"
           title="Plans for your business"
-          description={`From early-stage startups to growing enterprises, ${APP_NAME} has you covered.`}
+          description={`From early-stage startups to growing enterprises, ${appConfig.info.name} has you covered.`}
         />
         {/* <PricingTable /> */}
       </div>
