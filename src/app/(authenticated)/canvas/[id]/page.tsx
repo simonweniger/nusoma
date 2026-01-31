@@ -581,6 +581,7 @@ export default function OverlayPage() {
     videoId: string,
     videoUrl: string,
     duration: number,
+    referencedAssetIds?: string[],
   ) => {
     // Refetch credits after generation completes
     refetchCredits();
@@ -616,7 +617,10 @@ export default function OverlayPage() {
           video.y = image.y; // Keep the same vertical position
 
           // Add the video to the videos state
-          setVideos((prev) => [...prev, { ...video, isVideo: true as const }]);
+          setVideos((prev) => [
+            ...prev,
+            { ...video, isVideo: true as const, referencedAssetIds },
+          ]);
 
           // Save to history
           saveToHistory();
@@ -662,6 +666,7 @@ export default function OverlayPage() {
               muted: false,
               isLooping: false,
               isVideo: true as const,
+              referencedAssetIds,
             };
 
             // Add the transformed video to the canvas
@@ -711,11 +716,37 @@ export default function OverlayPage() {
         setSelectedVideoForExtend(null);
       } else {
         // This was a text-to-video generation
-        // For now, just log it as the placement function is missing
-        console.log("Generated video URL:", videoUrl);
+        // Place in center of viewport
+        const newVideo: PlacedVideo = {
+          id: id(),
+          src: videoUrl,
+          x:
+            -viewport.x / viewport.scale +
+            canvasSize.width / viewport.scale / 2 -
+            250, // Approximate center
+          y:
+            -viewport.y / viewport.scale +
+            canvasSize.height / viewport.scale / 2 -
+            250,
+          width: 500, // Default width
+          height: 500, // Default height
+          rotation: 0,
+          isPlaying: false,
+          currentTime: 0,
+          duration: duration,
+          volume: 1,
+          muted: false,
+          isLooping: false,
+          isVideo: true as const,
+          referencedAssetIds,
+        };
+
+        setVideos((prev) => [...prev, newVideo]);
+        saveToHistory();
+
         toast.add({
           title: "Video generated",
-          description: "Video is ready but cannot be placed on canvas yet.",
+          description: "Video has been placed on the canvas.",
         });
       }
 
@@ -845,6 +876,7 @@ export default function OverlayPage() {
             await canvasStorage.saveImage(image.src, image.id, {
               prompt: image.generationPrompt,
               creditsConsumed: image.creditsConsumed,
+              referencedAssetIds: image.referencedAssetIds,
             });
             console.log(`[CANVAS] Image ${image.id} saved successfully`);
           } else {
@@ -875,7 +907,9 @@ export default function OverlayPage() {
           const existingVideo = await canvasStorage.getVideo(video.id);
           if (!existingVideo) {
             console.log(`[CANVAS] Saving new video ${video.id}`);
-            await canvasStorage.saveVideo(video.src, video.duration, video.id);
+            await canvasStorage.saveVideo(video.src, video.duration, video.id, {
+              referencedAssetIds: video.referencedAssetIds,
+            });
             console.log(`[CANVAS] Video ${video.id} saved successfully`);
           } else {
             console.log(
@@ -1580,29 +1614,34 @@ export default function OverlayPage() {
         ? selectedIds.filter((i) => i !== id)
         : [...selectedIds, id];
 
-      // Sync to prompt editor for images only
-      if (isImage && promptEditorRef.current) {
+      // Sync to prompt editor for assets
+      if (promptEditorRef.current) {
         if (isCurrentlySelected) {
-          promptEditorRef.current.removeImageReference(id);
+          promptEditorRef.current.removeAssetReference(id);
         } else {
-          promptEditorRef.current.insertImageReference(image);
+          // Only insert if it's an image or video
+          const asset = image || videos.find((v) => v.id === id);
+          if (asset) {
+            promptEditorRef.current.insertAssetReference(asset);
+          }
         }
       }
 
       setSelectedIds(newSelection);
     } else {
       // Single select - clear others, select this one
-      // Remove old image references
+      // Remove old asset references
       if (promptEditorRef.current) {
-        const currentRefs = promptEditorRef.current.getReferencedImageIds();
+        const currentRefs = promptEditorRef.current.getReferencedAssetIds();
         currentRefs.forEach((refId) => {
           if (refId !== id) {
-            promptEditorRef.current?.removeImageReference(refId);
+            promptEditorRef.current?.removeAssetReference(refId);
           }
         });
-        // Add new reference if it's an image and not already referenced
-        if (isImage && !currentRefs.includes(id)) {
-          promptEditorRef.current.insertImageReference(image);
+        // Add new reference if it's an asset and not already referenced
+        const asset = image || videos.find((v) => v.id === id);
+        if (asset && !currentRefs.includes(id)) {
+          promptEditorRef.current.insertAssetReference(asset);
         }
       }
       setSelectedIds([id]);
@@ -1660,12 +1699,12 @@ export default function OverlayPage() {
           visible: true,
         });
 
-        // Clear all image references when clicking empty canvas
+        // Clear all asset references when clicking empty canvas
         syncSourceRef.current = "canvas";
         if (promptEditorRef.current) {
-          const currentRefs = promptEditorRef.current.getReferencedImageIds();
+          const currentRefs = promptEditorRef.current.getReferencedAssetIds();
           currentRefs.forEach((refId) => {
-            promptEditorRef.current?.removeImageReference(refId);
+            promptEditorRef.current?.removeAssetReference(refId);
           });
         }
         setSelectedIds([]);
@@ -1788,6 +1827,7 @@ export default function OverlayPage() {
       setIsGenerating,
       toast: toast.add,
       generateTextToImage,
+      setActiveVideoGenerations,
     });
   };
 
@@ -2405,6 +2445,7 @@ export default function OverlayPage() {
                           generationPrompt: generation?.prompt,
                           // Credits info not available from API yet
                           creditsConsumed: undefined,
+                          referencedAssetIds: generation?.referencedAssetIds,
                         }
                       : img,
                   ),
@@ -3200,13 +3241,13 @@ export default function OverlayPage() {
               handleRun={handleRun}
               handleFileUpload={handleFileUpload}
               toast={toast}
-              onImageReferencesChange={(imageIds) => {
+              onAssetReferencesChange={(assetIds) => {
                 // Only sync if the change came from the prompt editor, not from canvas
                 if (syncSourceRef.current === "canvas") return;
 
                 syncSourceRef.current = "prompt";
-                // Sync canvas selection when @ image references change in prompt
-                setSelectedIds(imageIds);
+                // Sync canvas selection when @ asset references change in prompt
+                setSelectedIds(assetIds);
                 // Reset sync source after a tick
                 setTimeout(() => {
                   syncSourceRef.current = null;

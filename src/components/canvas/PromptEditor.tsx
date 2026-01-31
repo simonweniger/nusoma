@@ -49,6 +49,7 @@ import { ShortcutBadge } from "@/components/canvas/ShortcutBadge";
 import type {
   GenerationSettings,
   PlacedImage,
+  PlacedVideo,
   ImageSizeType,
 } from "@/types/canvas";
 import {
@@ -67,18 +68,19 @@ interface PromptEditorProps {
   setGenerationSettings: (settings: GenerationSettings) => void;
   selectedIds: string[];
   images: PlacedImage[];
+  videos?: PlacedVideo[];
   isGenerating: boolean;
   generationState?: GenerationState;
   handleRun: () => void;
   handleFileUpload: (files: FileList | null) => void;
   toast: any;
-  onImageReferencesChange?: (imageIds: string[]) => void;
+  onAssetReferencesChange?: (assetIds: string[]) => void;
 }
 
 export interface PromptEditorHandle {
-  insertImageReference: (image: PlacedImage) => void;
-  removeImageReference: (imageId: string) => void;
-  getReferencedImageIds: () => string[];
+  insertAssetReference: (asset: PlacedImage | PlacedVideo) => void;
+  removeAssetReference: (assetId: string) => void;
+  getReferencedAssetIds: () => string[];
 }
 
 const renderCategoryIcon = (category: PromptActionCategory) => {
@@ -627,12 +629,13 @@ export const PromptEditor = memo(
       setGenerationSettings,
       selectedIds,
       images,
+      videos = [],
       isGenerating,
       generationState = "running",
       handleRun,
       handleFileUpload,
       toast,
-      onImageReferencesChange,
+      onAssetReferencesChange,
     },
     ref,
   ) {
@@ -716,7 +719,7 @@ export const PromptEditor = memo(
           if (node.type === "chip") {
             parts.push(node.attrs.value);
           } else if (node.type === "imageRef") {
-            // Keep @imageN in prompt for fal.ai, also track the imageId
+            // Keep @label in prompt for fal.ai, also track the assetId
             parts.push(`@${node.attrs.label}`);
             imageRefs.push(node.attrs.imageId);
           } else if (node.type === "colorRef") {
@@ -743,10 +746,10 @@ export const PromptEditor = memo(
           setGenerationSettings({
             ...generationSettings,
             prompt: combinedPrompt,
-            referencedImageIds: imageRefs, // Store for generation
+            referencedAssetIds: imageRefs, // Store for generation
           });
-          // Notify parent of image reference changes
-          onImageReferencesChange?.(imageRefs);
+          // Notify parent of asset reference changes
+          onAssetReferencesChange?.(imageRefs);
         }, 16); // ~1 frame at 60fps
 
         // Detect slash command at cursor position
@@ -838,7 +841,7 @@ export const PromptEditor = memo(
         showImageMenu,
         generationSettings,
         setGenerationSettings,
-        onImageReferencesChange,
+        onAssetReferencesChange,
         images.length,
       ],
     );
@@ -911,62 +914,67 @@ export const PromptEditor = memo(
       setSearchQuery("");
     };
 
-    // Get the next available image label (image1, image2, image3)
-    const getNextImageLabel = useCallback(() => {
-      if (!editor) return "image1";
+    // Get the next available asset label
+    const getNextAssetLabel = useCallback(
+      (type: "image" | "video" = "image") => {
+        if (!editor) return `${type}1`;
 
-      const json = editor.getJSON();
-      const usedLabels = new Set<string>();
+        const json = editor.getJSON();
+        const usedLabels = new Set<string>();
 
-      const findLabels = (node: any) => {
-        if (node.type === "imageRef") {
-          usedLabels.add(node.attrs.label);
+        const findLabels = (node: any) => {
+          if (node.type === "imageRef") {
+            usedLabels.add(node.attrs.label);
+          }
+          if (node.content) {
+            node.content.forEach(findLabels);
+          }
+        };
+
+        json.content?.forEach(findLabels);
+
+        // Find the next available label (max 3 per type)
+        for (let i = 1; i <= 3; i++) {
+          const label = `${type}${i}`;
+          if (!usedLabels.has(label)) {
+            return label;
+          }
         }
-        if (node.content) {
-          node.content.forEach(findLabels);
-        }
-      };
+        return null; // All slots used
+      },
+      [editor],
+    );
 
-      json.content?.forEach(findLabels);
-
-      // Find the next available label (max 3)
-      for (let i = 1; i <= 3; i++) {
-        const label = `image${i}`;
-        if (!usedLabels.has(label)) {
-          return label;
-        }
-      }
-      return null; // All slots used
-    }, [editor]);
-
-    // Get current referenced image IDs from editor
-    const getReferencedImageIds = useCallback(() => {
+    // Get current referenced asset IDs from editor
+    const getReferencedAssetIds = useCallback(() => {
       if (!editor) return [];
 
       const json = editor.getJSON();
-      const imageIds: string[] = [];
+      const assetIds: string[] = [];
 
-      const findImageRefs = (node: any) => {
+      const findAssetRefs = (node: any) => {
         if (node.type === "imageRef") {
-          imageIds.push(node.attrs.imageId);
+          assetIds.push(node.attrs.imageId);
         }
         if (node.content) {
-          node.content.forEach(findImageRefs);
+          node.content.forEach(findAssetRefs);
         }
       };
 
-      json.content?.forEach(findImageRefs);
-      return imageIds;
+      json.content?.forEach(findAssetRefs);
+      return assetIds;
     }, [editor]);
 
-    const insertImageRefChip = (image: PlacedImage) => {
+    const insertAssetRefChip = (asset: PlacedImage | PlacedVideo) => {
       if (!editor || atPositionRef.current === null) return;
 
-      const nextLabel = getNextImageLabel();
+      const isVideo = (asset as any).isVideo;
+      const nextLabel = getNextAssetLabel(isVideo ? "video" : "image");
+
       if (!nextLabel) {
         toast({
-          title: "Maximum images reached",
-          description: "You can reference up to 3 images at a time",
+          title: "Maximum assets reached",
+          description: "You can reference up to 3 assets of each type",
           variant: "destructive",
         });
         setShowImageMenu(false);
@@ -983,9 +991,10 @@ export const PromptEditor = memo(
         .insertContent({
           type: "imageRef",
           attrs: {
-            imageId: image.id,
+            imageId: asset.id,
             label: nextLabel,
-            src: image.src,
+            src: asset.src,
+            isVideo: isVideo,
           },
         })
         .insertContent(" ") // Add space after chip
@@ -998,16 +1007,18 @@ export const PromptEditor = memo(
       setImageSearchQuery("");
     };
 
-    // Imperative method to insert image reference (called from canvas selection)
-    const insertImageReferenceImperative = useCallback(
-      (image: PlacedImage) => {
+    // Imperative method to insert asset reference (called from canvas selection)
+    const insertAssetReferenceImperative = useCallback(
+      (asset: PlacedImage | PlacedVideo) => {
         if (!editor) return;
 
-        const nextLabel = getNextImageLabel();
+        const isVideo = (asset as any).isVideo;
+        const nextLabel = getNextAssetLabel(isVideo ? "video" : "image");
+
         if (!nextLabel) {
           toast({
-            title: "Maximum images reached",
-            description: "You can reference up to 3 images at a time",
+            title: "Maximum assets reached",
+            description: "You can reference up to 3 assets of each type",
             variant: "destructive",
           });
           return;
@@ -1020,20 +1031,21 @@ export const PromptEditor = memo(
           .insertContent({
             type: "imageRef",
             attrs: {
-              imageId: image.id,
+              imageId: asset.id,
               label: nextLabel,
-              src: image.src,
+              src: asset.src,
+              isVideo: isVideo,
             },
           })
           .insertContent(" ")
           .run();
       },
-      [editor, getNextImageLabel, toast],
+      [editor, getNextAssetLabel, toast],
     );
 
-    // Imperative method to remove image reference by imageId
-    const removeImageReferenceImperative = useCallback(
-      (imageId: string) => {
+    // Imperative method to remove asset reference by assetId
+    const removeAssetReferenceImperative = useCallback(
+      (assetId: string) => {
         if (!editor) return;
 
         const json = editor.getJSON();
@@ -1041,7 +1053,7 @@ export const PromptEditor = memo(
 
         // Find the node position
         editor.state.doc.descendants((node: any, pos: number) => {
-          if (node.type.name === "imageRef" && node.attrs.imageId === imageId) {
+          if (node.type.name === "imageRef" && node.attrs.imageId === assetId) {
             nodeToRemove = { pos, size: node.nodeSize };
             return false; // Stop iteration
           }
@@ -1062,14 +1074,14 @@ export const PromptEditor = memo(
     useImperativeHandle(
       ref,
       () => ({
-        insertImageReference: insertImageReferenceImperative,
-        removeImageReference: removeImageReferenceImperative,
-        getReferencedImageIds: getReferencedImageIds,
+        insertAssetReference: insertAssetReferenceImperative,
+        removeAssetReference: removeAssetReferenceImperative,
+        getReferencedAssetIds: getReferencedAssetIds,
       }),
       [
-        insertImageReferenceImperative,
-        removeImageReferenceImperative,
-        getReferencedImageIds,
+        insertAssetReferenceImperative,
+        removeAssetReferenceImperative,
+        getReferencedAssetIds,
       ],
     );
 
@@ -1109,18 +1121,24 @@ export const PromptEditor = memo(
       );
     });
 
-    // Get images available for @ referencing (exclude already referenced ones)
-    const referencedImageIds = getReferencedImageIds();
-    const availableImages = images.filter(
-      (img) => !referencedImageIds.includes(img.id),
-    );
-    const filteredImages = availableImages.filter((img) => {
+    // Get assets available for @ referencing (exclude already referenced ones)
+    const referencedAssetIds = getReferencedAssetIds();
+
+    // Combine images and videos for selection
+    // Add type discriminator for UI
+    const availableAssets = [
+      ...images.map((img) => ({ ...img, type: "image" as const })),
+      ...(videos || []).map((vid) => ({ ...vid, type: "video" as const })),
+    ].filter((asset) => !referencedAssetIds.includes(asset.id));
+
+    const filteredAssets = availableAssets.filter((asset) => {
       if (!imageSearchQuery) return true;
-      // Allow searching by index (e.g., "1", "2", "3")
-      const index = availableImages.indexOf(img) + 1;
+      // Allow searching by index
+      const index = availableAssets.indexOf(asset) + 1;
+      const type = asset.type;
       return (
         imageSearchQuery === String(index) ||
-        `image${index}`.includes(imageSearchQuery.toLowerCase())
+        `${type}${index}`.includes(imageSearchQuery.toLowerCase())
       );
     });
 
@@ -1163,15 +1181,15 @@ export const PromptEditor = memo(
           if (e.key === "ArrowDown" || e.key === "ArrowRight") {
             e.preventDefault();
             setImageMenuSelectedIndex((prev) =>
-              prev < filteredImages.length - 1 ? prev + 1 : prev,
+              prev < filteredAssets.length - 1 ? prev + 1 : prev,
             );
           } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
             e.preventDefault();
             setImageMenuSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
           } else if (e.key === "Enter") {
             e.preventDefault();
-            if (filteredImages[imageMenuSelectedIndex]) {
-              insertImageRefChip(filteredImages[imageMenuSelectedIndex]);
+            if (filteredAssets[imageMenuSelectedIndex]) {
+              insertAssetRefChip(filteredAssets[imageMenuSelectedIndex]);
             }
           } else if (e.key === "Escape") {
             e.preventDefault();
@@ -1206,7 +1224,7 @@ export const PromptEditor = memo(
       showMenu,
       showImageMenu,
       filteredItems,
-      filteredImages,
+      filteredAssets,
       selectedIndex,
       imageMenuSelectedIndex,
       isGenerating,
@@ -1237,19 +1255,23 @@ export const PromptEditor = memo(
               <div className="relative px-3 md:px-3 py-2 md:py-3">
                 <EditorContent editor={editor} />
 
-                {/* Selected images preview */}
+                {/* Selected assets preview */}
                 {selectedIds.length > 0 && (
                   <div className="absolute top-4 right-4 flex items-center justify-end">
                     <div className="relative h-12 w-20">
                       {selectedIds.slice(0, 3).map((id, index) => {
                         const image = images.find((img) => img.id === id);
-                        if (!image) return null;
+                        const video = videos?.find((vid) => vid.id === id);
+                        const asset = image || video;
+
+                        if (!asset) return null;
 
                         const isLast =
                           index === Math.min(selectedIds.length - 1, 2);
                         const offset = index * 8;
                         const size = 40 - index * 4;
                         const topOffset = index * 2;
+                        const isVideo = !!video;
 
                         return (
                           <div
@@ -1264,10 +1286,15 @@ export const PromptEditor = memo(
                             }}
                           >
                             <img
-                              src={image.src}
+                              src={asset.src}
                               alt=""
                               className="w-full h-full object-cover"
                             />
+                            {isVideo && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded">
+                                <PlayIcon className="h-3 w-3 text-white" />
+                              </div>
+                            )}
                             {isLast && selectedIds.length > 3 && (
                               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                                 <span className="text-white text-xs font-medium">
@@ -1561,6 +1588,7 @@ export const PromptEditor = memo(
         </Dialog>
 
         {/* Image Reference Dialog */}
+        {/* Asset Reference Dialog */}
         <Dialog
           open={showImageMenu}
           onOpenChange={(open) => {
@@ -1585,32 +1613,25 @@ export const PromptEditor = memo(
           >
             <div className="overflow-y-auto max-h-[80vh]">
               <div className="px-4 py-3 text-sm font-semibold text-muted-foreground bg-muted/50 backdrop-blur-2xl sticky top-0 z-10 flex items-center justify-between">
-                <span>📷 Select Image to Reference</span>
+                <span>📷 Select Asset to Reference</span>
                 <span className="text-xs font-normal">
-                  {referencedImageIds.length}/3 images referenced
+                  {referencedAssetIds.length}/6 assets referenced
                 </span>
               </div>
-              {filteredImages.length === 0 ? (
+              {filteredAssets.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground">
-                  {images.length === 0 ? (
-                    <p>No images on canvas. Upload or generate images first.</p>
-                  ) : referencedImageIds.length >= 3 ? (
-                    <p>
-                      Maximum of 3 images can be referenced. Remove an @image
-                      tag to add more.
-                    </p>
-                  ) : (
-                    <p>All images are already referenced.</p>
-                  )}
+                  <p>No available assets found.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-4">
-                  {filteredImages.map((image, index) => {
-                    const imageNumber = images.indexOf(image) + 1;
+                  {filteredAssets.map((asset, index) => {
+                    const isVideo = (asset as any).type === "video";
+                    const displayLabel = isVideo ? "Video" : "Image";
+
                     return (
                       <button
-                        key={image.id}
-                        onClick={() => insertImageRefChip(image)}
+                        key={asset.id}
+                        onClick={() => insertAssetRefChip(asset)}
                         className={cn(
                           "relative aspect-square rounded-lg border-2 overflow-hidden hover:border-cyan-500 transition-colors",
                           index === imageMenuSelectedIndex
@@ -1619,13 +1640,18 @@ export const PromptEditor = memo(
                         )}
                       >
                         <img
-                          src={image.src}
-                          alt={`Image ${imageNumber}`}
+                          src={asset.src}
+                          alt={`${displayLabel}`}
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                        {isVideo && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <PlayIcon className="h-8 w-8 text-white opacity-80" />
+                          </div>
+                        )}
+                        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/70 to-transparent p-2">
                           <span className="text-white text-xs font-medium">
-                            Image {imageNumber}
+                            {displayLabel}
                           </span>
                         </div>
                       </button>

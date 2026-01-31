@@ -108,6 +108,19 @@ const _schema = i.schema({
       },
       reverse: { on: "$files", has: "one", label: "canvasAsset" },
     },
+    // Asset lineage links
+    assetLineage: {
+      forward: {
+        on: "canvasAssets",
+        has: "many",
+        label: "referencedAssets", // The input assets used to create this one
+      },
+      reverse: {
+        on: "canvasAssets",
+        has: "many",
+        label: "derivedAssets", // The output assets created from this one
+      },
+    },
     // Folder links
     folderUser: {
       forward: { on: "folders", has: "one", label: "user" },

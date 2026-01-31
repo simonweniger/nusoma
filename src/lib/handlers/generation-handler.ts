@@ -3,9 +3,11 @@ import type {
   PlacedVideo,
   GenerationSettings,
   ActiveGeneration,
+  ActiveVideoGeneration,
 } from "@/types/canvas";
 import type { FalClient } from "@fal-ai/client";
 import { id } from "@instantdb/react";
+import { VIDEO_MODELS } from "../models-config";
 
 interface BoundingBox {
   x: number;
@@ -34,6 +36,9 @@ interface GenerationHandlerDeps {
     variant?: "default" | "destructive";
   }) => void;
   generateTextToImage: (params: any) => Promise<any>;
+  setActiveVideoGenerations: React.Dispatch<
+    React.SetStateAction<Map<string, ActiveVideoGeneration>>
+  >;
 }
 
 /**
@@ -228,7 +233,7 @@ export const generateImage = (
   setActiveGenerations((prev) =>
     new Map(prev).set(placeholderId, {
       imageUrl,
-      imageUrls, // Multiple images for @ references
+      imageSrcs: imageUrls, // Multiple images for @ references
       prompt: generationSettings.prompt,
       loraUrl: generationSettings.loraUrl,
       state: "submitting", // Initial state
@@ -250,6 +255,7 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
     setActiveGenerations,
     setIsGenerating,
     toast,
+    setActiveVideoGenerations,
   } = deps;
 
   if (!generationSettings.prompt) {
@@ -280,11 +286,33 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
   setIsGenerating(true);
   const selectedImages = images.filter((img) => selectedIds.includes(img.id));
 
-  // Check if there are referenced images via @ syntax
-  const referencedImageIds = generationSettings.referencedImageIds || [];
-  const referencedImages = referencedImageIds
-    .map((refId) => images.find((img) => img.id === refId))
-    .filter((img): img is PlacedImage => !!img);
+  // Check if there are referenced assets via @ syntax
+  const referencedAssetIds = generationSettings.referencedAssetIds || [];
+  const referencedAssets = referencedAssetIds
+    .map(
+      (refId) =>
+        images.find((img) => img.id === refId) ||
+        videos.find((vid) => vid.id === refId),
+    )
+    .filter((asset): asset is PlacedImage | PlacedVideo => !!asset);
+
+  // Check if the selected model is a video model
+  const isVideoModel =
+    generationSettings.modelId && VIDEO_MODELS[generationSettings.modelId];
+
+  if (isVideoModel) {
+    // Handle video generation
+    await handleVideoGeneration({
+      deps,
+      referencedAssets,
+      selectedImages,
+    });
+    return;
+  }
+
+  const referencedImages = referencedAssets.filter(
+    (asset): asset is PlacedImage => !("isVideo" in asset),
+  );
 
   // If there are @ referenced images, handle multi-image generation
   // Server will fetch images directly (no CORS issues on backend)
@@ -563,7 +591,7 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
         newX,
         newY,
         groupId,
-        generationSettings,
+        { ...generationSettings, referencedAssetIds: [img.id] }, // Pass referencedAssetIds
         setImages,
         setActiveGenerations,
         img.width,
@@ -585,4 +613,112 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
 
   // Done processing all images
   setIsGenerating(false);
+};
+
+// Helper for video generation
+const handleVideoGeneration = async ({
+  deps,
+  referencedAssets,
+  selectedImages,
+}: {
+  deps: GenerationHandlerDeps;
+  referencedAssets: (PlacedImage | PlacedVideo)[];
+  selectedImages: PlacedImage[];
+}) => {
+  const {
+    generationSettings,
+    setActiveVideoGenerations,
+    setIsGenerating,
+    toast,
+  } = deps;
+
+  const modelId = generationSettings.modelId!;
+  const modelConfig = VIDEO_MODELS[modelId];
+
+  // Logic to determine inputs based on model category
+  const prompt = generationSettings.prompt;
+  const generationId = id();
+
+  let payload: any = {
+    prompt,
+    modelId,
+    modelConfig,
+    referencedAssetIds: referencedAssets.map((a) => a.id), // Pass for lineage tracking
+    state: "submitting",
+  };
+
+  if (modelConfig.category === "text-to-video") {
+    // Kling Text to Video
+    // Uses prompt only. Referenced assets are ignored unless needed for specific flow?
+    // User might expect @refs to influence generation? Kling T2V doesn't supported inputs.
+    if (referencedAssets.length > 0) {
+      toast({
+        title: "Warning",
+        description:
+          "Text-to-Video model ignores referenced assets. Use Image-to-Video for inputs.",
+        variant: "default", // warning
+      });
+    }
+  } else if (modelConfig.category === "image-to-video") {
+    // Kling Image to Video OR Motion Control
+    // Needs at least one image
+    const firstImage = referencedAssets.find(
+      (a) => !("isVideo" in a),
+    ) as PlacedImage;
+
+    // Check for video input if motion control
+    const firstVideo = referencedAssets.find((a) => "isVideo" in a) as
+      | PlacedVideo
+      | undefined;
+
+    if (modelId === "kling-video-v2.6-pro-motion-control") {
+      // Motion Control needs Image + Video
+      if (!firstImage || !firstVideo) {
+        toast({
+          title: "Missing Inputs",
+          description:
+            "Motion Control requires both an Image (@image) and a Video (@video) reference.",
+          variant: "destructive",
+        });
+        setIsGenerating(false);
+        return;
+      }
+      payload.imageUrl = firstImage.src;
+      payload.videoUrl = firstVideo.src;
+      payload.sourceImageId = firstImage.id;
+      payload.sourceVideoId = firstVideo.id;
+    } else {
+      // Standard Image to Video
+      if (!firstImage) {
+        // Fallback to selected image if no @ref
+        if (selectedImages.length > 0) {
+          const img = selectedImages[0];
+          payload.imageUrl = img.src;
+          payload.sourceImageId = img.id;
+        } else {
+          toast({
+            title: "Missing Input",
+            description:
+              "Image-to-Video requires an image reference (@image) or a selected image.",
+            variant: "destructive",
+          });
+          setIsGenerating(false);
+          return;
+        }
+      } else {
+        payload.imageUrl = firstImage.src;
+        payload.sourceImageId = firstImage.id;
+        // Check for end image (second image)
+        const secondImage = referencedAssets.find(
+          (a) => !("isVideo" in a) && a.id !== firstImage.id,
+        ) as PlacedImage | undefined;
+        if (secondImage) {
+          payload.endImageUrl = secondImage.src;
+        }
+      }
+    }
+  }
+
+  setActiveVideoGenerations((prev) => new Map(prev).set(generationId, payload));
+  setIsGenerating(true); // Will be reset by StreamingVideo when done/error
 };

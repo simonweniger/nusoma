@@ -15,6 +15,7 @@ export interface PlacedImage {
   // Generation metadata
   generationPrompt?: string;
   creditsConsumed?: number;
+  referencedAssetIds?: string[]; // Lineage tracking
 }
 
 export interface PlacedVideo extends Omit<PlacedImage, "isGenerated"> {
@@ -24,6 +25,7 @@ export interface PlacedVideo extends Omit<PlacedImage, "isGenerated"> {
   isPlaying: boolean;
   volume: number;
   muted: boolean;
+  referencedAssetIds?: string[]; // Lineage tracking
   isLooping?: boolean; // Whether the video should loop when it reaches the end
   isGenerating?: boolean; // Similar to isGenerated for images
   isLoaded?: boolean; // Whether the video has loaded its metadata
@@ -34,7 +36,8 @@ export interface GenerationSettings {
   loraUrl: string;
   styleId?: string;
   imageSize?: ImageSizeType;
-  referencedImageIds?: string[]; // Image IDs referenced via @ syntax
+  referencedAssetIds?: string[]; // Image or Video IDs referenced via @ syntax
+  modelId?: string; // Selected model ID (e.g. for video generation)
 }
 
 export interface VideoGenerationSettings {
@@ -62,7 +65,7 @@ export type ImageSizeType =
 
 export interface ActiveGeneration {
   imageUrl?: string; // Optional - undefined for text-to-image, present for image-to-image
-  imageUrls?: string[]; // Multiple image URLs for multi-image generation (@ references)
+  referencedAssetIds?: string[]; // Multiple asset IDs for multi-modal generation (@ references)
   imageSrcs?: string[]; // Image URLs to fetch on server (no CORS issues)
   prompt: string;
   loraUrl?: string;
@@ -73,6 +76,7 @@ export interface ActiveGeneration {
 export interface ActiveVideoGeneration {
   videoUrl?: string;
   imageUrl?: string; // For image-to-video
+  endImageUrl?: string; // For image-to-video (optional end frame)
   prompt: string;
   duration?: number;
   motion?: string;

@@ -6,7 +6,12 @@ import type { ActiveVideoGeneration } from "@/types/canvas";
 interface StreamingVideoProps {
   videoId: string;
   generation: ActiveVideoGeneration;
-  onComplete: (videoId: string, videoUrl: string, duration: number) => void;
+  onComplete: (
+    videoId: string,
+    videoUrl: string,
+    duration: number,
+    referencedAssetIds?: string[],
+  ) => void;
   onError: (videoId: string, error: string) => void;
   onProgress: (videoId: string, progress: number, status: string) => void;
   apiKey?: string;
@@ -40,6 +45,7 @@ export const StreamingVideo: React.FC<StreamingVideoProps> = ({
         seed: generation.seed,
         isVideoToVideo: isVideoToVideo,
         isVideoExtension: isVideoExtension,
+        referencedAssetIds: generation.referencedAssetIds, // Pass to endpoint (though endpoint might ignore it, we need it back or just use from generation prop)
         // Include all model-specific fields
         ...Object.fromEntries(
           Object.entries(generation).filter(
@@ -50,6 +56,7 @@ export const StreamingVideo: React.FC<StreamingVideoProps> = ({
                 "sourceImageId",
                 "sourceVideoId",
                 "toastId",
+                "referencedAssetIds", // Exclude from generic model params as we handle it
               ].includes(key),
           ),
         ),
@@ -76,6 +83,7 @@ export const StreamingVideo: React.FC<StreamingVideoProps> = ({
               videoId,
               eventData.videoUrl,
               eventData.duration || generation.duration || 5,
+              generation.referencedAssetIds, // Pass lineage back
             );
           } else if (eventData.type === "error") {
             onError(videoId, eventData.error);

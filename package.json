@@ -11,6 +11,8 @@
     "lint:fix": "eslint --fix .",
     "postinstall": "content-collections build",
     "typecheck": "content-collections build && tsc --noEmit",
+    "db:push": "npx instant-cli push",
+    "db:pull": "npx instant-cli pull",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:fix": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "export": "next build && next export || next build && bun ./scripts/export-workaround.js",

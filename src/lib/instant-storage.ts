@@ -220,6 +220,7 @@ class InstantCanvasStorage {
     metadata?: {
       prompt?: string;
       creditsConsumed?: number;
+      referencedAssetIds?: string[];
     },
   ): Promise<string> {
     const assetId = imageId || id();
@@ -368,6 +369,11 @@ class InstantCanvasStorage {
     videoDataUrl: string,
     duration: number,
     videoId?: string,
+    metadata?: {
+      prompt?: string;
+      creditsConsumed?: number;
+      referencedAssetIds?: string[];
+    },
   ): Promise<string> {
     const assetId = videoId || id();
 
@@ -400,6 +406,7 @@ class InstantCanvasStorage {
             type: "video",
             duration,
             createdAt: new Date(),
+            ...(metadata?.prompt && { prompt: metadata.prompt }),
           })
           .link({ file: fileData.id }),
       ];
@@ -407,6 +414,18 @@ class InstantCanvasStorage {
       // Always link to user if authenticated
       if (this.userId) {
         txs.push(db.tx.canvasAssets[assetId].link({ user: this.userId }));
+      }
+
+      // Link to referenced assets (lineage)
+      if (
+        metadata?.referencedAssetIds &&
+        metadata.referencedAssetIds.length > 0
+      ) {
+        metadata.referencedAssetIds.forEach((refId) => {
+          txs.push(
+            db.tx.canvasAssets[assetId].link({ referencedAssets: refId }),
+          );
+        });
       }
 
       await db.transact(txs);
