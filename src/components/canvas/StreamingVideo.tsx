@@ -17,6 +17,14 @@ interface StreamingVideoProps {
   apiKey?: string;
 }
 
+const getAspectRatio = (size?: string): string => {
+  if (!size) return "16:9";
+  if (size.includes("16_9")) return size.includes("portrait") ? "9:16" : "16:9";
+  if (size.includes("4_3")) return size.includes("portrait") ? "3:4" : "4:3";
+  if (size.includes("square")) return "1:1";
+  return "16:9";
+};
+
 export const StreamingVideo: React.FC<StreamingVideoProps> = ({
   videoId,
   generation,
@@ -36,7 +44,7 @@ export const StreamingVideo: React.FC<StreamingVideoProps> = ({
     // Both image-to-video and video-to-video use the same endpoint with multiconditioning
     subscriptionOptions = useTRPC().generateImageToVideo.subscriptionOptions(
       {
-        imageUrl: generation.videoUrl || generation.imageUrl || "", // Use video URL if available, otherwise image URL
+        imageUrl: generation.imageUrl || generation.videoUrl || "", // Prioritize image URL, fallback to video URL
         prompt: generation.prompt,
         duration: generation.duration || 5,
         modelId: generation.modelId || "seedance-pro", // Always use multiconditioning model
@@ -52,7 +60,7 @@ export const StreamingVideo: React.FC<StreamingVideoProps> = ({
             ([key]) =>
               ![
                 "imageUrl",
-                "videoUrl",
+                // "videoUrl", // We need to pass videoUrl for Motion Control
                 "sourceImageId",
                 "sourceVideoId",
                 "toastId",
@@ -61,6 +69,8 @@ export const StreamingVideo: React.FC<StreamingVideoProps> = ({
           ),
         ),
         ...(apiKey ? { apiKey } : {}),
+        userId: generation.userId,
+        sessionId: generation.sessionId,
       },
       {
         enabled: true,
@@ -118,6 +128,9 @@ export const StreamingVideo: React.FC<StreamingVideoProps> = ({
         duration: generation.duration || 3,
         styleId: generation.styleId,
         ...(apiKey ? { apiKey } : {}),
+        userId: generation.userId,
+        sessionId: generation.sessionId,
+        aspectRatio: getAspectRatio(generation.imageSize),
       },
       {
         enabled: true,

@@ -11,65 +11,33 @@
 // Image Model Types
 // -----------------------------------------------------------------------------
 
-export type ImageGenerationType =
-  | "text-to-image"
-  | "image-to-image"
-  | "text-to-image-lora"
-  | "image-to-image-lora";
+import type {
+  ImageModelConfig,
+  ImageGenerationType,
+  VideoModelConfig,
+  UtilityModelConfig,
+  VideoGenerationType,
+  CommonSizeOption,
+} from "@/types/models";
+import { ImageModes, VideoModes } from "@/types/models";
+import type {
+  KlingTextToVideoInput,
+  KlingImageToVideoInput,
+  KlingMotionControlInput,
+  LtxVideoV2VInput,
+  BriaBackgroundRemovalInput,
+} from "@/types/fal-models";
 
-export type ImageSizeEnum =
-  | "square_hd"
-  | "square"
-  | "portrait_4_3"
-  | "portrait_16_9"
-  | "landscape_4_3"
-  | "landscape_16_9"
-  | "auto";
-
-export type SafetyToleranceEnum = "1" | "2" | "3" | "4" | "5";
-
-export type OutputFormatEnum = "jpeg" | "png" | "webp";
-
-export type AccelerationEnum = "none" | "regular" | "high";
-
-export interface LoRAInput {
-  path: string;
-  scale?: number;
-}
-
-export interface ImageModelOption {
-  name: string;
-  type: "select" | "boolean" | "number" | "text" | "lora";
-  label: string;
-  description?: string;
-  required?: boolean;
-  default?: any;
-  options?: Array<{ value: string | number; label: string }>;
-  min?: number;
-  max?: number;
-  step?: number;
-  placeholder?: string;
-}
-
-export interface ImageModelConfig {
-  id: string;
-  name: string;
-  endpoint: string;
-  type: ImageGenerationType;
-  options: Record<string, ImageModelOption>;
-  defaults: Record<string, any>;
-}
-
-export const IMAGE_MODELS: Record<string, ImageModelConfig> = {
+export const IMAGE_MODELS: Record<ImageGenerationType, ImageModelConfig> = {
   // ---------------------------------------------------------------------------
   // FLUX.2 [pro] - Text to Image
   // https://fal.ai/models/fal-ai/flux-2-pro/api
   // ---------------------------------------------------------------------------
-  "flux-2-pro": {
+  [ImageModes.TEXT_TO_IMAGE]: {
     id: "flux-2-pro",
     name: "Flux 2 Pro",
     endpoint: "fal-ai/flux-2-pro",
-    type: "text-to-image",
+    type: ImageModes.TEXT_TO_IMAGE,
     options: {
       prompt: {
         name: "prompt",
@@ -146,11 +114,11 @@ export const IMAGE_MODELS: Record<string, ImageModelConfig> = {
   // FLUX.2 [pro] Edit - Image to Image
   // https://fal.ai/models/fal-ai/flux-2-pro/edit/api
   // ---------------------------------------------------------------------------
-  "flux-2-pro-edit": {
+  [ImageModes.IMAGE_TO_IMAGE]: {
     id: "flux-2-pro-edit",
     name: "Flux 2 Pro Edit",
     endpoint: "fal-ai/flux-2-pro/edit",
-    type: "image-to-image",
+    type: ImageModes.IMAGE_TO_IMAGE,
     options: {
       prompt: {
         name: "prompt",
@@ -235,11 +203,11 @@ export const IMAGE_MODELS: Record<string, ImageModelConfig> = {
   // FLUX.2 [dev] LoRA - Text to Image with LoRA
   // https://fal.ai/models/fal-ai/flux-2/lora/api
   // ---------------------------------------------------------------------------
-  "flux-2-pro-lora": {
+  [ImageModes.TEXT_TO_IMAGE_LORA]: {
     id: "flux-2-pro-lora",
     name: "Flux 2 with LoRA",
     endpoint: "fal-ai/flux-2/lora",
-    type: "text-to-image-lora",
+    type: ImageModes.TEXT_TO_IMAGE_LORA,
     options: {
       prompt: {
         name: "prompt",
@@ -362,11 +330,11 @@ export const IMAGE_MODELS: Record<string, ImageModelConfig> = {
   // FLUX.2 [dev] LoRA Edit - Image to Image with LoRA
   // https://fal.ai/models/fal-ai/flux-2/lora/edit
   // ---------------------------------------------------------------------------
-  "flux-2-edit-lora": {
+  [ImageModes.IMAGE_TO_IMAGE_LORA]: {
     id: "flux-2-edit-lora",
     name: "Flux 2 Edit with LoRA",
     endpoint: "fal-ai/flux-2/lora/edit",
-    type: "image-to-image-lora",
+    type: ImageModes.IMAGE_TO_IMAGE_LORA,
     options: {
       prompt: {
         name: "prompt",
@@ -497,20 +465,6 @@ export const IMAGE_MODELS: Record<string, ImageModelConfig> = {
 // Utility Model Types (Background Removal, Object Isolation, etc.)
 // -----------------------------------------------------------------------------
 
-export type UtilityModelType = "background-removal" | "object-isolation";
-
-export interface UtilityModelConfig {
-  id: string;
-  name: string;
-  endpoint: string;
-  type: UtilityModelType;
-  pricing: {
-    costPerUnit: number;
-    currency: string;
-    unit: string;
-  };
-}
-
 export const UTILITY_MODELS: Record<string, UtilityModelConfig> = {
   backgroundRemoval: {
     id: "bria-background-remove",
@@ -546,54 +500,6 @@ export function getUtilityModelById(
 // Video Model Types
 // -----------------------------------------------------------------------------
 
-export type VideoGenerationType =
-  | "text-to-video"
-  | "image-to-video"
-  | "video-to-video"
-  | "multiconditioning"
-  | "video-extension";
-
-export interface VideoModelOption {
-  name: string;
-  type: "select" | "boolean" | "number" | "text";
-  label: string;
-  description?: string;
-  required?: boolean;
-  default?: any;
-  options?: Array<{ value: string | number; label: string }>;
-  min?: number;
-  max?: number;
-  step?: number;
-  placeholder?: string;
-}
-
-export interface ModelConstraints {
-  resolutionsByModel?: Record<string, string[]>;
-  conditionalOptions?: Array<{
-    when: { field: string; value: any };
-    then: { field: string; value: any };
-  }>;
-}
-
-export interface VideoModelPricing {
-  costPerVideo: number;
-  currency: string;
-  unit: string;
-}
-
-export interface VideoModelConfig {
-  id: string;
-  name: string;
-  endpoint: string;
-  category: VideoGenerationType;
-  pricing: VideoModelPricing;
-  options: Record<string, VideoModelOption>;
-  defaults: Record<string, any>;
-  constraints?: ModelConstraints;
-  isDefault?: boolean;
-  supportsMultipleCategories?: boolean;
-}
-
 export const VIDEO_MODELS: Record<string, VideoModelConfig> = {
   // ---------------------------------------------------------------------------
   // Kling 2.6 Pro - Text to Video
@@ -603,7 +509,7 @@ export const VIDEO_MODELS: Record<string, VideoModelConfig> = {
     id: "kling-video-v2.6-pro-text-to-video",
     name: "Kling 2.6 Pro (Text to Video)",
     endpoint: "fal-ai/kling-video/v2.6/pro/text-to-video",
-    category: "text-to-video",
+    category: VideoModes.TEXT_TO_VIDEO,
     pricing: {
       costPerVideo: 0.15,
       currency: "USD",
@@ -649,6 +555,9 @@ export const VIDEO_MODELS: Record<string, VideoModelConfig> = {
           { value: "1:1", label: "1:1 Square" },
         ],
       },
+      // Note: cfg_scale and generate_audio might not be in the strict KlingTextToVideoInput yet,
+      // handled via loose typing or needs update to type definition if critical.
+      // For now we keep them in options for UI even if strict type doesn't enforce them yet.
       cfg_scale: {
         name: "cfg_scale",
         type: "number",
@@ -671,10 +580,10 @@ export const VIDEO_MODELS: Record<string, VideoModelConfig> = {
       duration: "5",
       aspect_ratio: "16:9",
       negative_prompt: "blur, distort, and low quality",
-      cfg_scale: 0.5,
-      generate_audio: true,
+      // cfg_scale: 0.5, // Commented out to align with strict types if needed, or cast
+      // generate_audio: true,
     },
-  },
+  } as VideoModelConfig<KlingTextToVideoInput>,
 
   // ---------------------------------------------------------------------------
   // Kling 2.6 Pro - Image to Video
@@ -684,7 +593,7 @@ export const VIDEO_MODELS: Record<string, VideoModelConfig> = {
     id: "kling-video-v2.6-pro-image-to-video",
     name: "Kling 2.6 Pro (Image to Video)",
     endpoint: "fal-ai/kling-video/v2.6/pro/image-to-video",
-    category: "image-to-video",
+    category: VideoModes.IMAGE_TO_VIDEO,
     pricing: {
       costPerVideo: 0.15, // Approximate
       currency: "USD",
@@ -741,9 +650,9 @@ export const VIDEO_MODELS: Record<string, VideoModelConfig> = {
     defaults: {
       duration: "5",
       negative_prompt: "blur, distort, and low quality",
-      generate_audio: true,
+      // generate_audio: true,
     },
-  },
+  } as VideoModelConfig<KlingImageToVideoInput>,
 
   // ---------------------------------------------------------------------------
   // Kling 2.6 Pro - Motion Control (Image + Video)
@@ -753,7 +662,7 @@ export const VIDEO_MODELS: Record<string, VideoModelConfig> = {
     id: "kling-video-v2.6-pro-motion-control",
     name: "Kling 2.6 Pro (Motion Control)",
     endpoint: "fal-ai/kling-video/v2.6/pro/motion-control",
-    category: "image-to-video", // Categorized as image-to-video but uses video ref too
+    category: VideoModes.IMAGE_TO_VIDEO, // Categorized as image-to-video but uses video ref too
     pricing: {
       costPerVideo: 0.2, // Approximate
       currency: "USD",
@@ -803,9 +712,133 @@ export const VIDEO_MODELS: Record<string, VideoModelConfig> = {
     },
     defaults: {
       character_orientation: "video",
-      keep_original_sound: true,
+      // keep_original_sound: true,
     },
-  },
+  } as VideoModelConfig<KlingMotionControlInput>,
+
+  // ---------------------------------------------------------------------------
+  // LTX Video 2.1 19b - Video to Video
+  // https://fal.ai/models/fal-ai/ltx-2-19b/distilled/video-to-video/api
+  // ---------------------------------------------------------------------------
+  "ltx-video-2-19b-v2v": {
+    id: "ltx-video-2-19b-v2v",
+    name: "LTX Video 2.1 (Video to Video)",
+    endpoint: "fal-ai/ltx-2-19b/distilled/video-to-video",
+    category: VideoModes.VIDEO_TO_VIDEO,
+    pricing: {
+      costPerVideo: 0.1, // Approximate
+      currency: "USD",
+      unit: "video",
+    },
+    isDefault: true,
+    options: {
+      prompt: {
+        name: "prompt",
+        type: "text",
+        label: "Prompt",
+        description: "Description of the video to generate",
+        required: true,
+      },
+      video_url: {
+        name: "video_url",
+        type: "text",
+        label: "Input Video",
+        description: "URL of the input video",
+        required: true,
+      },
+      audio_url: {
+        name: "audio_url",
+        type: "text",
+        label: "Audio URL",
+        description: "Optional audio track URL",
+      },
+      start_image_url: {
+        name: "start_image_url",
+        type: "text",
+        label: "Start Image",
+        description: "Optional start frame image",
+      },
+      end_image_url: {
+        name: "end_image_url",
+        type: "text",
+        label: "End Image",
+        description: "Optional end frame image",
+      },
+      strength: {
+        name: "strength",
+        type: "number",
+        label: "Denoising Strength",
+        description: "How much to change the input video (0.0-1.0)",
+        default: 0.8,
+        min: 0.0,
+        max: 1.0,
+        step: 0.05,
+      },
+      seed: {
+        name: "seed",
+        type: "number",
+        label: "Seed",
+        description: "Random seed for generation",
+        placeholder: "Random",
+      },
+    },
+    defaults: {
+      strength: 0.8,
+    },
+  } as VideoModelConfig<LtxVideoV2VInput>,
+
+  // ---------------------------------------------------------------------------
+  // LTX Video 2.1 19b - Video to Video with LoRA
+  // https://fal.ai/models/fal-ai/ltx-2-19b/distilled/video-to-video/lora
+  // ---------------------------------------------------------------------------
+  "ltx-video-2-19b-v2v-lora": {
+    id: "ltx-video-2-19b-v2v-lora",
+    name: "LTX Video 2.1 with LoRA (Video to Video)",
+    endpoint: "fal-ai/ltx-2-19b/distilled/video-to-video/lora",
+    category: VideoModes.VIDEO_TO_VIDEO,
+    pricing: {
+      costPerVideo: 0.12, // Approximate
+      currency: "USD",
+      unit: "video",
+    },
+    isDefault: false,
+    options: {
+      prompt: {
+        name: "prompt",
+        type: "text",
+        label: "Prompt",
+        description: "Description of the video to generate",
+        required: true,
+      },
+      video_url: {
+        name: "video_url",
+        type: "text",
+        label: "Input Video",
+        description: "URL of the input video",
+        required: true,
+      },
+      // Inherits most options from base model, plus LoRA
+      loras: {
+        name: "loras",
+        type: "text", // Complex type handled manually for now
+        label: "LoRAs",
+        description: "LoRA configurations",
+      },
+      strength: {
+        name: "strength",
+        type: "number",
+        label: "Denoising Strength",
+        description: "How much to change the input video",
+        default: 0.8,
+        min: 0.0,
+        max: 1.0,
+        step: 0.05,
+      },
+    },
+    defaults: {
+      strength: 0.8,
+    },
+  } as VideoModelConfig<LtxVideoV2VInput>, // Using same V2V input type for now
 
   // ---------------------------------------------------------------------------
   // Utility: Background Removal
@@ -821,8 +854,8 @@ export const VIDEO_MODELS: Record<string, VideoModelConfig> = {
       unit: "second",
     },
     options: {
-      backgroundColor: {
-        name: "backgroundColor",
+      background_color: {
+        name: "background_color",
         type: "select",
         label: "Background Color",
         description: "The color to replace the removed background with",
@@ -843,9 +876,9 @@ export const VIDEO_MODELS: Record<string, VideoModelConfig> = {
       },
     },
     defaults: {
-      backgroundColor: "Black",
+      background_color: "Black",
     },
-  },
+  } as VideoModelConfig<BriaBackgroundRemovalInput>,
 };
 
 // -----------------------------------------------------------------------------
@@ -853,13 +886,17 @@ export const VIDEO_MODELS: Record<string, VideoModelConfig> = {
 // -----------------------------------------------------------------------------
 
 export function getImageModelById(id: string): ImageModelConfig | undefined {
-  return IMAGE_MODELS[id];
+  return Object.values(IMAGE_MODELS).find((model) => model.id === id);
 }
 
 export function getImageModelsByType(
   type: ImageGenerationType,
 ): ImageModelConfig[] {
-  return Object.values(IMAGE_MODELS).filter((model) => model.type === type);
+  // Since we use strict categories now, we can typically return just the single match.
+  // But if there were multiple, filtering is safe.
+  // Since IMAGE_MODELS is keyed by type (1:1), we can return the exact one.
+  const model = IMAGE_MODELS[type];
+  return model ? [model] : [];
 }
 
 /**
@@ -875,13 +912,13 @@ export function getImageModelForContext(
   if (hasImageSelected) {
     // Image-to-image modes
     return hasLora
-      ? IMAGE_MODELS["flux-2-edit-lora"]
-      : IMAGE_MODELS["flux-2-pro-edit"];
+      ? IMAGE_MODELS[ImageModes.IMAGE_TO_IMAGE_LORA]
+      : IMAGE_MODELS[ImageModes.IMAGE_TO_IMAGE];
   } else {
     // Text-to-image modes
     return hasLora
-      ? IMAGE_MODELS["flux-2-pro-lora"]
-      : IMAGE_MODELS["flux-2-pro"];
+      ? IMAGE_MODELS[ImageModes.TEXT_TO_IMAGE_LORA]
+      : IMAGE_MODELS[ImageModes.TEXT_TO_IMAGE];
   }
 }
 
@@ -896,9 +933,9 @@ export function getImageGenerationType(
   hasLora: boolean,
 ): ImageGenerationType {
   if (hasImageSelected) {
-    return hasLora ? "image-to-image-lora" : "image-to-image";
+    return hasLora ? ImageModes.IMAGE_TO_IMAGE_LORA : ImageModes.IMAGE_TO_IMAGE;
   } else {
-    return hasLora ? "text-to-image-lora" : "text-to-image";
+    return hasLora ? ImageModes.TEXT_TO_IMAGE_LORA : ImageModes.TEXT_TO_IMAGE;
   }
 }
 
@@ -939,7 +976,10 @@ export function buildImageModelInput(
   }
 
   // Handle image-to-image models (flux-2-pro-edit, flux-2-edit-lora)
-  if (model.type === "image-to-image" || model.type === "image-to-image-lora") {
+  if (
+    model.type === ImageModes.IMAGE_TO_IMAGE ||
+    model.type === ImageModes.IMAGE_TO_IMAGE_LORA
+  ) {
     console.log("Building input for image-to-image:", {
       type: model.type,
       imageUrl: options.imageUrl,
@@ -955,8 +995,8 @@ export function buildImageModelInput(
 
   // Handle LoRA models (flux-2-pro-lora, flux-2-edit-lora)
   if (
-    model.type === "text-to-image-lora" ||
-    model.type === "image-to-image-lora"
+    model.type === ImageModes.TEXT_TO_IMAGE_LORA ||
+    model.type === ImageModes.IMAGE_TO_IMAGE_LORA
   ) {
     if (options.loraUrl) {
       input.loras = [{ path: options.loraUrl, scale: 1 }];
@@ -988,9 +1028,21 @@ export function getVideoModelsByCategory(
 
 export function getVideoModelForCategory(
   category: VideoGenerationType,
-): VideoModelConfig | undefined {
+): VideoModelConfig {
   const models = getVideoModelsByCategory(category);
-  return models[0];
+  // Default to Kling for most things
+  const kling = models.find((m) => m.id.includes("kling"));
+  if (kling) return kling;
+
+  // LTX for extend/multi
+  if (
+    category === VideoModes.VIDEO_EXTENSION ||
+    category === VideoModes.MULTICONDITIONING
+  ) {
+    const ltx = models.find((m) => m.id.includes("ltx"));
+    if (ltx) return ltx;
+  }
+  return models[0] || VIDEO_MODELS["kling-video-v2.6-pro-text-to-video"];
 }
 
 export function calculateVideoGenerations(
@@ -1014,13 +1066,6 @@ export function getDefaultVideoModel(): VideoModelConfig | undefined {
 // -----------------------------------------------------------------------------
 // Helper Functions - Common
 // -----------------------------------------------------------------------------
-
-export interface CommonSizeOption {
-  id: string;
-  label: string;
-  ratio: string;
-  icon?: string;
-}
 
 /**
  * Get the available size options for a given model.
@@ -1060,7 +1105,8 @@ export function getModelSizeOptions(modelId?: string): CommonSizeOption[] {
   }
 
   // Check if it's an image model
-  const imageModel = IMAGE_MODELS[modelId];
+  // Note: we need to find the model by ID because IMAGE_MODELS is now keyed by type
+  const imageModel = Object.values(IMAGE_MODELS).find((m) => m.id === modelId);
   if (imageModel) {
     const imageSizeOption = imageModel.options.image_size;
     if (imageSizeOption && imageSizeOption.options) {

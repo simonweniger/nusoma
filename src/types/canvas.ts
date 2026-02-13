@@ -1,3 +1,5 @@
+import type { ImageSizeType } from "@/types/models";
+
 export interface PlacedImage {
   id: string;
   src: string;
@@ -46,7 +48,7 @@ export interface VideoGenerationSettings {
   styleId?: string;
   motion?: string; // For image-to-video
   sourceUrl?: string; // For image-to-video or video-to-video
-  modelId?: string; // Model identifier from video-models.ts
+  modelId: string; // Model identifier from video-models.ts
   resolution?: "480p" | "720p" | "1080p"; // Video resolution
   cameraFixed?: boolean; // Whether to fix the camera position
   seed?: number; // Random seed to control video generation
@@ -54,14 +56,6 @@ export interface VideoGenerationSettings {
   isVideoExtension?: boolean; // Indicates if this is a video extension (using last frame)
   [key: string]: any; // Allow additional model-specific fields
 }
-
-export type ImageSizeType =
-  | "landscape_16_9"
-  | "landscape_4_3"
-  | "square_hd"
-  | "square"
-  | "portrait_4_3"
-  | "portrait_16_9";
 
 export type GenerationState = "submitting" | "running" | "success";
 
@@ -94,6 +88,11 @@ export interface ActiveVideoGeneration {
   isVideoExtension?: boolean; // Indicates if this is a video extension
   promiseResolve?: (value: string) => void; // For toast.promise success
   promiseReject?: (error: Error) => void; // For toast.promise error
+  userId?: string; // For billing
+  sessionId?: string; // For billing
+  imageSize?: ImageSizeType;
+  audioUrl?: string; // For video generation with audio
+  startImageUrl?: string; // For video generation with start frame
   [key: string]: any; // Allow additional model-specific fields
 }
 
@@ -103,4 +102,11 @@ export interface SelectionBox {
   endX: number;
   endY: number;
   visible: boolean;
+}
+
+export interface BoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }

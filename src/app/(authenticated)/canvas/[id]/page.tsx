@@ -28,13 +28,13 @@ import { styleActions, getDefaultStyle } from "@/lib/prompt-actions";
 import { useToast } from "@/hooks/use-toast";
 
 // Import extracted components
-import { ShortcutBadge } from "@/components/canvas/ShortcutBadge";
+//import { ShortcutBadge } from "@/components/canvas/ShortcutBadge";
 import { StreamingImage } from "@/components/canvas/StreamingImage";
 import { StreamingVideo } from "@/components/canvas/StreamingVideo";
 import { CropOverlayWrapper } from "@/components/canvas/CropOverlayWrapper";
 import { CanvasImage } from "@/components/canvas/CanvasImage";
 import { CanvasVideo } from "@/components/canvas/CanvasVideo";
-import { VideoControls } from "@/components/canvas/VideoControls";
+//import { VideoControls } from "@/components/canvas/VideoControls";
 import { ImageToVideoDialog } from "@/components/canvas/ImageToVideoDialog";
 import { VideoToVideoDialog } from "@/components/canvas/VideoToVideoDialog";
 import { ExtendVideoDialog } from "@/components/canvas/ExtendVideoDialog";
@@ -362,7 +362,6 @@ export default function OverlayPage() {
         });
       });
 
-      // Use Base UI's native toast.promise
       toast.promise(generationPromise, {
         loading: {
           title: "Generating video",
@@ -424,8 +423,12 @@ export default function OverlayPage() {
 
       // Get video model name for toast display
       let modelName = "Video Model";
-      const modelId = settings.modelId || "seedance-pro";
-      const { getVideoModelById } = await import("@/lib/models-config");
+      const { getVideoModelById, getVideoModelForCategory } =
+        await import("@/lib/models-config");
+
+      const defaultModel = getVideoModelForCategory("video-to-video");
+      const modelId = settings.modelId || defaultModel?.id;
+
       const model = getVideoModelById(modelId);
       if (model) {
         modelName = model.name;
@@ -443,12 +446,14 @@ export default function OverlayPage() {
             ...settings,
             imageUrl: videoUrl,
             duration: video.duration || settings.duration || 5,
-            modelId: settings.modelId || "seedance-pro",
+            modelId: modelId,
             resolution: settings.resolution || "720p",
             isVideoToVideo: true,
             sourceVideoId: selectedVideoForVideo,
             promiseResolve: resolve,
             promiseReject: reject,
+            userId: user?.id,
+            sessionId: sessionId,
           });
           return newMap;
         });
@@ -516,9 +521,8 @@ export default function OverlayPage() {
 
       // Get video model name for toast display
       let modelName = "Video Model";
-      const modelId = settings.modelId || "seedance-pro";
       const { getVideoModelById } = await import("@/lib/models-config");
-      const model = getVideoModelById(modelId);
+      const model = getVideoModelById(settings.modelId);
       if (model) {
         modelName = model.name;
       }
@@ -535,7 +539,7 @@ export default function OverlayPage() {
             ...settings,
             imageUrl: videoUrl,
             duration: video.duration || settings.duration || 5,
-            modelId: settings.modelId || "seedance-pro",
+            modelId: settings.modelId,
             resolution: settings.resolution || "720p",
             isVideoToVideo: true,
             isVideoExtension: true,
@@ -595,159 +599,192 @@ export default function OverlayPage() {
 
       // Get the generation data to check for source image ID
       const generation = activeVideoGenerations.get(videoId);
-      const sourceImageId = generation?.sourceImageId || selectedImageForVideo;
       const isBackgroundRemoval =
         generation?.modelId === "bria-video-background-removal";
 
-      // Find the original image if this was an image-to-video conversion
-      if (sourceImageId) {
-        const image = images.find((img) => img.id === sourceImageId);
-        if (image) {
-          // Create a video element based on the original image
-          const video = convertImageToVideo(
-            image,
-            videoUrl,
-            duration,
-            false, // Don't replace the original image
-          );
+      // Check if we already have a placeholder video with this ID (from generation-handler)
+      const existingPlaceholderIndex = videos.findIndex(
+        (v) => v.id === videoId,
+      );
 
-          // Position the video to the right of the source image
-          // Add a small gap between the image and video (20px)
-          video.x = image.x + image.width + 20;
-          video.y = image.y; // Keep the same vertical position
-
-          // Add the video to the videos state
-          setVideos((prev) => [
-            ...prev,
-            { ...video, isVideo: true as const, referencedAssetIds },
-          ]);
-
-          // Save to history
-          saveToHistory();
-
-          // Show success toast
-          toast.add({
-            title: "Video created successfully",
-            description:
-              "The video has been added to the right of the source image.",
-          });
-        } else {
-          console.error("Source image not found:", sourceImageId);
-          toast.add({
-            title: "Error creating video",
-            description: "The source image could not be found.",
-            type: "error",
-          });
-        }
-      } else if (generation?.sourceVideoId || generation?.isVideoToVideo) {
-        // This was a video-to-video transformation or extension
-        const sourceVideoId =
-          generation?.sourceVideoId ||
-          selectedVideoForVideo ||
-          selectedVideoForExtend;
-        const isExtension = generation?.isVideoExtension;
-
-        if (sourceVideoId) {
-          const sourceVideo = videos.find((vid) => vid.id === sourceVideoId);
-          if (sourceVideo) {
-            // Create a new video based on the source video
-            const newVideo: PlacedVideo = {
-              id: id(), // Use UUID from InstantDB
-              src: videoUrl,
-              x: sourceVideo.x + sourceVideo.width + 20, // Position to the right
-              y: sourceVideo.y,
-              width: sourceVideo.width,
-              height: sourceVideo.height,
-              rotation: 0,
-              isPlaying: false,
-              currentTime: 0,
-              duration: duration,
-              volume: 1,
-              muted: false,
-              isLooping: false,
-              isVideo: true as const,
-              referencedAssetIds,
-            };
-
-            // Add the transformed video to the canvas
-            setVideos((prev) => [...prev, newVideo]);
-
-            // Save to history
-            saveToHistory();
-
-            // Resolve the promise for toast.promise
-            if (generation?.promiseResolve) {
-              if (isExtension) {
-                generation.promiseResolve(
-                  "The extended video has been added to the right of the source video.",
-                );
-              } else if (
-                generation?.modelId === "bria-video-background-removal"
-              ) {
-                generation.promiseResolve(
-                  "The video with removed background has been added to the right of the source video.",
-                );
-              } else {
-                generation.promiseResolve(
-                  "The transformed video has been added to the right of the source video.",
-                );
-              }
+      if (existingPlaceholderIndex !== -1) {
+        // Update the existing placeholder
+        setVideos((prev) =>
+          prev.map((v) => {
+            if (v.id === videoId) {
+              return {
+                ...v,
+                src: videoUrl,
+                duration: duration,
+                isGenerated: false, // Mark as finished generating
+                referencedAssetIds: referencedAssetIds || v.referencedAssetIds,
+              };
             }
-          } else {
-            console.error("Source video not found:", sourceVideoId);
-            if (generation?.promiseReject) {
-              generation.promiseReject(
-                new Error("The source video could not be found."),
-              );
-            } else {
-              toast.add({
-                title: "Error creating video",
-                description: "The source video could not be found.",
-                type: "error",
-              });
-            }
-          }
-        }
+            return v;
+          }),
+        );
 
-        // Reset the transformation/extension state
-        setIsTransformingVideo(false);
-        setSelectedVideoForVideo(null);
-        setIsExtendingVideo(false);
-        setSelectedVideoForExtend(null);
-      } else {
-        // This was a text-to-video generation
-        // Place in center of viewport
-        const newVideo: PlacedVideo = {
-          id: id(),
-          src: videoUrl,
-          x:
-            -viewport.x / viewport.scale +
-            canvasSize.width / viewport.scale / 2 -
-            250, // Approximate center
-          y:
-            -viewport.y / viewport.scale +
-            canvasSize.height / viewport.scale / 2 -
-            250,
-          width: 500, // Default width
-          height: 500, // Default height
-          rotation: 0,
-          isPlaying: false,
-          currentTime: 0,
-          duration: duration,
-          volume: 1,
-          muted: false,
-          isLooping: false,
-          isVideo: true as const,
-          referencedAssetIds,
-        };
-
-        setVideos((prev) => [...prev, newVideo]);
         saveToHistory();
 
         toast.add({
           title: "Video generated",
-          description: "Video has been placed on the canvas.",
+          description: "Video has been updated on the canvas.",
         });
+      } else {
+        // Handle dialog-based generations (where we create a new video relative to source)
+        const sourceImageId =
+          generation?.sourceImageId || selectedImageForVideo;
+
+        // Find the original image if this was an image-to-video conversion
+        if (sourceImageId) {
+          const image = images.find((img) => img.id === sourceImageId);
+          if (image) {
+            // Create a video element based on the original image
+            const video = convertImageToVideo(
+              image,
+              videoUrl,
+              duration,
+              false, // Don't replace the original image
+            );
+
+            // Position the video to the right of the source image
+            // Add a small gap between the image and video (20px)
+            video.x = image.x + image.width + 20;
+            video.y = image.y; // Keep the same vertical position
+
+            // Add the video to the videos state
+            setVideos((prev) => [
+              ...prev,
+              { ...video, isVideo: true as const, referencedAssetIds },
+            ]);
+
+            // Save to history
+            saveToHistory();
+
+            // Show success toast
+            toast.add({
+              title: "Video created successfully",
+              description:
+                "The video has been added to the right of the source image.",
+            });
+          } else {
+            console.error("Source image not found:", sourceImageId);
+            toast.add({
+              title: "Error creating video",
+              description: "The source image could not be found.",
+              type: "error",
+            });
+          }
+        } else if (generation?.sourceVideoId || generation?.isVideoToVideo) {
+          // This was a video-to-video transformation or extension
+          const sourceVideoId =
+            generation?.sourceVideoId ||
+            selectedVideoForVideo ||
+            selectedVideoForExtend;
+          const isExtension = generation?.isVideoExtension;
+
+          if (sourceVideoId) {
+            const sourceVideo = videos.find((vid) => vid.id === sourceVideoId);
+            if (sourceVideo) {
+              // Create a new video based on the source video
+              const newVideo: PlacedVideo = {
+                id: id(), // Use UUID from InstantDB
+                src: videoUrl,
+                x: sourceVideo.x + sourceVideo.width + 20, // Position to the right
+                y: sourceVideo.y,
+                width: sourceVideo.width,
+                height: sourceVideo.height,
+                rotation: 0,
+                isPlaying: false,
+                currentTime: 0,
+                duration: duration,
+                volume: 1,
+                muted: false,
+                isLooping: false,
+                isVideo: true as const,
+                referencedAssetIds,
+              };
+
+              // Add the transformed video to the canvas
+              setVideos((prev) => [...prev, newVideo]);
+
+              // Save to history
+              saveToHistory();
+
+              // Resolve the promise for toast.promise
+              if (generation?.promiseResolve) {
+                if (isExtension) {
+                  generation.promiseResolve(
+                    "The extended video has been added to the right of the source video.",
+                  );
+                } else if (
+                  generation?.modelId === "bria-video-background-removal"
+                ) {
+                  generation.promiseResolve(
+                    "The video with removed background has been added to the right of the source video.",
+                  );
+                } else {
+                  generation.promiseResolve(
+                    "The transformed video has been added to the right of the source video.",
+                  );
+                }
+              }
+            } else {
+              console.error("Source video not found:", sourceVideoId);
+              if (generation?.promiseReject) {
+                generation.promiseReject(
+                  new Error("The source video could not be found."),
+                );
+              } else {
+                toast.add({
+                  title: "Error creating video",
+                  description: "The source video could not be found.",
+                  type: "error",
+                });
+              }
+            }
+          }
+
+          // Reset the transformation/extension state
+          setIsTransformingVideo(false);
+          setSelectedVideoForVideo(null);
+          setIsExtendingVideo(false);
+          setSelectedVideoForExtend(null);
+        } else {
+          // This was a text-to-video generation
+          // Place in center of viewport
+          const newVideo: PlacedVideo = {
+            id: id(),
+            src: videoUrl,
+            x:
+              -viewport.x / viewport.scale +
+              canvasSize.width / viewport.scale / 2 -
+              250, // Approximate center
+            y:
+              -viewport.y / viewport.scale +
+              canvasSize.height / viewport.scale / 2 -
+              250,
+            width: 500, // Default width
+            height: 500, // Default height
+            rotation: 0,
+            isPlaying: false,
+            currentTime: 0,
+            duration: duration,
+            volume: 1,
+            muted: false,
+            isLooping: false,
+            isVideo: true as const,
+            referencedAssetIds,
+          };
+
+          setVideos((prev) => [...prev, newVideo]);
+          saveToHistory();
+
+          toast.add({
+            title: "Video generated",
+            description: "Video has been placed on the canvas.",
+          });
+        }
       }
 
       // Remove from active generations
@@ -764,6 +801,7 @@ export default function OverlayPage() {
         setIsConvertingToVideo(false);
         setSelectedImageForVideo(null);
       }
+      setIsGenerating(false);
     } catch (error) {
       console.error("Error completing video generation:", error);
 
@@ -792,6 +830,7 @@ export default function OverlayPage() {
 
       setIsConvertingToVideo(false);
       setSelectedImageForVideo(null);
+      setIsGenerating(false);
     }
   };
 
@@ -833,6 +872,7 @@ export default function OverlayPage() {
       setIsTransformingVideo(false);
       setIsExtendingVideo(false);
     }
+    setIsGenerating(false);
   };
 
   // Function to handle video generation progress
@@ -1822,12 +1862,15 @@ export default function OverlayPage() {
       viewport,
       falClient,
       setImages,
+      setVideos,
       setSelectedIds,
       setActiveGenerations,
       setIsGenerating,
       toast: toast.add,
       generateTextToImage,
       setActiveVideoGenerations,
+      userId: user?.id || undefined,
+      sessionId: sessionId || undefined,
     });
   };
 
@@ -1910,6 +1953,8 @@ export default function OverlayPage() {
           modelConfig: getVideoModelById("bria-video-background-removal"),
           sourceVideoId: video.id,
           backgroundColor: apiBackgroundColor,
+          userId: user?.id || undefined,
+          sessionId: sessionId || undefined,
         });
         return newMap;
       });

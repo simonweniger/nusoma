@@ -7,23 +7,41 @@ import Cookies from "js-cookie";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { db } from "@/lib/db";
 
+// Define a strict User type based on InstantDB's auth user
+export interface User {
+  id: string;
+  email: string;
+  refresh_token?: string;
+  [key: string]: any; // Allow extensibility
+}
+
 interface AuthContextType {
-  user: any | null; // Consider defining a more specific user type
+  user: User | null;
   profile: any | null;
   isLoading: boolean;
   error: Error | null;
   db: any;
-  sessionId: string | null;
+  sessionId: string; // Strictly typed as string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { isLoading, user, error } = db.useAuth();
+  const { isLoading: authIsLoading, user, error } = db.useAuth();
   const [profile, setProfile] = useState<any | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    // Initialize session ID
+    let currentSessionId = Cookies.get("sessionId");
+    if (!currentSessionId) {
+      currentSessionId = id();
+      Cookies.set("sessionId", currentSessionId, { expires: 7 });
+    }
+    setSessionId(currentSessionId);
+  }, []);
 
   useEffect(() => {
     const ensureProfile = async () => {
@@ -46,20 +64,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Create a new user profile (credits are managed by Polar, not stored locally)
           const profileId = id();
           await db.transact(
-            db.tx.userProfiles[profileId].update({}).link({ user: user?.id }),
+            db.tx.userProfiles[profileId].update({}).link({ user: user.id }),
           );
         }
-      } else {
-        // Check if a session ID cookie exists
-        let currentSessionId = Cookies.get("sessionId");
-        if (!currentSessionId) {
-          // If no cookie, generate a new session ID
-          currentSessionId = id();
-          // Set the cookie, expires in 7 days (adjust as needed)
-          Cookies.set("sessionId", currentSessionId, { expires: 7 });
-        }
-        // Set the session ID in state
-        setSessionId(currentSessionId);
       }
     };
     ensureProfile();
@@ -91,13 +98,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [profileData]);
 
-  if (isLoading) {
+  // Combined loading state: wait for auth to check user AND for sessionId to be initialized
+  if (authIsLoading || !sessionId) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-background">
         <CircleNotchIcon size={24} weight="bold" className="animate-spin" />
       </div>
     );
   }
+
   if (error) {
     return <div>Authentication Error: {error.message}</div>;
   }
@@ -112,8 +121,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user,
-        isLoading,
+        user: user as User | null,
+        isLoading: authIsLoading,
         error: error || null,
         profile: profile,
         db: db,

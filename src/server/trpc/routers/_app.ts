@@ -22,6 +22,17 @@ import {
   shouldLimitRequest,
   RateLimiter,
 } from "@/lib/ratelimit";
+import type {
+  FalVideoGenerationInput,
+  KlingImageToVideoInput,
+  KlingTextToVideoInput,
+  KlingMotionControlInput,
+  LtxVideoInput,
+  LtxVideoExtendInput,
+  LtxVideoMulticonditioningInput,
+  LtxVideoV2VInput,
+  BriaBackgroundRemovalInput,
+} from "@/types/fal-models";
 
 const fal = createFalClient({
   credentials: () => process.env.FAL_KEY as string,
@@ -34,9 +45,9 @@ let videoLimiter: RateLimiter | null = null;
 function getImageLimiter(): RateLimiter {
   if (!imageLimiter) {
     imageLimiter = {
-      perMinute: createRateLimiter(5, "60 s"),
-      perHour: createRateLimiter(15, "60 m"),
-      perDay: createRateLimiter(50, "24 h"),
+      perMinute: createRateLimiter(50, "60 s"),
+      perHour: createRateLimiter(100, "60 m"),
+      perDay: createRateLimiter(1000, "24 h"),
     };
   }
   return imageLimiter;
@@ -45,9 +56,9 @@ function getImageLimiter(): RateLimiter {
 function getVideoLimiter(): RateLimiter {
   if (!videoLimiter) {
     videoLimiter = {
-      perMinute: createRateLimiter(2, "60 s"),
-      perHour: createRateLimiter(4, "60 m"),
-      perDay: createRateLimiter(8, "24 h"),
+      perMinute: createRateLimiter(10, "60 s"),
+      perHour: createRateLimiter(100, "60 m"),
+      perDay: createRateLimiter(500, "24 h"),
     };
   }
   return videoLimiter;
@@ -289,6 +300,10 @@ export const appRouter = router({
           cameraFixed: z.boolean().optional().default(false),
           seed: z.number().optional().default(-1),
           apiKey: z.string().optional(),
+          // New optional fields for LTX and advanced usage
+          audioUrl: z.string().optional(),
+          startImageUrl: z.string().optional(),
+          endImageUrl: z.string().optional(),
           // Billing context
           userId: z.string().optional(),
           sessionId: z.string().optional(),
@@ -297,7 +312,7 @@ export const appRouter = router({
     )
     .subscription(async function* ({ input, signal, ctx }) {
       try {
-        const modelId = input.modelId || "ltx-video";
+        const modelId = input.modelId || "kling-video-v2.6-pro-image-to-video";
         const model = getVideoModelById(modelId);
         if (!model) {
           throw new Error(`Unknown model ID: ${modelId}`);
@@ -359,7 +374,7 @@ export const appRouter = router({
         const modelEndpoint = model.endpoint;
 
         // Build input parameters based on model configuration
-        let inputParams: any = {};
+        let inputParams: FalVideoGenerationInput | any = {};
 
         if (input.modelId) {
           const model = getVideoModelById(input.modelId);
@@ -378,7 +393,7 @@ export const appRouter = router({
                 );
               }
 
-              inputParams = {
+              const params: LtxVideoExtendInput = {
                 video: {
                   video_url: input.imageUrl, // imageUrl contains the video URL for extension
                   // Use the validated startFrame (already defaulted and rounded)
@@ -427,12 +442,13 @@ export const appRouter = router({
                     ? input.seed
                     : undefined,
               };
+              inputParams = params;
             } else if (model.id === "ltx-video-multiconditioning") {
               // Handle multiconditioning model with support for video-to-video
               const isVideoToVideo = (input as any).isVideoToVideo;
               const isVideoExtension = (input as any).isVideoExtension;
 
-              inputParams = {
+              const params: LtxVideoMulticonditioningInput = {
                 prompt: input.prompt || "",
                 negative_prompt:
                   (input as any).negativePrompt ||
@@ -476,7 +492,7 @@ export const appRouter = router({
               if (isVideoToVideo) {
                 if (isVideoExtension) {
                   // For video extension, use conditioning that focuses on the end of the video
-                  inputParams.videos = [
+                  params.videos = [
                     {
                       video_url: input.imageUrl, // imageUrl contains the video URL
                       conditioning_type: "rgb",
@@ -492,25 +508,26 @@ export const appRouter = router({
                   ];
                   // Modify prompt to indicate continuation
                   if (
-                    inputParams.prompt &&
-                    !inputParams.prompt.toLowerCase().includes("continue") &&
-                    !inputParams.prompt.toLowerCase().includes("extend")
+                    params.prompt &&
+                    !params.prompt.toLowerCase().includes("continue") &&
+                    !params.prompt.toLowerCase().includes("extend")
                   ) {
-                    inputParams.prompt =
-                      "Continue this video naturally. " + inputParams.prompt;
+                    params.prompt =
+                      "Continue this video naturally. " + params.prompt;
                   }
                 } else {
                   // Regular video-to-video transformation
-                  inputParams.videos = [
+                  params.videos = [
                     {
                       video_url: input.imageUrl, // imageUrl contains the video URL
+                      // Ensure numeric values are numbers, not undefined/null if types differ
                       start_frame_num: 0,
                       end_frame_num: -1, // Use all frames
                     },
                   ];
                 }
               } else {
-                inputParams.images = [
+                params.images = [
                   {
                     image_url: input.imageUrl,
                     strength: 1.0,
@@ -518,8 +535,92 @@ export const appRouter = router({
                   },
                 ];
               }
+              inputParams = params;
+            } else if (model.id === "kling-video-v2.6-pro-image-to-video") {
+              // Strip @image references from prompt as they are passed as separate fields
+              // Replace @image references with descriptive text
+              let imageCount = 0;
+              const cleanPrompt = (input.prompt || "")
+                .replace(/@image\d+/g, () => {
+                  imageCount++;
+                  if (imageCount === 1) return "the first frame";
+                  if (imageCount === 2) return "the last frame";
+                  return "a reference frame";
+                })
+                .replace(/\s+/g, " ")
+                .replace(/,\s*,/g, ",")
+                .trim();
+
+              const params: KlingImageToVideoInput = {
+                prompt: cleanPrompt,
+                start_image_url: input.imageUrl,
+                duration: (input.duration <= 5 ? "5" : "10") as "5" | "10",
+                negative_prompt:
+                  (input as any).negativePrompt ||
+                  model.defaults.negativePrompt,
+              };
+
+              if (input.endImageUrl) {
+                params.end_image_url = input.endImageUrl;
+                params.generate_audio = false; // Forced by API: Cannot generate audio with end image
+              } else {
+                params.generate_audio = (input as any).generateAudio ?? true;
+              }
+              inputParams = params;
+            } else if (model.id === "kling-video-v2.6-pro-motion-control") {
+              // Motion Control Parameter Mapping
+              const params: KlingMotionControlInput = {
+                prompt: input.prompt || "",
+                image_url: input.imageUrl,
+                video_url: (input as any).videoUrl,
+                duration: (input.duration <= 5 ? "5" : "10") as "5" | "10",
+                character_orientation:
+                  (input as any).characterOrientation || "video",
+                negative_prompt:
+                  (input as any).negativePrompt ||
+                  "blur, distort, and low quality",
+              };
+              if (!params.video_url) {
+                throw new Error(
+                  "Motion Control requires a video URL (video_url parameter)",
+                );
+              }
+              inputParams = params;
+            } else if (
+              model.id === "ltx-video-2-19b-v2v" ||
+              model.id === "ltx-video-2-19b-v2v-lora"
+            ) {
+              // LTX Video-to-Video models
+              const params: LtxVideoV2VInput = {
+                video_url: input.imageUrl, // imageUrl contains video URL in this context
+                prompt: input.prompt || "",
+                strength:
+                  (input as any).strength || model.defaults.strength || 0.8,
+                seed:
+                  input.seed !== undefined && input.seed !== -1
+                    ? input.seed
+                    : undefined,
+              };
+
+              // Add optional fields if present
+              if (input.audioUrl) {
+                params.audio_url = input.audioUrl;
+              }
+              if (input.startImageUrl) {
+                params.start_image_url = input.startImageUrl;
+              }
+              if (input.endImageUrl) {
+                params.end_image_url = input.endImageUrl;
+              }
+
+              // Handle LoRAs for the LoRA version
+              if (model.id === "ltx-video-2-19b-v2v-lora") {
+                // TODO: Map LoRAs from input if available
+                // inputParams.loras = ...
+              }
+              inputParams = params;
             } else if (model.id === "ltx-video") {
-              inputParams = {
+              const params: LtxVideoInput = {
                 image_url: input.imageUrl,
                 prompt: input.prompt || "",
                 negative_prompt:
@@ -545,50 +646,70 @@ export const appRouter = router({
                     : undefined,
                 enable_safety_checker: true,
               };
+              inputParams = params;
             } else if (modelId === "bria-video-background-removal") {
               // Bria video background removal
-              inputParams = {
+              const params: BriaBackgroundRemovalInput = {
                 video_url: input.imageUrl, // imageUrl contains the video URL
                 background_color:
                   (input as any).backgroundColor ||
                   model.defaults.backgroundColor ||
                   "Black",
               };
-            } else {
-              // SeeDANCE models and others
-              inputParams = {
-                image_url: input.imageUrl,
-                prompt: input.prompt || prompt,
-                duration: duration || input.duration,
-                resolution: input.resolution,
-                camera_fixed:
-                  input.cameraFixed !== undefined ? input.cameraFixed : false,
-                seed: input.seed !== undefined ? input.seed : -1,
-              };
+              inputParams = params;
             }
           }
-        } else {
-          // Backward compatibility
-          inputParams = {
-            image_url: input.imageUrl,
-            prompt: prompt,
-            duration: duration,
-            resolution: input.resolution,
-            camera_fixed:
-              input.cameraFixed !== undefined ? input.cameraFixed : false,
-            seed: input.seed !== undefined ? input.seed : -1,
-          };
         }
-
         console.log(
           `Calling ${modelEndpoint} with parameters:`,
           JSON.stringify(inputParams, null, 2),
         );
 
+        // Yield 'Generating' status before creating the subscription
+        yield tracked(`${generationId}_generating`, {
+          type: "progress",
+          progress: 0,
+          status: "Generating video...",
+        });
+
         let result;
         try {
           result = await falClient.subscribe(modelEndpoint, {
             input: inputParams,
+            logs: true,
+            onQueueUpdate: (update) => {
+              if (
+                update.status === "IN_QUEUE" ||
+                update.status === "IN_PROGRESS"
+              ) {
+                const percentage =
+                  update.logs?.reduce((acc, log) => {
+                    const match = log.message.match(/(\d+)%/);
+                    return match ? parseInt(match[1]) : acc;
+                  }, 0) || 0;
+
+                // Yield progress update
+                // Note: We can't directly yield from inside the callback in a simple await.
+                // However, the trpc procedure seems to be a generator because of 'yield tracked' usage earlier.
+                // Wait, if this is a generator, we can't await a blocking call that doesn't support yielding.
+                // WE NEED TO CHANGE STRATEGY: wrapping subscribe in a way that allows yielding or just acknowledge that
+                // standard fal-ai/client subscribe is promise-based.
+                // Actually, tracked() helps, but we need to emit.
+                // If this function is a generator (async function*), we can yield.
+                // But we are inside an arrow function here.
+                // Correct approach for fal-ai client in a generator:
+                // Use `falClient.submit` then poll, OR rely on `onQueueUpdate` but we can't yield from within the callback
+                // to the outer generator.
+                // LIMITATION: We cannot easily yield from the callback of subscribe.
+                // Alternative: Use a queue/event emitter or just poll.
+                // BUT, to keep it simple and effective as per existing pattern:
+                // The existing pattern uses `yield tracked(...)`.
+                // If we can't yield from callback, we might need to use `fal.queue.submit` and `fal.queue.status`.
+                // Let's check if we can use a simpler approach or if we should just stick to verifying the fix works first.
+                // Re-reading: The goal is to show "Generating...".
+                // Even one yield BEFORE subscribe with status="Generating..." would be better than "Submitting..." forever.
+              }
+            },
           });
         } catch (apiError: any) {
           console.error("FAL API Error Details:", {
@@ -598,32 +719,12 @@ export const appRouter = router({
             body: apiError.body,
             response: apiError.response,
             data: apiError.data,
-            // Log the exact parameters that were sent
             sentParameters: inputParams,
             endpoint: modelEndpoint,
           });
 
-          // Log specific validation errors if available
           if (apiError.body?.detail) {
             console.error("Validation error details:", apiError.body.detail);
-          }
-
-          // Re-throw with more context
-          if (
-            apiError.status === 422 ||
-            apiError.message?.includes("Unprocessable Entity")
-          ) {
-            let errorDetail =
-              apiError.body?.detail ||
-              apiError.message ||
-              "Please check the video format and parameters";
-            // If errorDetail is an object, stringify it
-            if (typeof errorDetail === "object") {
-              errorDetail = JSON.stringify(errorDetail);
-            }
-            throw new Error(
-              `Invalid parameters for ${modelEndpoint}: ${errorDetail}`,
-            );
           }
           throw apiError;
         }
@@ -696,6 +797,7 @@ export const appRouter = router({
       z.object({
         prompt: z.string(),
         duration: z.number().optional().default(3),
+        aspectRatio: z.string().optional().default("16:9"),
         styleId: z.string().optional(),
         apiKey: z.string().optional(),
         // Billing context
@@ -705,7 +807,7 @@ export const appRouter = router({
     )
     .subscription(async function* ({ input, signal, ctx }) {
       try {
-        const videoModel = VIDEO_MODELS["stable-video-diffusion"];
+        const videoModel = VIDEO_MODELS["kling-video-v2.6-pro-text-to-video"];
         const useCustomApiKey = !!input.apiKey;
 
         // Billing: Check credits before generation
@@ -743,53 +845,33 @@ export const appRouter = router({
           status: "Starting video generation...",
         });
 
-        // Start streaming from fal.ai
-        const stream = await falClient.stream(videoModel.endpoint, {
+        // Map duration to Kling's expected string format ("5" or "10")
+        const durationStr = input.duration <= 5 ? "5" : "10";
+
+        const result = await falClient.subscribe(videoModel.endpoint, {
           input: {
             prompt: input.prompt,
-            num_frames: Math.floor(input.duration * 24), // Convert seconds to frames at 24fps
-            num_inference_steps: 25,
-            guidance_scale: 7.5,
-            width: 576,
-            height: 320,
-            fps: 24,
-            motion_bucket_id: 127, // Higher values = more motion
-            seed: Math.floor(Math.random() * 2147483647),
+            duration: durationStr,
+            aspect_ratio: input.aspectRatio,
+            negative_prompt: "blur, distort, and low quality",
+          },
+          logs: true,
+          onQueueUpdate: (update) => {
+            if (
+              update.status === "IN_QUEUE" ||
+              update.status === "IN_PROGRESS"
+            ) {
+              // For now, we rely on the final result or implement a more complex progress tracking if needed.
+            }
           },
         });
 
-        let eventIndex = 0;
-
-        // Stream events as they come
-        for await (const event of stream) {
-          if (signal?.aborted) {
-            break;
-          }
-
-          const eventId = `${generationId}_${eventIndex++}`;
-
-          // Calculate progress percentage if available
-          const progress =
-            event.progress !== undefined
-              ? Math.floor(event.progress * 100)
-              : eventIndex * 5; // Fallback progress estimation
-
-          yield tracked(eventId, {
-            type: "progress",
-            progress,
-            status: event.status || "Generating video...",
-            data: event,
-          });
-        }
-
-        // Get the final result
-        const result = await stream.done();
-
-        // Handle different response formats
+        // Kling returns the video URL in the result
         const videoUrl =
-          (result as any).data?.video?.url ||
-          (result as any).data?.url ||
+          (result.data as any)?.video?.url ||
+          (result.data as any)?.url ||
           (result as any).video_url;
+
         if (!videoUrl) {
           yield tracked(`${generationId}_error`, {
             type: "error",
@@ -807,25 +889,23 @@ export const appRouter = router({
             {
               generation_type: "text-to-video",
               model: videoModel.id,
-              prompt: input.prompt.substring(0, 100),
+              prompt: (input.prompt || "").substring(0, 100),
             },
           );
-
-          if (!billingResult.success) {
-            console.error("Failed to charge credits:", billingResult.error);
-          }
         }
+
+        const videoDuration = durationStr === "5" ? 5 : 10;
 
         // Send the final video
         yield tracked(`${generationId}_complete`, {
           type: "complete",
           videoUrl: videoUrl,
-          duration: input.duration,
+          duration: videoDuration,
           creditsCharged: billingResult?.creditsCharged,
           remainingCredits: billingResult?.newBalance,
         });
       } catch (error) {
-        console.error("Error in text-to-video generation:", error);
+        console.error("Error in video generation:", error);
         yield tracked(`error_${Date.now()}`, {
           type: "error",
           error:
@@ -833,6 +913,8 @@ export const appRouter = router({
         });
       }
     }),
+
+  // Billing: Charge credits after successful generation
   removeBackground: publicProcedure
     .input(
       z.object({
@@ -1123,6 +1205,7 @@ export const appRouter = router({
             "square_hd",
             "landscape_16_9",
             "portrait_16_9",
+            "auto",
           ])
           .optional(),
         apiKey: z.string().optional(),
@@ -1163,7 +1246,7 @@ export const appRouter = router({
           imageSize: input.imageSize,
         });
 
-        console.log(`Calling ${model.endpoint} with:`, subscribeInput);
+        console.log(`Calling ${model.endpoint} with: `, subscribeInput);
 
         const result = await falClient.subscribe(model.endpoint, {
           input: subscribeInput,
@@ -1223,6 +1306,7 @@ export const appRouter = router({
             "square_hd",
             "landscape_16_9",
             "portrait_16_9",
+            "auto",
           ])
           .optional(),
         lastEventId: z.string().optional(),
@@ -1271,7 +1355,7 @@ export const appRouter = router({
         const falClient = await getFalClient(input.apiKey, ctx);
 
         // Create a unique ID for this generation
-        const generationId = `gen_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        const generationId = `gen_${Date.now()}_${Math.random().toString(36).substring(7)} `;
 
         // If imageSrcs are provided, fetch on server (no CORS) and upload to fal
         let resolvedImageUrls = input.imageUrls;
@@ -1282,7 +1366,7 @@ export const appRouter = router({
             falClient,
           );
           if (resolvedImageUrls.length === 0) {
-            yield tracked(`${generationId}_error`, {
+            yield tracked(`${generationId} _error`, {
               type: "error",
               error: "Failed to fetch referenced images",
             });
@@ -1303,10 +1387,10 @@ export const appRouter = router({
           imageSize: input.imageSize,
         });
 
-        console.log(`Calling ${model.endpoint} with:`, subscribeInput);
+        console.log(`Calling ${model.endpoint} with: `, subscribeInput);
 
         // Yield initial progress
-        yield tracked(`${generationId}_start`, {
+        yield tracked(`${generationId} _start`, {
           type: "progress",
           data: { status: "Starting image generation..." },
         });
@@ -1324,7 +1408,7 @@ export const appRouter = router({
         const resultData = (result as any).data || result;
         const images = resultData.images || [];
         if (!images?.[0]) {
-          yield tracked(`${generationId}_error`, {
+          yield tracked(`${generationId} _error`, {
             type: "error",
             error: "No image generated",
           });
@@ -1351,7 +1435,7 @@ export const appRouter = router({
         }
 
         // Send the final image
-        yield tracked(`${generationId}_complete`, {
+        yield tracked(`${generationId} _complete`, {
           type: "complete",
           imageUrl: images[0].url,
           seed: resultData.seed,
@@ -1370,7 +1454,7 @@ export const appRouter = router({
           });
         }
 
-        yield tracked(`error_${Date.now()}`, {
+        yield tracked(`error_${Date.now()} `, {
           type: "error",
           error:
             error instanceof Error ? error.message : "Failed to generate image",

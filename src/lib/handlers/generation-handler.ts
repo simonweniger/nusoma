@@ -4,17 +4,16 @@ import type {
   GenerationSettings,
   ActiveGeneration,
   ActiveVideoGeneration,
+  BoundingBox,
 } from "@/types/canvas";
 import type { FalClient } from "@fal-ai/client";
 import { id } from "@instantdb/react";
 import { VIDEO_MODELS } from "../models-config";
-
-interface BoundingBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+import {
+  findNonOverlappingPosition,
+  processAndUploadImage,
+  uploadImageDirect,
+} from "./generation-helpers";
 
 interface GenerationHandlerDeps {
   images: PlacedImage[];
@@ -25,6 +24,7 @@ interface GenerationHandlerDeps {
   viewport: { x: number; y: number; scale: number };
   falClient: FalClient;
   setImages: React.Dispatch<React.SetStateAction<PlacedImage[]>>;
+  setVideos: React.Dispatch<React.SetStateAction<PlacedVideo[]>>;
   setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
   setActiveGenerations: React.Dispatch<
     React.SetStateAction<Map<string, ActiveGeneration>>
@@ -39,236 +39,19 @@ interface GenerationHandlerDeps {
   setActiveVideoGenerations: React.Dispatch<
     React.SetStateAction<Map<string, ActiveVideoGeneration>>
   >;
+  userId?: string;
+  sessionId?: string;
 }
 
-/**
- * Check if two bounding boxes overlap
- */
-const boxesOverlap = (
-  a: BoundingBox,
-  b: BoundingBox,
-  padding = 10,
-): boolean => {
-  return !(
-    a.x + a.width + padding <= b.x ||
-    b.x + b.width + padding <= a.x ||
-    a.y + a.height + padding <= b.y ||
-    b.y + b.height + padding <= a.y
-  );
-};
+// ------------------------------------------------------------------
+// Internal Helpers
+// ------------------------------------------------------------------
 
-/**
- * Find a non-overlapping position for a new asset
- * Starts at the preferred position and searches for a free spot
- */
-const findNonOverlappingPosition = (
-  preferredX: number,
-  preferredY: number,
-  width: number,
-  height: number,
-  existingAssets: BoundingBox[],
-  maxAttempts = 50,
-): { x: number; y: number } => {
-  const newBox: BoundingBox = { x: preferredX, y: preferredY, width, height };
-
-  // Check if preferred position is free
-  const hasOverlap = existingAssets.some((asset) =>
-    boxesOverlap(newBox, asset),
-  );
-  if (!hasOverlap) {
-    return { x: preferredX, y: preferredY };
-  }
-
-  // Try positions in a spiral pattern: right, down, left, up
-  const gap = 20;
-  let attempt = 0;
-  let offsetX = 0;
-  let offsetY = 0;
-  let direction = 0; // 0=right, 1=down, 2=left, 3=up
-  let stepsInDirection = 1;
-  let stepsTaken = 0;
-  let directionChanges = 0;
-
-  while (attempt < maxAttempts) {
-    // Move in current direction
-    switch (direction) {
-      case 0:
-        offsetX += width + gap;
-        break; // right
-      case 1:
-        offsetY += height + gap;
-        break; // down
-      case 2:
-        offsetX -= width + gap;
-        break; // left
-      case 3:
-        offsetY -= height + gap;
-        break; // up
-    }
-    stepsTaken++;
-    attempt++;
-
-    const testBox: BoundingBox = {
-      x: preferredX + offsetX,
-      y: preferredY + offsetY,
-      width,
-      height,
-    };
-
-    const overlaps = existingAssets.some((asset) =>
-      boxesOverlap(testBox, asset),
-    );
-    if (!overlaps) {
-      return { x: testBox.x, y: testBox.y };
-    }
-
-    // Change direction after completing steps
-    if (stepsTaken >= stepsInDirection) {
-      stepsTaken = 0;
-      direction = (direction + 1) % 4;
-      directionChanges++;
-      // Increase steps every 2 direction changes (completing a half-spiral)
-      if (directionChanges % 2 === 0) {
-        stepsInDirection++;
-      }
-    }
-  }
-
-  // Fallback: just offset down if no free spot found
-  return { x: preferredX, y: preferredY + height + gap };
-};
-
-export const uploadImageDirect = async (
-  dataUrl: string,
-  falClient: FalClient,
-  toast: GenerationHandlerDeps["toast"],
-) => {
-  // Convert data URL to blob first
-  const response = await fetch(dataUrl);
-  const blob = await response.blob();
-
-  try {
-    // Check size before attempting upload
-    if (blob.size > 10 * 1024 * 1024) {
-      // 10MB warning
-      console.warn(
-        "Large image detected:",
-        (blob.size / 1024 / 1024).toFixed(2) + "MB",
-      );
-    }
-
-    // Upload directly to FAL through proxy (using the client instance)
-    const uploadResult = await falClient.storage.upload(blob);
-
-    return { url: uploadResult };
-  } catch (error: any) {
-    // Check for rate limit error
-    const isRateLimit =
-      error.status === 429 ||
-      error.message?.includes("429") ||
-      error.message?.includes("rate limit") ||
-      error.message?.includes("Rate limit");
-
-    if (isRateLimit) {
-      toast({
-        title: "Rate limit exceeded",
-        description:
-          "Add your FAL API key to bypass rate limits. Without an API key, uploads are limited.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Failed to upload image",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
-      });
-    }
-
-    // Re-throw the error so calling code knows upload failed
-    throw error;
-  }
-};
-
-export const generateImage = (
-  imageUrl: string | undefined,
-  preferredX: number,
-  preferredY: number,
-  groupId: string,
-  generationSettings: GenerationSettings,
-  setImages: GenerationHandlerDeps["setImages"],
-  setActiveGenerations: GenerationHandlerDeps["setActiveGenerations"],
-  width: number = 300,
-  height: number = 300,
-  existingAssets: BoundingBox[] = [],
-  imageUrls?: string[], // Optional array for multi-image generation
-) => {
-  // Find a non-overlapping position
-  const { x, y } = findNonOverlappingPosition(
-    preferredX,
-    preferredY,
-    width,
-    height,
-    existingAssets,
-  );
-
-  const placeholderId = id(); // Use UUID from InstantDB
-  setImages((prev) => [
-    ...prev,
-    {
-      id: placeholderId,
-      src: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-      x,
-      y,
-      width,
-      height,
-      rotation: 0,
-      isGenerated: true,
-      parentGroupId: groupId,
-      generationPrompt: generationSettings.prompt,
-      creditsConsumed: undefined,
-    },
-  ]);
-
-  // Store generation params
-  setActiveGenerations((prev) =>
-    new Map(prev).set(placeholderId, {
-      imageUrl,
-      imageSrcs: imageUrls, // Multiple images for @ references
-      prompt: generationSettings.prompt,
-      loraUrl: generationSettings.loraUrl,
-      state: "submitting", // Initial state
-    }),
-  );
-};
-
-export const handleRun = async (deps: GenerationHandlerDeps) => {
-  const {
-    images,
-    videos,
-    selectedIds,
-    generationSettings,
-    canvasSize,
-    viewport,
-    falClient,
-    setImages,
-    setSelectedIds,
-    setActiveGenerations,
-    setIsGenerating,
-    toast,
-    setActiveVideoGenerations,
-  } = deps;
-
-  if (!generationSettings.prompt) {
-    toast({
-      title: "No Prompt",
-      description: "Please enter a prompt to generate an image",
-      variant: "destructive",
-    });
-    return;
-  }
-
-  // Collect all existing assets as bounding boxes for collision detection
-  const existingAssets: BoundingBox[] = [
+const getExistingAssets = (
+  images: PlacedImage[],
+  videos: PlacedVideo[],
+): BoundingBox[] => {
+  return [
     ...images.map((img) => ({
       x: img.x,
       y: img.y,
@@ -282,143 +65,171 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
       height: vid.height,
     })),
   ];
+};
 
-  setIsGenerating(true);
-  const selectedImages = images.filter((img) => selectedIds.includes(img.id));
+const createPlaceholderImage = (
+  deps: GenerationHandlerDeps,
+  width: number,
+  height: number,
+  preferredX: number,
+  preferredY: number,
+  existingAssets: BoundingBox[],
+  settings: GenerationSettings,
+  generationParams: Partial<ActiveGeneration>,
+) => {
+  const { setImages, setActiveGenerations, setSelectedIds } = deps;
+  const imageId = id();
 
-  // Check if there are referenced assets via @ syntax
-  const referencedAssetIds = generationSettings.referencedAssetIds || [];
-  const referencedAssets = referencedAssetIds
-    .map(
-      (refId) =>
-        images.find((img) => img.id === refId) ||
-        videos.find((vid) => vid.id === refId),
-    )
-    .filter((asset): asset is PlacedImage | PlacedVideo => !!asset);
-
-  // Check if the selected model is a video model
-  const isVideoModel =
-    generationSettings.modelId && VIDEO_MODELS[generationSettings.modelId];
-
-  if (isVideoModel) {
-    // Handle video generation
-    await handleVideoGeneration({
-      deps,
-      referencedAssets,
-      selectedImages,
-    });
-    return;
-  }
-
-  const referencedImages = referencedAssets.filter(
-    (asset): asset is PlacedImage => !("isVideo" in asset),
+  const { x, y } = findNonOverlappingPosition(
+    preferredX,
+    preferredY,
+    width,
+    height,
+    existingAssets,
   );
 
-  // If there are @ referenced images, handle multi-image generation
-  // Server will fetch images directly (no CORS issues on backend)
-  if (referencedImages.length > 0) {
-    // Create placeholder image
-    const imageId = id();
-
-    // Place at center of viewport
-    const viewportCenterX =
-      (canvasSize.width / 2 - viewport.x) / viewport.scale;
-    const viewportCenterY =
-      (canvasSize.height / 2 - viewport.y) / viewport.scale;
-
-    // Use first referenced image dimensions as base
-    const firstImg = referencedImages[0];
-    const width = firstImg.width;
-    const height = firstImg.height;
-
-    const preferredX = viewportCenterX - width / 2;
-    const preferredY = viewportCenterY - height / 2;
-    const { x, y } = findNonOverlappingPosition(
-      preferredX,
-      preferredY,
+  setImages((prev) => [
+    ...prev,
+    {
+      id: imageId,
+      src: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      x,
+      y,
       width,
       height,
-      existingAssets,
-    );
+      rotation: 0,
+      isGenerated: true,
+      generationPrompt: settings.prompt,
+      creditsConsumed: undefined,
+    },
+  ]);
 
-    setImages((prev) => [
-      ...prev,
-      {
-        id: imageId,
-        src: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-        x,
-        y,
-        width,
-        height,
-        rotation: 0,
-        isGenerated: true,
-        generationPrompt: generationSettings.prompt,
-        creditsConsumed: undefined,
-      },
-    ]);
+  setActiveGenerations((prev) =>
+    new Map(prev).set(imageId, {
+      ...generationParams,
+      prompt: settings.prompt,
+      loraUrl: settings.loraUrl,
+      imageSize: settings.imageSize,
+      state: "submitting",
+    } as ActiveGeneration),
+  );
 
-    // Pass image source URLs - server will fetch them (no CORS on backend)
-    const imageSrcs = referencedImages.map((img) => img.src);
+  setSelectedIds([imageId]);
+};
 
-    // Add to active generations - server handles fetching and uploading
-    setActiveGenerations((prev) =>
-      new Map(prev).set(imageId, {
-        imageSrcs, // Server will fetch these URLs directly
-        prompt: generationSettings.prompt,
-        loraUrl: generationSettings.loraUrl,
-        imageSize: generationSettings.imageSize,
-        state: "submitting",
-      }),
-    );
+// ------------------------------------------------------------------
+// Handlers
+// ------------------------------------------------------------------
 
-    setSelectedIds([imageId]);
-    return;
+const handleMultiImageGeneration = (
+  deps: GenerationHandlerDeps,
+  referencedImages: PlacedImage[],
+  existingAssets: BoundingBox[],
+) => {
+  const { canvasSize, viewport, generationSettings } = deps;
+
+  // Use first referenced image dimensions as base
+  const firstImg = referencedImages[0];
+  const width = firstImg.width;
+  const height = firstImg.height;
+
+  const viewportCenterX = (canvasSize.width / 2 - viewport.x) / viewport.scale;
+  const viewportCenterY = (canvasSize.height / 2 - viewport.y) / viewport.scale;
+  const preferredX = viewportCenterX - width / 2;
+  const preferredY = viewportCenterY - height / 2;
+
+  createPlaceholderImage(
+    deps,
+    width,
+    height,
+    preferredX,
+    preferredY,
+    existingAssets,
+    generationSettings,
+    {
+      imageSrcs: referencedImages.map((img) => img.src),
+    },
+  );
+};
+
+const handleTextToImageGeneration = (
+  deps: GenerationHandlerDeps,
+  existingAssets: BoundingBox[],
+) => {
+  const { canvasSize, viewport, generationSettings } = deps;
+  const baseSize = 512;
+  let width = baseSize;
+  let height = baseSize;
+  const imageSize = generationSettings.imageSize || "landscape_16_9";
+
+  switch (imageSize) {
+    case "landscape_16_9":
+      width = baseSize;
+      height = Math.round(baseSize * (9 / 16));
+      break;
+    case "landscape_4_3":
+      width = baseSize;
+      height = Math.round(baseSize * (3 / 4));
+      break;
+    case "square_hd":
+    case "square":
+      width = baseSize;
+      height = baseSize;
+      break;
+    case "portrait_4_3":
+      width = Math.round(baseSize * (3 / 4));
+      height = baseSize;
+      break;
+    case "portrait_16_9":
+      width = Math.round(baseSize * (9 / 16));
+      height = baseSize;
+      break;
   }
 
-  // If no images are selected, do text-to-image generation
-  if (selectedImages.length === 0) {
-    // Create placeholder image immediately
-    const imageId = id(); // Use UUID from InstantDB
+  const viewportCenterX = (canvasSize.width / 2 - viewport.x) / viewport.scale;
+  const viewportCenterY = (canvasSize.height / 2 - viewport.y) / viewport.scale;
+  const preferredX = viewportCenterX - width / 2;
+  const preferredY = viewportCenterY - height / 2;
 
-    // Place at center of viewport
-    const viewportCenterX =
-      (canvasSize.width / 2 - viewport.x) / viewport.scale;
-    const viewportCenterY =
-      (canvasSize.height / 2 - viewport.y) / viewport.scale;
+  createPlaceholderImage(
+    deps,
+    width,
+    height,
+    preferredX,
+    preferredY,
+    existingAssets,
+    generationSettings,
+    {
+      imageUrl: undefined,
+    },
+  );
+};
 
-    // Calculate dimensions based on selected image size
+const handleSelectedImagesGeneration = async (
+  deps: GenerationHandlerDeps,
+  selectedImages: PlacedImage[],
+  existingAssets: BoundingBox[],
+) => {
+  const { falClient, toast, setIsGenerating, generationSettings } = deps;
+
+  for (const img of selectedImages) {
+    const result = await processAndUploadImage(img, falClient, toast);
+    if (!result) continue; // Skip if failed
+
+    // Calculate output size
+    const aspectRatio = result.width / result.height;
     const baseSize = 512;
     let width = baseSize;
     let height = baseSize;
-
-    const imageSize = generationSettings.imageSize || "landscape_16_9";
-    switch (imageSize) {
-      case "landscape_16_9":
-        width = baseSize;
-        height = Math.round(baseSize * (9 / 16));
-        break;
-      case "landscape_4_3":
-        width = baseSize;
-        height = Math.round(baseSize * (3 / 4));
-        break;
-      case "square_hd":
-      case "square":
-        width = baseSize;
-        height = baseSize;
-        break;
-      case "portrait_4_3":
-        width = Math.round(baseSize * (3 / 4));
-        height = baseSize;
-        break;
-      case "portrait_16_9":
-        width = Math.round(baseSize * (9 / 16));
-        height = baseSize;
-        break;
+    if (aspectRatio > 1) {
+      height = Math.round(baseSize / aspectRatio);
+    } else {
+      width = Math.round(baseSize * aspectRatio);
     }
 
-    // Find non-overlapping position for text-to-image
-    const preferredX = viewportCenterX - width / 2;
-    const preferredY = viewportCenterY - height / 2;
+    const preferredX = img.x + img.width + 20;
+    const preferredY = img.y;
+
     const { x, y } = findNonOverlappingPosition(
       preferredX,
       preferredY,
@@ -427,191 +238,24 @@ export const handleRun = async (deps: GenerationHandlerDeps) => {
       existingAssets,
     );
 
-    // Add placeholder image
-    setImages((prev) => [
-      ...prev,
+    // Add to existing assets so next image doesn't overlap this one
+    existingAssets.push({ x, y, width, height });
+
+    createPlaceholderImage(
+      deps,
+      width,
+      height,
+      preferredX,
+      preferredY,
+      existingAssets,
+      generationSettings,
       {
-        id: imageId,
-        src: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-        x,
-        y,
-        width,
-        height,
-        rotation: 0,
-        isGenerated: true,
-        generationPrompt: generationSettings.prompt,
-        creditsConsumed: undefined,
+        imageUrl: result.url,
+        referencedAssetIds: [img.id],
       },
-    ]);
-
-    // Add to active generations - StreamingImage will handle the actual generation
-    setActiveGenerations((prev) =>
-      new Map(prev).set(imageId, {
-        imageUrl: undefined, // No source image for text-to-image
-        prompt: generationSettings.prompt,
-        loraUrl: generationSettings.loraUrl,
-        imageSize: generationSettings.imageSize,
-        state: "submitting", // Initial state
-      }),
     );
-
-    // Select the new placeholder
-    setSelectedIds([imageId]);
-
-    // Note: setIsGenerating(false) will be called by StreamingImage onComplete/onError
-    return;
   }
 
-  // Process each selected image individually for image-to-image
-  let successCount = 0;
-  let failureCount = 0;
-
-  for (const img of selectedImages) {
-    try {
-      // Get crop values
-      const cropX = img.cropX || 0;
-      const cropY = img.cropY || 0;
-      const cropWidth = img.cropWidth || 1;
-      const cropHeight = img.cropHeight || 1;
-
-      // Load the image - use proxy for S3 URLs to bypass CORS
-      const imgElement = new window.Image();
-      imgElement.crossOrigin = "anonymous"; // Enable CORS
-
-      // Check if the image is from S3 (InstantDB storage) and needs proxying
-      const needsProxy =
-        img.src.includes("instant-storage.s3.amazonaws.com") ||
-        img.src.includes("storage.googleapis.com");
-
-      imgElement.src = needsProxy
-        ? `/api/proxy-image?url=${encodeURIComponent(img.src)}`
-        : img.src;
-      await new Promise((resolve) => {
-        imgElement.onload = resolve;
-      });
-
-      // Create a canvas for the image at original resolution
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Failed to get canvas context");
-
-      // Calculate the effective original dimensions accounting for crops
-      let effectiveWidth = imgElement.naturalWidth;
-      let effectiveHeight = imgElement.naturalHeight;
-
-      if (cropWidth !== 1 || cropHeight !== 1) {
-        effectiveWidth = cropWidth * imgElement.naturalWidth;
-        effectiveHeight = cropHeight * imgElement.naturalHeight;
-      }
-
-      // Set canvas size to the original resolution (not display size)
-      canvas.width = effectiveWidth;
-      canvas.height = effectiveHeight;
-
-      console.log(
-        `Processing image at ${canvas.width}x${canvas.height} (original res, display: ${img.width}x${img.height})`,
-      );
-
-      // Always use the crop values (default to full image if not set)
-      ctx.drawImage(
-        imgElement,
-        cropX * imgElement.naturalWidth,
-        cropY * imgElement.naturalHeight,
-        cropWidth * imgElement.naturalWidth,
-        cropHeight * imgElement.naturalHeight,
-        0,
-        0,
-        canvas.width,
-        canvas.height,
-      );
-
-      // Convert to blob and upload
-      const blob = await new Promise<Blob>((resolve) => {
-        canvas.toBlob((blob) => resolve(blob!), "image/png");
-      });
-
-      const reader = new FileReader();
-      const dataUrl = await new Promise<string>((resolve) => {
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.readAsDataURL(blob);
-      });
-
-      let uploadResult;
-      try {
-        uploadResult = await uploadImageDirect(dataUrl, falClient, toast);
-      } catch (uploadError) {
-        console.error("Failed to upload image:", uploadError);
-        failureCount++;
-        // Skip this image if upload fails
-        continue;
-      }
-
-      // Only proceed with generation if upload succeeded
-      if (!uploadResult?.url) {
-        console.error("Upload succeeded but no URL returned");
-        failureCount++;
-        continue;
-      }
-
-      // Calculate output size maintaining aspect ratio
-      const aspectRatio = canvas.width / canvas.height;
-      const baseSize = 512;
-      let outputWidth = baseSize;
-      let outputHeight = baseSize;
-
-      if (aspectRatio > 1) {
-        outputHeight = Math.round(baseSize / aspectRatio);
-      } else {
-        outputWidth = Math.round(baseSize * aspectRatio);
-      }
-
-      const groupId = id(); // Use UUID from InstantDB
-
-      // Find non-overlapping position for the new image
-      const preferredX = img.x + img.width + 20;
-      const preferredY = img.y;
-      const { x: newX, y: newY } = findNonOverlappingPosition(
-        preferredX,
-        preferredY,
-        img.width,
-        img.height,
-        existingAssets,
-      );
-
-      // Add the new position to existingAssets so subsequent generations don't overlap
-      existingAssets.push({
-        x: newX,
-        y: newY,
-        width: img.width,
-        height: img.height,
-      });
-
-      generateImage(
-        uploadResult.url,
-        newX,
-        newY,
-        groupId,
-        { ...generationSettings, referencedAssetIds: [img.id] }, // Pass referencedAssetIds
-        setImages,
-        setActiveGenerations,
-        img.width,
-        img.height,
-        existingAssets,
-      );
-      successCount++;
-    } catch (error) {
-      console.error("Error processing image:", error);
-      failureCount++;
-      toast({
-        title: "Failed to process image",
-        description:
-          error instanceof Error ? error.message : "Failed to process image",
-        variant: "destructive",
-      });
-    }
-  }
-
-  // Done processing all images
   setIsGenerating(false);
 };
 
@@ -620,22 +264,66 @@ const handleVideoGeneration = async ({
   deps,
   referencedAssets,
   selectedImages,
+  selectedVideos,
 }: {
   deps: GenerationHandlerDeps;
   referencedAssets: (PlacedImage | PlacedVideo)[];
   selectedImages: PlacedImage[];
+  selectedVideos: PlacedVideo[];
 }) => {
   const {
     generationSettings,
     setActiveVideoGenerations,
     setIsGenerating,
     toast,
+    userId,
+    sessionId,
   } = deps;
 
-  const modelId = generationSettings.modelId!;
-  const modelConfig = VIDEO_MODELS[modelId];
+  let modelId = generationSettings.modelId!;
+  let modelConfig = VIDEO_MODELS[modelId];
 
-  // Logic to determine inputs based on model category
+  if (!modelConfig) {
+    toast({
+      title: "Model not found",
+      description: `The video model ID "${modelId}" is not configured.`,
+      variant: "destructive",
+    });
+    setIsGenerating(false);
+    return;
+  }
+
+  // Auto-switch logic
+  if (modelConfig.category === "text-to-video") {
+    const hasImageRef = referencedAssets.some((a) => !("isVideo" in a));
+    const hasVideoRef = referencedAssets.some((a) => "isVideo" in a);
+    const hasSelectedImage = selectedImages.length > 0;
+    const hasSelectedVideo = selectedVideos.length > 0;
+
+    const hasImageInput = hasImageRef || hasSelectedImage;
+    const hasVideoInput = hasVideoRef || hasSelectedVideo;
+
+    if (hasImageInput && hasVideoInput) {
+      const motionModelId = "kling-video-v2.6-pro-motion-control";
+      if (VIDEO_MODELS[motionModelId]) {
+        console.log(
+          `[Auto-Switch] Switching to ${motionModelId} based on Image+Video inputs`,
+        );
+        modelId = motionModelId;
+        modelConfig = VIDEO_MODELS[motionModelId];
+      }
+    } else if (hasImageInput) {
+      const i2vModelId = "kling-video-v2.6-pro-image-to-video";
+      if (VIDEO_MODELS[i2vModelId]) {
+        console.log(
+          `[Auto-Switch] Switching to ${i2vModelId} based on Image input`,
+        );
+        modelId = i2vModelId;
+        modelConfig = VIDEO_MODELS[i2vModelId];
+      }
+    }
+  }
+
   const prompt = generationSettings.prompt;
   const generationId = id();
 
@@ -643,54 +331,90 @@ const handleVideoGeneration = async ({
     prompt,
     modelId,
     modelConfig,
-    referencedAssetIds: referencedAssets.map((a) => a.id), // Pass for lineage tracking
+    referencedAssetIds: referencedAssets.map((a) => a.id),
+    imageSize: generationSettings.imageSize || "landscape_16_9",
     state: "submitting",
+    userId,
+    sessionId,
   };
 
   if (modelConfig.category === "text-to-video") {
-    // Kling Text to Video
-    // Uses prompt only. Referenced assets are ignored unless needed for specific flow?
-    // User might expect @refs to influence generation? Kling T2V doesn't supported inputs.
     if (referencedAssets.length > 0) {
       toast({
         title: "Warning",
         description:
           "Text-to-Video model ignores referenced assets. Use Image-to-Video for inputs.",
-        variant: "default", // warning
+        variant: "default",
       });
     }
+
+    if (deps.setVideos) {
+      const { canvasSize, viewport } = deps;
+      const viewportCenterX =
+        (canvasSize.width / 2 - viewport.x) / viewport.scale;
+      const viewportCenterY =
+        (canvasSize.height / 2 - viewport.y) / viewport.scale;
+      const width = 512;
+      const height = 288;
+      const existingAssets = getExistingAssets(deps.images, deps.videos);
+
+      const { x, y } = findNonOverlappingPosition(
+        viewportCenterX - width / 2,
+        viewportCenterY - height / 2,
+        width,
+        height,
+        existingAssets,
+      );
+
+      deps.setVideos((prev) => [
+        ...prev,
+        {
+          id: generationId,
+          src: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+          x,
+          y,
+          width,
+          height,
+          rotation: 0,
+          isVideo: true,
+          duration: 5,
+          currentTime: 0,
+          isPlaying: false,
+          volume: 1,
+          muted: false,
+          isLooping: false,
+          isGenerated: true,
+        },
+      ]);
+    }
   } else if (modelConfig.category === "image-to-video") {
-    // Kling Image to Video OR Motion Control
-    // Needs at least one image
     const firstImage = referencedAssets.find(
       (a) => !("isVideo" in a),
     ) as PlacedImage;
-
-    // Check for video input if motion control
     const firstVideo = referencedAssets.find((a) => "isVideo" in a) as
       | PlacedVideo
       | undefined;
 
     if (modelId === "kling-video-v2.6-pro-motion-control") {
-      // Motion Control needs Image + Video
-      if (!firstImage || !firstVideo) {
+      const imageInput = firstImage || selectedImages[0];
+      const videoInput = firstVideo || selectedVideos[0];
+
+      if (!imageInput || !videoInput) {
         toast({
           title: "Missing Inputs",
           description:
-            "Motion Control requires both an Image (@image) and a Video (@video) reference.",
+            "Motion Control requires both an Image and a Video. Please select them or use @ references.",
           variant: "destructive",
         });
         setIsGenerating(false);
         return;
       }
-      payload.imageUrl = firstImage.src;
-      payload.videoUrl = firstVideo.src;
-      payload.sourceImageId = firstImage.id;
-      payload.sourceVideoId = firstVideo.id;
+      payload.imageUrl = imageInput.src;
+      payload.videoUrl = videoInput.src;
+      payload.sourceImageId = imageInput.id;
+      payload.sourceVideoId = videoInput.id;
     } else {
-      // Standard Image to Video
       if (!firstImage) {
-        // Fallback to selected image if no @ref
         if (selectedImages.length > 0) {
           const img = selectedImages[0];
           payload.imageUrl = img.src;
@@ -708,7 +432,6 @@ const handleVideoGeneration = async ({
       } else {
         payload.imageUrl = firstImage.src;
         payload.sourceImageId = firstImage.id;
-        // Check for end image (second image)
         const secondImage = referencedAssets.find(
           (a) => !("isVideo" in a) && a.id !== firstImage.id,
         ) as PlacedImage | undefined;
@@ -717,8 +440,206 @@ const handleVideoGeneration = async ({
         }
       }
     }
+
+    if (deps.setVideos) {
+      const { canvasSize, viewport } = deps;
+      const refAsset =
+        firstVideo ||
+        firstImage ||
+        (selectedImages.length > 0 ? selectedImages[0] : null);
+
+      const width = 512;
+      const height = 288;
+      let preferredX =
+        (canvasSize.width / 2 - viewport.x) / viewport.scale - width / 2;
+      let preferredY =
+        (canvasSize.height / 2 - viewport.y) / viewport.scale - height / 2;
+
+      if (refAsset) {
+        preferredX = refAsset.x + refAsset.width + 20;
+        preferredY = refAsset.y;
+      }
+
+      const existingAssets = getExistingAssets(deps.images, deps.videos);
+      const { x, y } = findNonOverlappingPosition(
+        preferredX,
+        preferredY,
+        width,
+        height,
+        existingAssets,
+      );
+
+      deps.setVideos((prev) => [
+        ...prev,
+        {
+          id: generationId,
+          src: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+          x,
+          y,
+          width,
+          height,
+          rotation: 0,
+          isVideo: true,
+          duration: 5,
+          currentTime: 0,
+          isPlaying: false,
+          volume: 1,
+          muted: false,
+          isLooping: false,
+          isGenerated: true,
+        },
+      ]);
+    }
+  } else if (modelConfig.category === "video-to-video") {
+    // Handle Video-to-Video (e.g. LTX)
+    const firstVideo = referencedAssets.find((a) => "isVideo" in a) as
+      | PlacedVideo
+      | undefined;
+
+    // For V2V, the "imageUrl" param in TRPC is used for the input video URL
+    if (firstVideo) {
+      payload.imageUrl = firstVideo.src;
+      payload.sourceVideoId = firstVideo.id;
+    } else if (selectedVideos.length > 0) {
+      const vid = selectedVideos[0];
+      payload.imageUrl = vid.src;
+      payload.sourceVideoId = vid.id;
+    } else {
+      toast({
+        title: "Missing Input",
+        description:
+          "Video-to-Video requires a video reference (@video) or a selected video.",
+        variant: "destructive",
+      });
+      setIsGenerating(false);
+      return;
+    }
+
+    if (deps.setVideos) {
+      const { canvasSize, viewport } = deps;
+      const refAsset =
+        firstVideo || (selectedVideos.length > 0 ? selectedVideos[0] : null);
+
+      const width = 512;
+      const height = 288;
+      let preferredX =
+        (canvasSize.width / 2 - viewport.x) / viewport.scale - width / 2;
+      let preferredY =
+        (canvasSize.height / 2 - viewport.y) / viewport.scale - height / 2;
+
+      if (refAsset) {
+        preferredX = refAsset.x + refAsset.width + 20;
+        preferredY = refAsset.y;
+      }
+
+      const existingAssets = getExistingAssets(deps.images, deps.videos);
+      const { x, y } = findNonOverlappingPosition(
+        preferredX,
+        preferredY,
+        width,
+        height,
+        existingAssets,
+      );
+
+      deps.setVideos((prev) => [
+        ...prev,
+        {
+          id: generationId,
+          src: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+          x,
+          y,
+          width,
+          height,
+          rotation: 0,
+          isVideo: true,
+          duration: 5,
+          currentTime: 0,
+          isPlaying: false,
+          volume: 1,
+          muted: false,
+          isLooping: false,
+          isGenerated: true,
+        },
+      ]);
+    }
   }
 
   setActiveVideoGenerations((prev) => new Map(prev).set(generationId, payload));
-  setIsGenerating(true); // Will be reset by StreamingVideo when done/error
+  setIsGenerating(true);
 };
+
+// ------------------------------------------------------------------
+// Main Entry Point
+// ------------------------------------------------------------------
+
+export const handleRun = async (deps: GenerationHandlerDeps) => {
+  const {
+    images,
+    videos,
+    selectedIds,
+    generationSettings,
+    setIsGenerating,
+    toast,
+  } = deps;
+
+  if (!generationSettings.prompt) {
+    toast({
+      title: "No Prompt",
+      description: "Please enter a prompt to generate an image",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  // Pre-fetch assets for overlap detection
+  const existingAssets = getExistingAssets(images, videos);
+  setIsGenerating(true);
+
+  const selectedImages = images.filter((img) => selectedIds.includes(img.id));
+
+  // Check if there are referenced assets via @ syntax
+  const referencedAssetIds = generationSettings.referencedAssetIds || [];
+  const referencedAssets = referencedAssetIds
+    .map(
+      (refId) =>
+        images.find((img) => img.id === refId) ||
+        videos.find((vid) => vid.id === refId),
+    )
+    .filter((asset): asset is PlacedImage | PlacedVideo => !!asset);
+
+  // Video Generation Check
+  const isVideoModel =
+    generationSettings.modelId && VIDEO_MODELS[generationSettings.modelId];
+
+  if (isVideoModel) {
+    const selectedVideos = videos.filter((vid) => selectedIds.includes(vid.id));
+    await handleVideoGeneration({
+      deps,
+      referencedAssets,
+      selectedImages,
+      selectedVideos,
+    });
+    return;
+  }
+
+  const referencedImages = referencedAssets.filter(
+    (asset): asset is PlacedImage => !("isVideo" in asset),
+  );
+
+  // 1. Multi-Image Generation from References
+  if (referencedImages.length > 0) {
+    handleMultiImageGeneration(deps, referencedImages, existingAssets);
+    return;
+  }
+
+  // 2. Text-To-Image Generation (if nothing selected)
+  if (selectedImages.length === 0) {
+    handleTextToImageGeneration(deps, existingAssets);
+    return;
+  }
+
+  // 3. Image-To-Image Generation (Selected Images)
+  await handleSelectedImagesGeneration(deps, selectedImages, existingAssets);
+};
+
+export { uploadImageDirect };

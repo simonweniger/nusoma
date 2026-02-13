@@ -6,7 +6,7 @@ import {
   getGenerationTypeColor,
   getGenerationModeForContext,
 } from "@/lib/generation-types";
-import { type CommonSizeOption } from "@/lib/models-config";
+import { type CommonSizeOption } from "@/types/models";
 
 // Matrix toolbar constants
 const MATRIX_ROWS = 10;
