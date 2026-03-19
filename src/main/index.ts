@@ -659,8 +659,10 @@ ipcMain.handle(IPC.TRANSCRIBE_AUDIO, async (_event, audioBase64: string) => {
     const buf = Buffer.from(audioBase64, 'base64')
     writeFileSync(tmpWav, buf)
 
-    // Find whisper-cli (whisper-cpp homebrew) or whisper (python)
+    // Find whisperkit-cli (recommended), whisper-cli (whisper-cpp), or whisper (python)
     const candidates = [
+      '/opt/homebrew/bin/whisperkit-cli',
+      '/usr/local/bin/whisperkit-cli',
       '/opt/homebrew/bin/whisper-cli',
       '/usr/local/bin/whisper-cli',
       '/opt/homebrew/bin/whisper',
@@ -676,6 +678,12 @@ ipcMain.handle(IPC.TRANSCRIBE_AUDIO, async (_event, audioBase64: string) => {
     if (!whisperBin) {
       // Use getCliEnv() and strip escape sequences from shell output
       try {
+        const raw = execSync('/bin/zsh -lc "whence -p whisperkit-cli"', { encoding: 'utf-8', env: getCliEnv(), timeout: 3000 })
+        whisperBin = extractAbsoluteShellPath(raw) ?? ''
+      } catch {}
+    }
+    if (!whisperBin) {
+      try {
         const raw = execSync('/bin/zsh -lc "whence -p whisper-cli"', { encoding: 'utf-8', env: getCliEnv(), timeout: 3000 })
         whisperBin = extractAbsoluteShellPath(raw) ?? ''
       } catch {}
@@ -689,37 +697,49 @@ ipcMain.handle(IPC.TRANSCRIBE_AUDIO, async (_event, audioBase64: string) => {
 
     if (!whisperBin) {
       return {
-        error: 'Whisper not found. Install with: brew install whisper-cli',
+        error: 'Whisper not found. Install with: brew install whisperkit-cli',
         transcript: null,
       }
     }
 
-    const isWhisperCpp = whisperBin.includes('whisper-cli')
+    const isWhisperKit = whisperBin.includes('whisperkit-cli')
+    const isWhisperCpp = !isWhisperKit && whisperBin.includes('whisper-cli')
 
-    // Find model file — prefer multilingual (auto-detect language) over .en (English-only)
-    const modelCandidates = [
-      join(homedir(), '.local/share/whisper/ggml-base.bin'),
-      join(homedir(), '.local/share/whisper/ggml-tiny.bin'),
-      '/opt/homebrew/share/whisper-cpp/models/ggml-base.bin',
-      '/opt/homebrew/share/whisper-cpp/models/ggml-tiny.bin',
-      // Fall back to English-only models if multilingual not available
-      join(homedir(), '.local/share/whisper/ggml-base.en.bin'),
-      join(homedir(), '.local/share/whisper/ggml-tiny.en.bin'),
-      '/opt/homebrew/share/whisper-cpp/models/ggml-base.en.bin',
-      '/opt/homebrew/share/whisper-cpp/models/ggml-tiny.en.bin',
-    ]
-
+    // whisperkit-cli manages its own models — only search for ggml models if using whisper-cpp
     let modelPath = ''
-    for (const m of modelCandidates) {
-      if (existsSync(m)) { modelPath = m; break }
+    let isEnglishOnly = false
+    if (!isWhisperKit) {
+      // Find model file — prefer multilingual (auto-detect language) over .en (English-only)
+      const modelCandidates = [
+        join(homedir(), '.local/share/whisper/ggml-base.bin'),
+        join(homedir(), '.local/share/whisper/ggml-tiny.bin'),
+        '/opt/homebrew/share/whisper-cpp/models/ggml-base.bin',
+        '/opt/homebrew/share/whisper-cpp/models/ggml-tiny.bin',
+        // Fall back to English-only models if multilingual not available
+        join(homedir(), '.local/share/whisper/ggml-base.en.bin'),
+        join(homedir(), '.local/share/whisper/ggml-tiny.en.bin'),
+        '/opt/homebrew/share/whisper-cpp/models/ggml-base.en.bin',
+        '/opt/homebrew/share/whisper-cpp/models/ggml-tiny.en.bin',
+      ]
+
+      for (const m of modelCandidates) {
+        if (existsSync(m)) { modelPath = m; break }
+      }
+
+      // Detect if using an English-only model (.en suffix) — force English if so
+      isEnglishOnly = modelPath.includes('.en.')
     }
 
-    // Detect if using an English-only model (.en suffix) — force English if so
-    const isEnglishOnly = modelPath.includes('.en.')
-    log(`Transcribing with: ${whisperBin} (model: ${modelPath || 'default'}, lang: ${isEnglishOnly ? 'en' : 'auto'})`)
+    log(`Transcribing with: ${whisperBin} (${isWhisperKit ? 'whisperkit' : `model: ${modelPath || 'default'}, lang: ${isEnglishOnly ? 'en' : 'auto'}`})`)
 
     let output: string
-    if (isWhisperCpp) {
+    if (isWhisperKit) {
+      // whisperkit-cli: auto-manages CoreML models, 60s timeout for first-run model download
+      output = execSync(
+        `"${whisperBin}" transcribe --audio-path "${tmpWav}" --model-size tiny`,
+        { encoding: 'utf-8', timeout: 60000 }
+      )
+    } else if (isWhisperCpp) {
       // whisper-cpp: whisper-cli -m model -f file --no-timestamps
       if (!modelPath) {
         return {
