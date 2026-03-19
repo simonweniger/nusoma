@@ -359,6 +359,8 @@ export const IPC = {
   WINDOW_SHOWN: 'nusoma:window-shown',
   SET_IGNORE_MOUSE_EVENTS: 'nusoma:set-ignore-mouse-events',
   IS_VISIBLE: 'nusoma:is-visible',
+  MOVE_WINDOW: 'nusoma:move-window',
+  GET_WINDOW_POSITION: 'nusoma:get-window-position',
 
   // Skill provisioning (main → renderer)
   SKILL_STATUS: 'nusoma:skill-status',
