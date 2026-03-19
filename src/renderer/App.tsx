@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react'
+import React, { useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Paperclip, Camera, HeadCircuit } from '@phosphor-icons/react'
 import { TabStrip } from './components/TabStrip'
@@ -90,6 +90,44 @@ export default function App() {
     return () => {
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('mouseleave', onMouseLeave)
+    }
+  }, [])
+
+  // Manual window drag — bypasses -webkit-app-region conflicts with setIgnoreMouseEvents
+  const dragRef = useRef<{ startX: number; startY: number } | null>(null)
+  useEffect(() => {
+    if (!window.nusoma?.startWindowDrag) return
+
+    const onMouseDown = (e: MouseEvent) => {
+      const el = e.target as HTMLElement
+      // Only start drag if directly on a drag-region, not on a no-drag child
+      if (!el.closest('.drag-region') || el.closest('.no-drag')) return
+      e.preventDefault()
+      dragRef.current = { startX: e.screenX, startY: e.screenY }
+    }
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!dragRef.current) return
+      const dx = e.screenX - dragRef.current.startX
+      const dy = e.screenY - dragRef.current.startY
+      if (dx !== 0 || dy !== 0) {
+        window.nusoma.startWindowDrag(dx, dy)
+        dragRef.current.startX = e.screenX
+        dragRef.current.startY = e.screenY
+      }
+    }
+
+    const onMouseUp = () => {
+      dragRef.current = null
+    }
+
+    document.addEventListener('mousedown', onMouseDown)
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown)
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
     }
   }, [])
 
