@@ -14,6 +14,8 @@ import type { RunOptions, NormalizedEvent, EnrichedError, ShortcutSettings } fro
 import { loadShortcutSettings, registerShortcutSettings, saveShortcutSettings } from './shortcut-settings'
 import { validateUrl, validateSessionId, validateProjectPath, sanitizeAppleScript, verifyBinary } from './security'
 
+app.disableHardwareAcceleration()
+
 const DEBUG_MODE = process.env.CLUI_DEBUG === '1'
 const SPACES_DEBUG = DEBUG_MODE || process.env.CLUI_SPACES_DEBUG === '1'
 
@@ -1018,6 +1020,34 @@ app.whenReady().then(async () => {
   registerPmHandlers()
   createWindow()
   snapshotWindowState('after createWindow')
+
+  // Override default app menu to remove Cmd+W (Close Window) — renderer handles it as close-tab
+  Menu.setApplicationMenu(Menu.buildFromTemplate([
+    {
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' },
+      ],
+    },
+  ]))
 
   if (SPACES_DEBUG) {
     mainWindow?.on('show', () => snapshotWindowState('event window show'))
