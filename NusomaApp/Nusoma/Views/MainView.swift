@@ -1,5 +1,5 @@
 // MainView.swift — Root view: tab strip + conversation + input pill
-// Phase 2 — adds file picker, drag-and-drop, resize handle, polish
+// Phase 4 — adds session history panel, settings panel, voice input
 //
 // Uses macOS 26 Liquid Glass design language throughout.
 // Layout: vertical stack anchored to bottom of transparent panel.
@@ -44,6 +44,32 @@ struct MainView: View {
                         .padding(.bottom, 14)
                 }
 
+                // Session history panel
+                if appState.historyOpen {
+                    SessionHistoryView()
+                        .frame(maxWidth: 720, maxHeight: 400)
+                        .glassEffect(.regular)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.98)),
+                            removal: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.985))
+                        ))
+                        .padding(.bottom, 14)
+                }
+
+                // Settings panel
+                if appState.settingsOpen {
+                    SettingsView()
+                        .frame(maxWidth: 720, maxHeight: 420)
+                        .glassEffect(.regular)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.98)),
+                            removal: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.985))
+                        ))
+                        .padding(.bottom, 14)
+                }
+
                 // Chat shell (tabs + conversation)
                 chatShell
                     .padding(.bottom, appState.isExpanded ? 10 : -14)
@@ -56,6 +82,8 @@ struct MainView: View {
             .animation(NusomaAnimation.standard, value: appState.isExpanded)
             .animation(NusomaAnimation.standard, value: appState.marketplaceOpen)
             .animation(NusomaAnimation.standard, value: appState.pmOpen)
+            .animation(NusomaAnimation.standard, value: appState.historyOpen)
+            .animation(NusomaAnimation.standard, value: appState.settingsOpen)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)

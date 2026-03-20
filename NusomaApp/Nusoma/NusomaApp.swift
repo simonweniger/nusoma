@@ -31,6 +31,8 @@ struct NusomaApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     private let appState = AppState()
     private let themeManager = ThemeManager()
+    private let voiceManager = VoiceInputManager()
+    private let sessionHistory = SessionHistoryService()
     private let panelManager = PanelManager()
     private let hotkeyManager = HotkeyManager()
     private let trayManager = TrayManager()
@@ -59,6 +61,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let contentView = MainView()
             .environment(appState)
             .environment(themeManager)
+            .environment(voiceManager)
+            .environment(sessionHistory)
             .modelContainer(for: [PMProject.self, PMIssue.self, PMLabel.self, PMComment.self, PMSetting.self],
                            isUndoEnabled: false)
 

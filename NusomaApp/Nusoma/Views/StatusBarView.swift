@@ -1,15 +1,13 @@
 // StatusBarView.swift — Session info footer
-// Phase 2 — enhanced with session metadata, clear button, theme toggle
+// Phase 4 — adds session history button, links to full settings panel
 //
-// Shows: working directory, model, session cost, duration, clear, settings.
+// Shows: working directory, model, session cost, duration, history, settings.
 
 import SwiftUI
 
 struct StatusBarView: View {
     @Environment(AppState.self) private var appState
     @Environment(ThemeManager.self) private var theme
-
-    @State private var showSettings = false
 
     private var tab: TabState? { appState.activeTab }
 
@@ -82,6 +80,20 @@ struct StatusBarView: View {
                 .help("Clear conversation")
             }
 
+            // Session history button
+            Button {
+                appState.historyOpen.toggle()
+                if appState.historyOpen {
+                    appState.settingsOpen = false
+                }
+            } label: {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 9))
+                    .foregroundStyle(appState.historyOpen ? theme.colors.accent : theme.colors.textMuted)
+            }
+            .buttonStyle(.plain)
+            .help("Session history")
+
             // Theme toggle
             Button {
                 if theme.isDark {
@@ -97,18 +109,19 @@ struct StatusBarView: View {
             .buttonStyle(.plain)
             .help("Toggle theme")
 
-            // Settings button
+            // Settings button — opens full settings panel
             Button {
-                showSettings.toggle()
+                appState.settingsOpen.toggle()
+                if appState.settingsOpen {
+                    appState.historyOpen = false
+                }
             } label: {
                 Image(systemName: "gearshape")
                     .font(.system(size: 10))
-                    .foregroundStyle(theme.colors.textTertiary)
+                    .foregroundStyle(appState.settingsOpen ? theme.colors.accent : theme.colors.textTertiary)
             }
             .buttonStyle(.plain)
-            .popover(isPresented: $showSettings, arrowEdge: .top) {
-                SettingsPopover()
-            }
+            .help("Settings")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
@@ -209,76 +222,3 @@ struct StatusBarView: View {
     }
 }
 
-// MARK: - Settings Popover
-
-struct SettingsPopover: View {
-    @Environment(AppState.self) private var appState
-    @Environment(ThemeManager.self) private var theme
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Settings")
-                .font(.system(size: 12, weight: .semibold))
-
-            // Theme
-            HStack {
-                Text("Theme")
-                    .font(.system(size: 11))
-                Spacer()
-                Picker("", selection: Bindable(theme).themeMode) {
-                    ForEach(ThemeManager.ThemeMode.allCases, id: \.self) { mode in
-                        Text(mode.rawValue.capitalized).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 150)
-            }
-
-            // Sound
-            Toggle("Notification sound", isOn: Bindable(theme).soundEnabled)
-                .font(.system(size: 11))
-                .toggleStyle(.switch)
-                .controlSize(.small)
-
-            // Use last folder
-            Toggle("Remember last folder", isOn: Bindable(theme).useLastFolder)
-                .font(.system(size: 11))
-                .toggleStyle(.switch)
-                .controlSize(.small)
-
-            // Permission mode
-            HStack {
-                Text("Permission mode")
-                    .font(.system(size: 11))
-                Spacer()
-                Picker("", selection: Binding(
-                    get: { appState.permissionMode },
-                    set: { appState.setPermissionMode($0) }
-                )) {
-                    Text("Ask").tag(PermissionMode.ask)
-                    Text("Auto").tag(PermissionMode.auto)
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 100)
-            }
-
-            Divider()
-
-            // Version info
-            if let info = appState.staticInfo {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Claude CLI v\(info.version)")
-                        .font(.system(size: 10))
-                        .foregroundStyle(theme.colors.textTertiary)
-                    if let email = info.email {
-                        Text(email)
-                            .font(.system(size: 10))
-                            .foregroundStyle(theme.colors.textMuted)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .frame(width: 260)
-    }
-}

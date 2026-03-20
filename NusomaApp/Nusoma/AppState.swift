@@ -33,6 +33,11 @@ class AppState {
 
     var pmOpen: Bool = false
 
+    // MARK: - Session History & Settings Panels
+
+    var historyOpen: Bool = false
+    var settingsOpen: Bool = false
+
     // MARK: - Services
 
     let controlPlane: ControlPlane
@@ -123,12 +128,16 @@ class AppState {
             // Clicking active tab toggles expand/collapse
             isExpanded.toggle()
             marketplaceOpen = false
+            historyOpen = false
+            settingsOpen = false
             if isExpanded, let tab = tabs.first(where: { $0.id == tabId }) {
                 tab.hasUnread = false
             }
         } else {
             activeTabId = tabId
             marketplaceOpen = false
+            historyOpen = false
+            settingsOpen = false
             if let tab = tabs.first(where: { $0.id == tabId }) {
                 tab.hasUnread = false
             }
@@ -173,6 +182,8 @@ class AppState {
     func toggleExpanded() {
         isExpanded.toggle()
         marketplaceOpen = false
+        historyOpen = false
+        settingsOpen = false
         if isExpanded, let tab = activeTab {
             tab.hasUnread = false
         }
@@ -185,6 +196,8 @@ class AppState {
         } else {
             isExpanded = false
             marketplaceOpen = true
+            historyOpen = false
+            settingsOpen = false
         }
     }
 

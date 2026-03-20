@@ -1,5 +1,5 @@
 // InputBarView.swift — Text input with send/stop/mic/model buttons
-// Phase 2 — adds draft persistence, slash command trigger, model picker popover
+// Phase 4 — adds voice input via VoiceInputManager
 //
 // Renders inside a glass pill provided by MainView.
 
@@ -8,6 +8,7 @@ import SwiftUI
 struct InputBarView: View {
     @Environment(AppState.self) private var appState
     @Environment(ThemeManager.self) private var theme
+    @Environment(VoiceInputManager.self) private var voiceManager
 
     @State private var input: String = ""
     @State private var showModelPicker: Bool = false
@@ -19,6 +20,7 @@ struct InputBarView: View {
     private var isConnecting: Bool { tab?.status == .connecting }
     private var hasContent: Bool { !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     private var canSend: Bool { tab != nil && !isConnecting && hasContent }
+    private var isRecording: Bool { voiceManager.state == .recording }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -80,17 +82,26 @@ struct InputBarView: View {
                     }
                     .disabled(isBusy)
 
-                    // Mic button (Phase 4)
+                    // Mic button — voice input
                     Button {
-                        // TODO: Voice recording
+                        if isRecording {
+                            voiceManager.stopRecording()
+                        } else {
+                            voiceManager.onTranscript = { text in
+                                input = text
+                            }
+                            voiceManager.startRecording()
+                        }
                     } label: {
-                        Image(systemName: "mic")
+                        Image(systemName: isRecording ? "mic.fill" : "mic")
                             .font(.system(size: 14))
-                            .foregroundStyle(theme.colors.textTertiary)
+                            .foregroundStyle(isRecording ? theme.colors.statusError : theme.colors.textTertiary)
+                            .symbolEffect(.pulse, isActive: isRecording)
                     }
                     .buttonStyle(.plain)
                     .frame(width: 28, height: 28)
                     .disabled(isBusy)
+                    .help(isRecording ? "Stop recording" : "Voice input")
 
                     // Send / Stop button
                     if isBusy {
@@ -126,6 +137,43 @@ struct InputBarView: View {
                 .padding(.bottom, 4)
             }
             .padding(.leading, 12)
+
+            // Voice recording indicator
+            if isRecording {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(theme.colors.statusError)
+                        .frame(width: 6, height: 6)
+                    Text("Listening...")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(theme.colors.statusError)
+                    Spacer()
+                    Button("Cancel") {
+                        voiceManager.cancelRecording()
+                        input = ""
+                    }
+                    .font(.system(size: 10))
+                    .buttonStyle(.plain)
+                    .foregroundStyle(theme.colors.textTertiary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 6)
+                .transition(.opacity)
+            }
+
+            // Voice error
+            if case .error(let message) = voiceManager.state {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 9))
+                    Text(message)
+                        .font(.system(size: 10))
+                        .lineLimit(1)
+                }
+                .foregroundStyle(theme.colors.statusError)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 6)
+            }
 
             // Activity indicator
             if let activity = tab?.currentActivity, !activity.isEmpty {
