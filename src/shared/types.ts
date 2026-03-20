@@ -170,6 +170,8 @@ export interface TabState {
   hasChosenDirectory: boolean
   /** Extra directories accessible via --add-dir (session-preserving) */
   additionalDirs: string[]
+  /** Whether this tab is pinned (persists across restarts) */
+  pinned: boolean
 }
 
 export interface Message {
@@ -359,6 +361,8 @@ export const IPC = {
   WINDOW_SHOWN: 'nusoma:window-shown',
   SET_IGNORE_MOUSE_EVENTS: 'nusoma:set-ignore-mouse-events',
   IS_VISIBLE: 'nusoma:is-visible',
+  MOVE_WINDOW: 'nusoma:move-window',
+  GET_WINDOW_POSITION: 'nusoma:get-window-position',
 
   // Skill provisioning (main → renderer)
   SKILL_STATUS: 'nusoma:skill-status',
