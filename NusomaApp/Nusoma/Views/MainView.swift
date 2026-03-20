@@ -1,16 +1,20 @@
 // MainView.swift — Root view: tab strip + conversation + input pill
-// Ported from src/renderer/App.tsx
+// Phase 2 — adds file picker, drag-and-drop, resize handle, polish
 //
 // Uses macOS 26 Liquid Glass design language throughout.
 // Layout: vertical stack anchored to bottom of transparent panel.
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct MainView: View {
     @Environment(AppState.self) private var appState
     @Environment(ThemeManager.self) private var theme
 
     @State private var contentHeight: CGFloat = 160
+    @State private var conversationHeight: CGFloat = 400
+    @State private var isDraggingResize: Bool = false
+    @State private var isDropTargeted: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -63,28 +67,41 @@ struct MainView: View {
         .onPreferenceChange(ContentHeightKey.self) { height in
             contentHeight = height
         }
+        // Drag-and-drop overlay for files
+        .onDrop(of: [.fileURL, .image], isTargeted: $isDropTargeted) { providers in
+            handleDrop(providers)
+            return true
+        }
+        .overlay {
+            if isDropTargeted {
+                dropOverlay
+            }
+        }
     }
 
     // MARK: - Chat Shell
 
     private var chatShell: some View {
         let isExpanded = appState.isExpanded
-        let contentWidth = theme.expandedUI ? Spacing.expandedContentWidth : Spacing.contentWidth
         let cardWidth: CGFloat = isExpanded
             ? (theme.expandedUI ? 700 : 460)
             : (theme.expandedUI ? 670 : 430)
 
         return VStack(spacing: 0) {
-            // Tab strip (draggable area)
+            // Tab strip
             TabStripView()
 
             // Conversation body — collapses to zero height when not expanded
             if isExpanded {
                 VStack(spacing: 0) {
+                    // Resize handle (top of conversation)
+                    ResizeHandle(height: $conversationHeight, isDragging: $isDraggingResize)
+
                     ConversationView()
+                        .frame(height: conversationHeight)
+
                     StatusBarView()
                 }
-                .frame(maxHeight: theme.expandedUI ? Spacing.expandedMaxHeight : Spacing.conversationMaxHeight)
                 .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .bottom)))
             }
         }
@@ -98,7 +115,7 @@ struct MainView: View {
 
     private var inputRow: some View {
         HStack(spacing: 12) {
-            // Stacked action buttons (attach, screenshot, skills)
+            // Action buttons
             actionButtons
 
             // Input pill
@@ -106,7 +123,7 @@ struct MainView: View {
                 .glassEffect(.regular.interactive)
                 .clipShape(Capsule())
         }
-        .frame(height: 50)
+        .frame(minHeight: 50)
     }
 
     // MARK: - Action Buttons
@@ -115,7 +132,7 @@ struct MainView: View {
         HStack(spacing: 8) {
             // Attach file
             Button {
-                // TODO: NSOpenPanel file picker
+                openFilePicker()
             } label: {
                 Image(systemName: "paperclip")
                     .font(.system(size: 15))
@@ -125,7 +142,7 @@ struct MainView: View {
 
             // Screenshot
             Button {
-                // TODO: Screenshot capture
+                captureScreenshot()
             } label: {
                 Image(systemName: "camera")
                     .font(.system(size: 15))
@@ -143,6 +160,154 @@ struct MainView: View {
             .buttonStyle(GlassCircleButtonStyle())
             .disabled(appState.isRunning)
         }
+    }
+
+    // MARK: - File Picker
+
+    private func openFilePicker() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = true
+        panel.allowedContentTypes = [
+            .image, .text, .sourceCode, .json, .yaml,
+            .plainText, .pdf, .html, .xml,
+        ]
+
+        guard panel.runModal() == .OK else { return }
+
+        let attachments = panel.urls.compactMap { url -> Attachment? in
+            let name = url.lastPathComponent
+            let ext = url.pathExtension.lowercased()
+            let isImage = ["png", "jpg", "jpeg", "gif", "webp", "svg", "heic"].contains(ext)
+
+            return Attachment(
+                type: isImage ? .image : .file,
+                name: name,
+                path: url.path,
+                mimeType: isImage ? "image/\(ext)" : nil,
+                size: (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int)
+            )
+        }
+
+        appState.addAttachments(attachments)
+    }
+
+    // MARK: - Screenshot
+
+    private func captureScreenshot() {
+        // Use screencapture CLI for interactive selection
+        let tempPath = NSTemporaryDirectory() + "nusoma-screenshot-\(UUID().uuidString).png"
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        process.arguments = ["-i", "-s", tempPath] // Interactive selection
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+
+            if FileManager.default.fileExists(atPath: tempPath) {
+                let attachment = Attachment(
+                    type: .image,
+                    name: "screenshot.png",
+                    path: tempPath,
+                    mimeType: "image/png"
+                )
+                appState.addAttachments([attachment])
+            }
+        } catch {
+            // silently ignore — user cancelled
+        }
+    }
+
+    // MARK: - Drag & Drop
+
+    private func handleDrop(_ providers: [NSItemProvider]) {
+        for provider in providers {
+            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { data, _ in
+                guard let data = data as? Data,
+                      let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
+
+                let name = url.lastPathComponent
+                let ext = url.pathExtension.lowercased()
+                let isImage = ["png", "jpg", "jpeg", "gif", "webp", "svg", "heic"].contains(ext)
+
+                let attachment = Attachment(
+                    type: isImage ? .image : .file,
+                    name: name,
+                    path: url.path,
+                    mimeType: isImage ? "image/\(ext)" : nil
+                )
+
+                DispatchQueue.main.async {
+                    appState.addAttachments([attachment])
+                }
+            }
+        }
+    }
+
+    private var dropOverlay: some View {
+        RoundedRectangle(cornerRadius: Spacing.containerRadius)
+            .fill(.ultraThinMaterial)
+            .overlay {
+                VStack(spacing: 8) {
+                    Image(systemName: "arrow.down.doc")
+                        .font(.system(size: 28))
+                    Text("Drop files to attach")
+                        .font(.system(size: 13, weight: .medium))
+                }
+                .foregroundStyle(.secondary)
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: Spacing.containerRadius)
+                    .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 4]))
+                    .foregroundStyle(.secondary.opacity(0.5))
+            )
+            .padding(4)
+            .transition(.opacity)
+    }
+}
+
+// MARK: - Resize Handle
+
+struct ResizeHandle: View {
+    @Binding var height: CGFloat
+    @Binding var isDragging: Bool
+
+    @State private var isHovering = false
+
+    var body: some View {
+        Rectangle()
+            .fill(Color.clear)
+            .frame(height: 8)
+            .contentShape(Rectangle())
+            .overlay {
+                Capsule()
+                    .fill(.secondary.opacity(isHovering || isDragging ? 0.4 : 0.15))
+                    .frame(width: 36, height: 4)
+            }
+            .onHover { hovering in
+                isHovering = hovering
+                if hovering {
+                    NSCursor.resizeUpDown.push()
+                } else {
+                    NSCursor.pop()
+                }
+            }
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        isDragging = true
+                        // Dragging up increases height (y is inverted in screen coords)
+                        let delta = -value.translation.height
+                        let newHeight = height + delta
+                        height = max(200, min(newHeight, 700))
+                    }
+                    .onEnded { _ in
+                        isDragging = false
+                    }
+            )
     }
 }
 

@@ -40,7 +40,9 @@ struct ChatMessage: Identifiable, Sendable {
     var content: String
     var toolName: String?
     var toolInput: String?
+    var toolOutput: String?
     var toolStatus: ToolStatus?
+    var isCollapsed: Bool = false
     let timestamp: Date
 
     init(
@@ -49,6 +51,7 @@ struct ChatMessage: Identifiable, Sendable {
         content: String,
         toolName: String? = nil,
         toolInput: String? = nil,
+        toolOutput: String? = nil,
         toolStatus: ToolStatus? = nil,
         timestamp: Date = Date()
     ) {
@@ -57,6 +60,7 @@ struct ChatMessage: Identifiable, Sendable {
         self.content = content
         self.toolName = toolName
         self.toolInput = toolInput
+        self.toolOutput = toolOutput
         self.toolStatus = toolStatus
         self.timestamp = timestamp
     }
