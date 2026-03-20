@@ -12,6 +12,7 @@ import { extractAbsoluteShellPath, getCliEnv } from './cli-env'
 import { DEFAULT_SHORTCUT_SETTINGS, IPC } from '../shared/types'
 import type { RunOptions, NormalizedEvent, EnrichedError, ShortcutSettings } from '../shared/types'
 import { loadShortcutSettings, registerShortcutSettings, saveShortcutSettings } from './shortcut-settings'
+import { validateUrl, validateSessionId, validateProjectPath, sanitizeAppleScript, verifyBinary } from './security'
 
 app.disableHardwareAcceleration()
 
@@ -36,7 +37,7 @@ const controlPlane = new ControlPlane(INTERACTIVE_PTY)
 // Keep native width fixed to avoid renderer animation vs setBounds race.
 // The UI itself still launches in compact mode; extra width is transparent/click-through.
 const BAR_WIDTH = 1040
-const PILL_HEIGHT = 720  // Fixed native window height — extra room for expanded UI + shadow buffers
+const PILL_HEIGHT = 160  // Start compact — ResizeObserver in renderer dynamically adjusts via IPC
 const PILL_BOTTOM_MARGIN = 24
 
 // ─── Broadcast to renderer ───
@@ -212,11 +213,29 @@ function toggleWindow(source = 'unknown'): void {
 }
 
 // ─── Resize ───
-// Fixed-height mode: ignore renderer resize events to prevent jank.
-// The native window stays at PILL_HEIGHT; all expand/collapse happens inside the renderer.
+// Dynamic: renderer measures content height via ResizeObserver and sends it here.
+// We anchor the bottom edge so the pill stays pinned to the bottom of the screen.
 
-ipcMain.on(IPC.RESIZE_HEIGHT, () => {
-  // No-op — fixed height window, no dynamic resize
+ipcMain.on(IPC.RESIZE_HEIGHT, (_event, height: number) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  if (typeof height !== 'number' || !isFinite(height)) return
+
+  // Cap at screen work area height (minus menu bar, dock, etc.)
+  const cursor = screen.getCursorScreenPoint()
+  const display = screen.getDisplayNearestPoint(cursor)
+  const maxHeight = display.workAreaSize.height - 20
+
+  const safeHeight = Math.max(120, Math.min(Math.round(height), maxHeight))
+  const bounds = mainWindow.getBounds()
+
+  // Anchor bottom edge: adjust y so bottom stays at the same position
+  const dy = bounds.height - safeHeight
+  mainWindow.setBounds({
+    x: bounds.x,
+    y: bounds.y + dy,
+    width: bounds.width,
+    height: safeHeight,
+  })
 })
 
 ipcMain.on(IPC.SET_WINDOW_WIDTH, () => {
@@ -242,6 +261,19 @@ ipcMain.on(IPC.SET_IGNORE_MOUSE_EVENTS, (event, ignore: boolean, options?: { for
   if (win && !win.isDestroyed()) {
     win.setIgnoreMouseEvents(ignore, options || {})
   }
+})
+
+// JS-based window dragging — renderer tracks mouse delta and sends new position
+ipcMain.handle(IPC.GET_WINDOW_POSITION, () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { x: 0, y: 0 }
+  const [x, y] = mainWindow.getPosition()
+  return { x, y }
+})
+
+ipcMain.on(IPC.MOVE_WINDOW, (_event, x: number, y: number) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  if (typeof x !== 'number' || typeof y !== 'number') return
+  mainWindow.setPosition(Math.round(x), Math.round(y))
 })
 
 // ─── IPC Handlers (typed, strict) ───
@@ -434,6 +466,10 @@ ipcMain.handle(IPC.LIST_SESSIONS, async (_e, projectPath?: string) => {
 ipcMain.handle(IPC.LOAD_SESSION, async (_e, arg: { sessionId: string; projectPath?: string } | string) => {
   const sessionId = typeof arg === 'string' ? arg : arg.sessionId
   const projectPath = typeof arg === 'string' ? undefined : arg.projectPath
+  if (!validateSessionId(sessionId)) {
+    log(`LOAD_SESSION: rejected invalid session ID: ${sessionId}`)
+    return []
+  }
   log(`IPC LOAD_SESSION ${sessionId}${projectPath ? ` (path=${projectPath})` : ''}`)
   try {
     const cwd = projectPath || process.cwd()
@@ -504,8 +540,7 @@ ipcMain.handle(IPC.SELECT_DIRECTORY, async () => {
 
 ipcMain.handle(IPC.OPEN_EXTERNAL, async (_event, url: string) => {
   try {
-    // Only allow http(s) links from markdown content.
-    if (!/^https?:\/\//i.test(url)) return false
+    if (!validateUrl(url)) return false
     await shell.openExternal(url)
     return true
   } catch {
@@ -661,8 +696,10 @@ ipcMain.handle(IPC.TRANSCRIBE_AUDIO, async (_event, audioBase64: string) => {
     const buf = Buffer.from(audioBase64, 'base64')
     writeFileSync(tmpWav, buf)
 
-    // Find whisper-cli (whisper-cpp homebrew) or whisper (python)
+    // Find whisperkit-cli (recommended), whisper-cli (whisper-cpp), or whisper (python)
     const candidates = [
+      '/opt/homebrew/bin/whisperkit-cli',
+      '/usr/local/bin/whisperkit-cli',
       '/opt/homebrew/bin/whisper-cli',
       '/usr/local/bin/whisper-cli',
       '/opt/homebrew/bin/whisper',
@@ -678,6 +715,12 @@ ipcMain.handle(IPC.TRANSCRIBE_AUDIO, async (_event, audioBase64: string) => {
     if (!whisperBin) {
       // Use getCliEnv() and strip escape sequences from shell output
       try {
+        const raw = execSync('/bin/zsh -lc "whence -p whisperkit-cli"', { encoding: 'utf-8', env: getCliEnv(), timeout: 3000 })
+        whisperBin = extractAbsoluteShellPath(raw) ?? ''
+      } catch {}
+    }
+    if (!whisperBin) {
+      try {
         const raw = execSync('/bin/zsh -lc "whence -p whisper-cli"', { encoding: 'utf-8', env: getCliEnv(), timeout: 3000 })
         whisperBin = extractAbsoluteShellPath(raw) ?? ''
       } catch {}
@@ -691,37 +734,49 @@ ipcMain.handle(IPC.TRANSCRIBE_AUDIO, async (_event, audioBase64: string) => {
 
     if (!whisperBin) {
       return {
-        error: 'Whisper not found. Install with: brew install whisper-cli',
+        error: 'Whisper not found. Install with: brew install whisperkit-cli',
         transcript: null,
       }
     }
 
-    const isWhisperCpp = whisperBin.includes('whisper-cli')
+    const isWhisperKit = whisperBin.includes('whisperkit-cli')
+    const isWhisperCpp = !isWhisperKit && whisperBin.includes('whisper-cli')
 
-    // Find model file — prefer multilingual (auto-detect language) over .en (English-only)
-    const modelCandidates = [
-      join(homedir(), '.local/share/whisper/ggml-base.bin'),
-      join(homedir(), '.local/share/whisper/ggml-tiny.bin'),
-      '/opt/homebrew/share/whisper-cpp/models/ggml-base.bin',
-      '/opt/homebrew/share/whisper-cpp/models/ggml-tiny.bin',
-      // Fall back to English-only models if multilingual not available
-      join(homedir(), '.local/share/whisper/ggml-base.en.bin'),
-      join(homedir(), '.local/share/whisper/ggml-tiny.en.bin'),
-      '/opt/homebrew/share/whisper-cpp/models/ggml-base.en.bin',
-      '/opt/homebrew/share/whisper-cpp/models/ggml-tiny.en.bin',
-    ]
-
+    // whisperkit-cli manages its own models — only search for ggml models if using whisper-cpp
     let modelPath = ''
-    for (const m of modelCandidates) {
-      if (existsSync(m)) { modelPath = m; break }
+    let isEnglishOnly = false
+    if (!isWhisperKit) {
+      // Find model file — prefer multilingual (auto-detect language) over .en (English-only)
+      const modelCandidates = [
+        join(homedir(), '.local/share/whisper/ggml-base.bin'),
+        join(homedir(), '.local/share/whisper/ggml-tiny.bin'),
+        '/opt/homebrew/share/whisper-cpp/models/ggml-base.bin',
+        '/opt/homebrew/share/whisper-cpp/models/ggml-tiny.bin',
+        // Fall back to English-only models if multilingual not available
+        join(homedir(), '.local/share/whisper/ggml-base.en.bin'),
+        join(homedir(), '.local/share/whisper/ggml-tiny.en.bin'),
+        '/opt/homebrew/share/whisper-cpp/models/ggml-base.en.bin',
+        '/opt/homebrew/share/whisper-cpp/models/ggml-tiny.en.bin',
+      ]
+
+      for (const m of modelCandidates) {
+        if (existsSync(m)) { modelPath = m; break }
+      }
+
+      // Detect if using an English-only model (.en suffix) — force English if so
+      isEnglishOnly = modelPath.includes('.en.')
     }
 
-    // Detect if using an English-only model (.en suffix) — force English if so
-    const isEnglishOnly = modelPath.includes('.en.')
-    log(`Transcribing with: ${whisperBin} (model: ${modelPath || 'default'}, lang: ${isEnglishOnly ? 'en' : 'auto'})`)
+    log(`Transcribing with: ${whisperBin} (${isWhisperKit ? 'whisperkit' : `model: ${modelPath || 'default'}, lang: ${isEnglishOnly ? 'en' : 'auto'}`})`)
 
     let output: string
-    if (isWhisperCpp) {
+    if (isWhisperKit) {
+      // whisperkit-cli: auto-manages CoreML models, 60s timeout for first-run model download
+      output = execSync(
+        `"${whisperBin}" transcribe --audio-path "${tmpWav}" --model-size tiny`,
+        { encoding: 'utf-8', timeout: 60000 }
+      )
+    } else if (isWhisperCpp) {
       // whisper-cpp: whisper-cli -m model -f file --no-timestamps
       if (!modelPath) {
         return {
@@ -818,8 +873,17 @@ ipcMain.handle(IPC.OPEN_IN_TERMINAL, (_event, arg: string | null | { sessionId?:
     projectPath = arg.projectPath && arg.projectPath !== '~' ? arg.projectPath : process.cwd()
   }
 
-  // Escape for AppleScript: double quotes → backslash-escaped, backslashes doubled
-  const projectDir = projectPath.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+  // Validate inputs
+  if (sessionId && !validateSessionId(sessionId)) {
+    log(`openInTerminal: rejected invalid session ID: ${sessionId}`)
+    return false
+  }
+  if (!validateProjectPath(projectPath)) {
+    log(`openInTerminal: rejected invalid project path: ${projectPath}`)
+    return false
+  }
+
+  const projectDir = sanitizeAppleScript(projectPath)
   let cmd: string
   if (sessionId) {
     cmd = `cd \\"${projectDir}\\" && ${claudeBin} --resume ${sessionId}`

@@ -6,6 +6,7 @@ import { homedir } from 'os'
 import type { CatalogPlugin } from '../../shared/types'
 import { log as _log } from '../logger'
 import { getCliEnv } from '../cli-env'
+import { validatePluginName, validateRepoFormat } from '../security'
 
 function log(msg: string): void {
   _log('marketplace', msg)
@@ -247,6 +248,16 @@ export async function installPlugin(
   sourcePath?: string,
   isSkillMd?: boolean
 ): Promise<{ ok: boolean; error?: string }> {
+  // Validate inputs to prevent path traversal
+  if (!validatePluginName(pluginName)) {
+    log(`installPlugin: rejected unsafe plugin name: ${pluginName}`)
+    return { ok: false, error: 'Invalid plugin name' }
+  }
+  if (!validateRepoFormat(repo)) {
+    log(`installPlugin: rejected unsafe repo: ${repo}`)
+    return { ok: false, error: 'Invalid repository name' }
+  }
+
   try {
     if (isSkillMd !== false) {
       // Direct SKILL.md install
@@ -294,6 +305,12 @@ export async function installPlugin(
 export async function uninstallPlugin(
   pluginName: string
 ): Promise<{ ok: boolean; error?: string }> {
+  // Validate plugin name to prevent path traversal (critical: rm -rf follows)
+  if (!validatePluginName(pluginName)) {
+    log(`uninstallPlugin: rejected unsafe plugin name: ${pluginName}`)
+    return { ok: false, error: 'Invalid plugin name' }
+  }
+
   try {
     const skillsDir = join(homedir(), '.claude', 'skills', pluginName)
     await rm(skillsDir, { recursive: true, force: true })
