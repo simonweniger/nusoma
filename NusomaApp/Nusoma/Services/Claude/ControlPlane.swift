@@ -1,12 +1,13 @@
 // ControlPlane.swift — Tab/session registry, request queue, dispatch
-// Ported from src/main/claude/control-plane.ts
+// Phase 3 — Integrates PermissionHookServer for real permission handling
 //
 // Single backend authority for:
 // 1. Tab/session registry
 // 2. Request queue + backpressure
 // 3. RequestId idempotency
 // 4. Run lifecycle state transitions
-// 5. Health reporting
+// 5. Permission hook server lifecycle + routing
+// 6. Health reporting
 
 import Foundation
 
@@ -40,6 +41,15 @@ class ControlPlane {
     private let runManager = RunManager()
     private var permissionMode: PermissionMode = .ask
 
+    // Permission hook server
+    private let permissionServer = PermissionHookServer()
+    private var hookServerReady: Task<UInt16?, Never>?
+    private var hookServerPort: UInt16?
+    private var hookEventTask: Task<Void, Never>?
+
+    // Per-run token tracking: requestId → runToken
+    private var runTokens: [String: String] = [:]
+
     // Active run tracking
     private var activeStreams: [String: Task<Void, Never>] = [:]
     private var requestToTab: [String: String] = [:]
@@ -61,6 +71,26 @@ class ControlPlane {
         let (stream, continuation) = AsyncStream<ControlPlaneEvent>.makeStream()
         self.events = stream
         self.eventContinuation = continuation
+
+        // Start the permission hook server
+        hookServerReady = Task {
+            do {
+                let port = try await permissionServer.start()
+                print("[ControlPlane] Permission hook server ready on port \(port)")
+                return port
+            } catch {
+                print("[ControlPlane] Failed to start permission hook server: \(error.localizedDescription)")
+                return nil
+            }
+        }
+
+        // Wire permission server events → normalized events for UI
+        hookEventTask = Task { [weak self] in
+            guard let self else { return }
+            for await hookEvent in await self.permissionServer.events {
+                self.handleHookPermissionEvent(hookEvent)
+            }
+        }
     }
 
     deinit {
@@ -69,6 +99,7 @@ class ControlPlane {
 
     // MARK: - Tab Lifecycle
 
+    @discardableResult
     func createTab(id: String? = nil) -> String {
         let tabId = id ?? UUID().uuidString
         let entry = TabRegistryEntry(tabId: tabId)
@@ -82,6 +113,12 @@ class ControlPlane {
         // Cancel active run
         if let requestId = tab.activeRequestId {
             Task { await runManager.cancel(requestId) }
+
+            // Unregister run token (denies pending permissions)
+            if let runToken = runTokens.removeValue(forKey: requestId) {
+                Task { await permissionServer.unregisterRun(runToken) }
+            }
+
             requestToTab.removeValue(forKey: requestId)
             activeStreams[requestId]?.cancel()
             activeStreams.removeValue(forKey: requestId)
@@ -99,6 +136,9 @@ class ControlPlane {
 
     func setPermissionMode(_ mode: PermissionMode) {
         permissionMode = mode
+        Task {
+            await permissionServer.setPermissionMode(mode.rawValue)
+        }
     }
 
     // MARK: - Submit Prompt
@@ -135,6 +175,7 @@ class ControlPlane {
 
     // MARK: - Cancel
 
+    @discardableResult
     func cancelTab(_ tabId: String) -> Bool {
         guard let tab = tabs[tabId], let requestId = tab.activeRequestId else { return false }
         Task { await runManager.cancel(requestId) }
@@ -144,8 +185,16 @@ class ControlPlane {
     // MARK: - Permission Response
 
     func respondToPermission(tabId: String, questionId: String, optionId: String) {
-        // TODO: Route to permission server when implemented
-        // For now, this is a placeholder
+        Task {
+            let success = await permissionServer.respondToPermission(
+                questionId: questionId,
+                decision: optionId,
+                reason: "User responded via UI"
+            )
+            if !success {
+                print("[ControlPlane] Permission response failed for \(questionId) — request may have timed out")
+            }
+        }
     }
 
     // MARK: - Health
@@ -192,8 +241,28 @@ class ControlPlane {
         // Track request → tab mapping
         requestToTab[requestId] = tabId
 
+        // Wait for hook server to be ready before dispatching
+        if let serverTask = hookServerReady {
+            let port = await serverTask.value
+            hookServerPort = port
+        }
+
+        // Register this run with the permission server and generate settings file
+        if hookServerPort != nil {
+            let runToken = await permissionServer.registerRun(
+                tabId: tabId,
+                requestId: requestId,
+                sessionId: tab.claudeSessionId
+            )
+            runTokens[requestId] = runToken
+
+            // Generate per-run settings file with hook URL
+            let settingsPath = await permissionServer.generateSettingsFile(runToken: runToken)
+            opts.hookSettingsPath = settingsPath
+        }
+
         // Start the run
-        let (handle, eventStream) = try await runManager.startRun(
+        let (_, eventStream) = try await runManager.startRun(
             requestId: requestId,
             options: opts
         )
@@ -209,6 +278,99 @@ class ControlPlane {
         }
         activeStreams[requestId] = streamTask
     }
+
+    // MARK: - Hook Permission Event Handling
+
+    private func handleHookPermissionEvent(_ hookEvent: PermissionHookEvent) {
+        let tabId = hookEvent.tabId
+
+        // Verify tab still exists
+        guard tabs[tabId] != nil else {
+            // Tab closed — auto-deny
+            Task {
+                await permissionServer.respondToPermission(
+                    questionId: hookEvent.questionId,
+                    decision: "deny",
+                    reason: "Tab closed"
+                )
+            }
+            return
+        }
+
+        // Auto mode: immediately allow without showing UI
+        if permissionMode == .auto {
+            Task {
+                await permissionServer.respondToPermission(
+                    questionId: hookEvent.questionId,
+                    decision: "allow",
+                    reason: "Auto mode"
+                )
+            }
+            return
+        }
+
+        // Mask sensitive fields before sending to UI
+        let safeInput = maskSensitiveFields(hookEvent.toolRequest.toolInput)
+        let safeInputStrings = safeInput.mapValues { "\($0)" }
+
+        // Forward as NormalizedEvent to the UI
+        let permEvent = NormalizedEvent.permissionRequest(
+            questionId: hookEvent.questionId,
+            toolName: hookEvent.toolRequest.toolName,
+            toolDescription: describeToolAction(hookEvent.toolRequest),
+            toolInput: safeInputStrings,
+            options: hookEvent.options
+        )
+
+        eventContinuation.yield(.normalizedEvent(tabId: tabId, event: permEvent))
+    }
+
+    /// Build a human-readable description of what the tool is about to do.
+    private func describeToolAction(_ request: HookToolRequest) -> String {
+        let toolName = request.toolName
+        let input = request.toolInput
+
+        switch toolName {
+        case "Bash":
+            if let command = input["command"] as? String {
+                let preview = command.count > 100 ? String(command.prefix(97)) + "..." : command
+                return "Run command: \(preview)"
+            }
+            return "Run a shell command"
+
+        case "Edit", "MultiEdit":
+            if let path = input["file_path"] as? String {
+                return "Edit file: \(abbreviatePath(path))"
+            }
+            return "Edit a file"
+
+        case "Write":
+            if let path = input["file_path"] as? String {
+                return "Write file: \(abbreviatePath(path))"
+            }
+            return "Write a new file"
+
+        default:
+            if toolName.hasPrefix("mcp__") {
+                // MCP tool: extract server and tool name
+                let parts = toolName.split(separator: "__")
+                if parts.count >= 3 {
+                    return "MCP tool: \(parts[2]) (server: \(parts[1]))"
+                }
+            }
+            return "Use tool: \(toolName)"
+        }
+    }
+
+    private func abbreviatePath(_ path: String) -> String {
+        let components = path.split(separator: "/")
+        if components.count > 3 {
+            return ".../" + components.suffix(2).joined(separator: "/")
+        }
+        return path
+    }
+
+    // MARK: - Run Event Handling
 
     private func handleRunEvent(requestId: String, event: NormalizedEvent) {
         guard let tabId = requestToTab[requestId] else { return }
@@ -229,6 +391,11 @@ class ControlPlane {
 
     private func handleRunCompleted(requestId: String) {
         guard let tabId = requestToTab[requestId] else { return }
+
+        // Clean up per-run token
+        if let runToken = runTokens.removeValue(forKey: requestId) {
+            Task { await permissionServer.unregisterRun(runToken) }
+        }
 
         tabs[tabId]?.activeRequestId = nil
         requestToTab.removeValue(forKey: requestId)
@@ -264,11 +431,23 @@ class ControlPlane {
     // MARK: - Shutdown
 
     func shutdown() {
+        // Cancel all active runs
         for (requestId, task) in activeStreams {
             task.cancel()
             Task { await runManager.cancel(requestId) }
         }
         activeStreams.removeAll()
+
+        // Unregister all run tokens
+        for (requestId, runToken) in runTokens {
+            Task { await permissionServer.unregisterRun(runToken) }
+        }
+        runTokens.removeAll()
+
+        // Stop hook server
+        Task { await permissionServer.stop() }
+        hookEventTask?.cancel()
+
         tabs.removeAll()
         eventContinuation.finish()
     }
