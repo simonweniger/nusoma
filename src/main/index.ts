@@ -12,6 +12,7 @@ import { extractAbsoluteShellPath, getCliEnv } from './cli-env'
 import { DEFAULT_SHORTCUT_SETTINGS, IPC } from '../shared/types'
 import type { RunOptions, NormalizedEvent, EnrichedError, ShortcutSettings } from '../shared/types'
 import { loadShortcutSettings, registerShortcutSettings, saveShortcutSettings } from './shortcut-settings'
+import { validateUrl, validateSessionId, validateProjectPath, sanitizeAppleScript, verifyBinary } from './security'
 
 const DEBUG_MODE = process.env.CLUI_DEBUG === '1'
 const SPACES_DEBUG = DEBUG_MODE || process.env.CLUI_SPACES_DEBUG === '1'
@@ -34,7 +35,7 @@ const controlPlane = new ControlPlane(INTERACTIVE_PTY)
 // Keep native width fixed to avoid renderer animation vs setBounds race.
 // The UI itself still launches in compact mode; extra width is transparent/click-through.
 const BAR_WIDTH = 1040
-const PILL_HEIGHT = 720  // Fixed native window height — extra room for expanded UI + shadow buffers
+const PILL_HEIGHT = 160  // Start compact — ResizeObserver in renderer dynamically adjusts via IPC
 const PILL_BOTTOM_MARGIN = 24
 
 // ─── Broadcast to renderer ───
@@ -210,11 +211,29 @@ function toggleWindow(source = 'unknown'): void {
 }
 
 // ─── Resize ───
-// Fixed-height mode: ignore renderer resize events to prevent jank.
-// The native window stays at PILL_HEIGHT; all expand/collapse happens inside the renderer.
+// Dynamic: renderer measures content height via ResizeObserver and sends it here.
+// We anchor the bottom edge so the pill stays pinned to the bottom of the screen.
 
-ipcMain.on(IPC.RESIZE_HEIGHT, () => {
-  // No-op — fixed height window, no dynamic resize
+ipcMain.on(IPC.RESIZE_HEIGHT, (_event, height: number) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  if (typeof height !== 'number' || !isFinite(height)) return
+
+  // Cap at screen work area height (minus menu bar, dock, etc.)
+  const cursor = screen.getCursorScreenPoint()
+  const display = screen.getDisplayNearestPoint(cursor)
+  const maxHeight = display.workAreaSize.height - 20
+
+  const safeHeight = Math.max(120, Math.min(Math.round(height), maxHeight))
+  const bounds = mainWindow.getBounds()
+
+  // Anchor bottom edge: adjust y so bottom stays at the same position
+  const dy = bounds.height - safeHeight
+  mainWindow.setBounds({
+    x: bounds.x,
+    y: bounds.y + dy,
+    width: bounds.width,
+    height: safeHeight,
+  })
 })
 
 ipcMain.on(IPC.SET_WINDOW_WIDTH, () => {
@@ -240,6 +259,19 @@ ipcMain.on(IPC.SET_IGNORE_MOUSE_EVENTS, (event, ignore: boolean, options?: { for
   if (win && !win.isDestroyed()) {
     win.setIgnoreMouseEvents(ignore, options || {})
   }
+})
+
+// JS-based window dragging — renderer tracks mouse delta and sends new position
+ipcMain.handle(IPC.GET_WINDOW_POSITION, () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { x: 0, y: 0 }
+  const [x, y] = mainWindow.getPosition()
+  return { x, y }
+})
+
+ipcMain.on(IPC.MOVE_WINDOW, (_event, x: number, y: number) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  if (typeof x !== 'number' || typeof y !== 'number') return
+  mainWindow.setPosition(Math.round(x), Math.round(y))
 })
 
 // ─── IPC Handlers (typed, strict) ───
@@ -432,6 +464,10 @@ ipcMain.handle(IPC.LIST_SESSIONS, async (_e, projectPath?: string) => {
 ipcMain.handle(IPC.LOAD_SESSION, async (_e, arg: { sessionId: string; projectPath?: string } | string) => {
   const sessionId = typeof arg === 'string' ? arg : arg.sessionId
   const projectPath = typeof arg === 'string' ? undefined : arg.projectPath
+  if (!validateSessionId(sessionId)) {
+    log(`LOAD_SESSION: rejected invalid session ID: ${sessionId}`)
+    return []
+  }
   log(`IPC LOAD_SESSION ${sessionId}${projectPath ? ` (path=${projectPath})` : ''}`)
   try {
     const cwd = projectPath || process.cwd()
@@ -502,8 +538,7 @@ ipcMain.handle(IPC.SELECT_DIRECTORY, async () => {
 
 ipcMain.handle(IPC.OPEN_EXTERNAL, async (_event, url: string) => {
   try {
-    // Only allow http(s) links from markdown content.
-    if (!/^https?:\/\//i.test(url)) return false
+    if (!validateUrl(url)) return false
     await shell.openExternal(url)
     return true
   } catch {
@@ -836,8 +871,17 @@ ipcMain.handle(IPC.OPEN_IN_TERMINAL, (_event, arg: string | null | { sessionId?:
     projectPath = arg.projectPath && arg.projectPath !== '~' ? arg.projectPath : process.cwd()
   }
 
-  // Escape for AppleScript: double quotes → backslash-escaped, backslashes doubled
-  const projectDir = projectPath.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+  // Validate inputs
+  if (sessionId && !validateSessionId(sessionId)) {
+    log(`openInTerminal: rejected invalid session ID: ${sessionId}`)
+    return false
+  }
+  if (!validateProjectPath(projectPath)) {
+    log(`openInTerminal: rejected invalid project path: ${projectPath}`)
+    return false
+  }
+
+  const projectDir = sanitizeAppleScript(projectPath)
   let cmd: string
   if (sessionId) {
     cmd = `cd \\"${projectDir}\\" && ${claudeBin} --resume ${sessionId}`

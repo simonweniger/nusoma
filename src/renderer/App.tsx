@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react'
+import React, { useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Paperclip, Camera, HeadCircuit } from '@phosphor-icons/react'
 import { TabStrip } from './components/TabStrip'
@@ -8,8 +8,10 @@ import { StatusBar } from './components/StatusBar'
 import { MarketplacePanel } from './components/MarketplacePanel'
 import { PMPanel } from './components/pm/PMPanel'
 import { PopoverLayerProvider } from './components/PopoverLayer'
+import DragHandle from './components/DragHandle'
 import { useClaudeEvents } from './hooks/useClaudeEvents'
 import { useHealthReconciliation } from './hooks/useHealthReconciliation'
+import { useContentResize } from './hooks/useContentResize'
 import { useSessionStore } from './stores/sessionStore'
 import { usePmStore } from './stores/pmStore'
 import { useColors, useThemeStore, spacing } from './theme'
@@ -106,6 +108,10 @@ export default function App() {
   const cardCollapsedMargin = expandedUI ? 15 : 15
   const bodyMaxHeight = expandedUI ? 520 : 400
 
+  // Dynamic window resize: measure the root content wrapper and sync to native window
+  const contentRef = useRef<HTMLDivElement>(null)
+  useContentResize(contentRef)
+
   const handleScreenshot = useCallback(async () => {
     const result = await window.nusoma.takeScreenshot()
     if (!result) return
@@ -120,7 +126,7 @@ export default function App() {
 
   return (
     <PopoverLayerProvider>
-      <div className="flex flex-col justify-end h-full" style={{ background: 'transparent' }}>
+      <div ref={contentRef} className="flex flex-col justify-end h-full" style={{ background: 'transparent' }}>
 
         {/* ─── 460px content column, centered. Circles overflow left. ─── */}
         <div style={{ width: contentWidth, position: 'relative', margin: '0 auto', transition: 'width 0.26s cubic-bezier(0.4, 0, 0.1, 1)' }}>
@@ -199,7 +205,7 @@ export default function App() {
           */}
           <motion.div
             data-nusoma-ui
-            className="overflow-hidden flex flex-col drag-region"
+            className="overflow-hidden flex flex-col"
             animate={{
               width: isExpanded ? cardExpandedWidth : cardCollapsedWidth,
               marginBottom: isExpanded ? 10 : -14,
@@ -218,10 +224,10 @@ export default function App() {
               zIndex: isExpanded ? 20 : 10,
             }}
           >
-            {/* Tab strip — always mounted */}
-            <div className="no-drag">
+            {/* Tab strip — JS-based drag handle replaces CSS -webkit-app-region: drag */}
+            <DragHandle>
               <TabStrip />
-            </div>
+            </DragHandle>
 
             {/* Body — chat history only; the marketplace is a separate overlay above */}
             <motion.div

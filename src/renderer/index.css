@@ -196,10 +196,11 @@ input::placeholder {
 .btn-stack:hover .stack-btn-2 { right: 56px; }
 .btn-stack:hover .stack-btn-3 { right: 112px; }
 
-/* ─── Drag region for frameless window ─── */
-.drag-region {
-  -webkit-app-region: drag;
-}
+/* ─── Window drag ───
+ * JS-based dragging via DragHandle component replaces CSS -webkit-app-region: drag
+ * which conflicted with setIgnoreMouseEvents click-through toggle.
+ * The .no-drag class is kept as a no-op for backward compatibility with existing markup.
+ */
 .no-drag {
   -webkit-app-region: no-drag;
 }
