@@ -41,6 +41,7 @@ class AppState {
     // MARK: - Services
 
     let controlPlane: ControlPlane
+    let marketplaceService: MarketplaceService
     private(set) var eventTask: Task<Void, Never>?
 
     // MARK: - Computed
@@ -62,6 +63,7 @@ class AppState {
 
     init() {
         self.controlPlane = ControlPlane()
+        self.marketplaceService = MarketplaceService()
         let initialTab = TabState()
         self.tabs = [initialTab]
         self.activeTabId = initialTab.id
@@ -83,6 +85,16 @@ class AppState {
 
         // Start listening for ControlPlane events
         startEventStream()
+
+        // Ensure manifest skills are installed (non-blocking)
+        Task.detached {
+            await SkillInstaller.ensureSkills { status in
+                // Log only — UI not needed for startup provisioning
+                if status.state == .failed, let error = status.error {
+                    print("[SkillInstaller] Failed to install \(status.name): \(error)")
+                }
+            }
+        }
 
         // Restore pinned tabs
         let pinnedData = loadPinnedTabs()
@@ -196,8 +208,13 @@ class AppState {
         } else {
             isExpanded = false
             marketplaceOpen = true
+            pmOpen = false
             historyOpen = false
             settingsOpen = false
+            // Load marketplace data on first open
+            if marketplaceCatalog.isEmpty && !marketplaceLoading {
+                loadMarketplace()
+            }
         }
     }
 
@@ -339,6 +356,76 @@ class AppState {
     func setPermissionMode(_ mode: PermissionMode) {
         permissionMode = mode
         controlPlane.setPermissionMode(mode)
+    }
+
+    // MARK: - Project Management
+
+    @MainActor
+    func togglePM() {
+        if pmOpen {
+            pmOpen = false
+        } else {
+            isExpanded = false
+            pmOpen = true
+            marketplaceOpen = false
+            historyOpen = false
+            settingsOpen = false
+        }
+    }
+
+    // MARK: - Marketplace Actions
+
+    @MainActor
+    func loadMarketplace(forceRefresh: Bool = false) {
+        marketplaceLoading = true
+        marketplaceError = nil
+
+        Task {
+            let (plugins, error) = await marketplaceService.fetchCatalog(forceRefresh: forceRefresh)
+            marketplaceCatalog = plugins
+            marketplaceError = error
+            marketplaceLoading = false
+
+            // Refresh installed state
+            let installed = marketplaceService.listInstalled()
+            marketplaceInstalledNames = installed
+
+            // Update plugin states
+            for plugin in plugins {
+                if installed.contains(plugin.installName) || installed.contains(plugin.id) {
+                    marketplacePluginStates[plugin.id] = .installed
+                } else if marketplacePluginStates[plugin.id] == nil {
+                    marketplacePluginStates[plugin.id] = .notInstalled
+                }
+            }
+        }
+    }
+
+    @MainActor
+    func installMarketplacePlugin(_ plugin: CatalogPlugin) {
+        marketplacePluginStates[plugin.id] = .installing
+
+        Task {
+            let (ok, error) = await marketplaceService.installPlugin(plugin)
+            if ok {
+                marketplacePluginStates[plugin.id] = .installed
+                marketplaceInstalledNames.append(plugin.installName)
+            } else {
+                marketplacePluginStates[plugin.id] = .failed
+                print("[Marketplace] Install failed: \(error ?? "unknown")")
+            }
+        }
+    }
+
+    @MainActor
+    func uninstallMarketplacePlugin(_ plugin: CatalogPlugin) {
+        Task {
+            let (ok, _) = await marketplaceService.uninstallPlugin(plugin)
+            if ok {
+                marketplacePluginStates[plugin.id] = .notInstalled
+                marketplaceInstalledNames.removeAll { $0 == plugin.installName }
+            }
+        }
     }
 
     // MARK: - Event Handling

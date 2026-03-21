@@ -298,54 +298,138 @@ struct ModelPickerPopover: View {
 
 // MARK: - Slash Command Menu
 
+struct SlashCommandItem: Identifiable {
+    let id: String
+    let command: String
+    let description: String
+    let icon: String // SF Symbol name
+
+    init(command: String, description: String, icon: String = "terminal") {
+        self.id = command
+        self.command = command
+        self.description = description
+        self.icon = icon
+    }
+}
+
+let builtInSlashCommands: [SlashCommandItem] = [
+    SlashCommandItem(command: "/clear", description: "Clear conversation history", icon: "trash"),
+    SlashCommandItem(command: "/compact", description: "Compact conversation into summary", icon: "arrow.down.right.and.arrow.up.left"),
+    SlashCommandItem(command: "/cost", description: "Show token usage and cost", icon: "dollarsign.circle"),
+    SlashCommandItem(command: "/model", description: "Show current model info", icon: "cpu"),
+    SlashCommandItem(command: "/mcp", description: "Show MCP server status", icon: "server.rack"),
+    SlashCommandItem(command: "/skills", description: "Show available skills", icon: "sparkles"),
+    SlashCommandItem(command: "/help", description: "Show available commands", icon: "questionmark.circle"),
+    SlashCommandItem(command: "/bug", description: "Report a bug to Claude", icon: "ladybug"),
+    SlashCommandItem(command: "/review", description: "Review recent changes", icon: "doc.text.magnifyingglass"),
+    SlashCommandItem(command: "/test", description: "Run project tests", icon: "checkmark.diamond"),
+]
+
 struct SlashCommandMenu: View {
+    @Environment(AppState.self) private var appState
     @Environment(ThemeManager.self) private var theme
     @Binding var input: String
     @Binding var isPresented: Bool
 
-    private let commands = [
-        ("clear", "Clear conversation"),
-        ("compact", "Compact conversation into summary"),
-        ("help", "Show available commands"),
-        ("bug", "Report a bug to Claude"),
-        ("review", "Review recent changes"),
-        ("test", "Run project tests"),
-    ]
+    @State private var selectedIndex: Int = 0
 
-    var body: some View {
-        let query = String(input.dropFirst()).lowercased() // Drop the "/"
-        let filtered = query.isEmpty
-            ? commands
-            : commands.filter { $0.0.hasPrefix(query) || $0.1.lowercased().contains(query) }
-
-        VStack(alignment: .leading, spacing: 1) {
-            ForEach(filtered, id: \.0) { cmd, desc in
-                Button {
-                    input = "/\(cmd) "
-                    isPresented = false
-                } label: {
-                    HStack(spacing: 8) {
-                        Text("/\(cmd)")
-                            .font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .foregroundStyle(theme.colors.accent)
-                        Text(desc)
-                            .font(.system(size: 11))
-                            .foregroundStyle(theme.colors.textTertiary)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .contentShape(Rectangle())
+    private var allCommands: [SlashCommandItem] {
+        var cmds = builtInSlashCommands
+        // Add dynamic skill commands from session metadata
+        if let skills = appState.activeTab?.sessionSkills {
+            for skill in skills {
+                let cmd = "/\(skill)"
+                if !cmds.contains(where: { $0.command == cmd }) {
+                    cmds.append(SlashCommandItem(command: cmd, description: "Run \(skill) skill", icon: "sparkle"))
                 }
-                .buttonStyle(.plain)
             }
         }
-        .background(theme.colors.codeBg)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(theme.colors.containerBorder.opacity(0.5), lineWidth: 0.5)
-        )
+        return cmds
+    }
+
+    private var filteredCommands: [SlashCommandItem] {
+        let query = String(input.dropFirst()).lowercased()
+        if query.isEmpty { return allCommands }
+        return allCommands.filter {
+            $0.command.lowercased().hasPrefix("/\(query)") ||
+            $0.description.lowercased().contains(query)
+        }
+    }
+
+    var body: some View {
+        if !filteredCommands.isEmpty {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 1) {
+                        ForEach(Array(filteredCommands.enumerated()), id: \.element.id) { index, cmd in
+                            Button {
+                                selectCommand(cmd)
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: cmd.icon)
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(index == selectedIndex ? theme.colors.accent : theme.colors.textTertiary)
+                                        .frame(width: 20, height: 20)
+                                        .background(index == selectedIndex ? theme.colors.accentSoft : theme.colors.codeBg)
+                                        .clipShape(RoundedRectangle(cornerRadius: 5))
+
+                                    Text(cmd.command)
+                                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                        .foregroundStyle(index == selectedIndex ? theme.colors.accent : theme.colors.textPrimary)
+
+                                    Text(cmd.description)
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(theme.colors.textTertiary)
+
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 5)
+                                .background(index == selectedIndex ? theme.colors.accentLight : Color.clear)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .id(cmd.id)
+                        }
+                    }
+                }
+                .frame(maxHeight: 220)
+                .background(theme.colors.codeBg)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(theme.colors.containerBorder.opacity(0.5), lineWidth: 0.5)
+                )
+                .onKeyPress(.upArrow) {
+                    selectedIndex = max(0, selectedIndex - 1)
+                    proxy.scrollTo(filteredCommands[selectedIndex].id, anchor: .center)
+                    return .handled
+                }
+                .onKeyPress(.downArrow) {
+                    selectedIndex = min(filteredCommands.count - 1, selectedIndex + 1)
+                    proxy.scrollTo(filteredCommands[selectedIndex].id, anchor: .center)
+                    return .handled
+                }
+                .onKeyPress(.tab) {
+                    if !filteredCommands.isEmpty {
+                        selectCommand(filteredCommands[selectedIndex])
+                    }
+                    return .handled
+                }
+                .onKeyPress(.escape) {
+                    isPresented = false
+                    return .handled
+                }
+                .onChange(of: input) {
+                    selectedIndex = 0
+                }
+            }
+        }
+    }
+
+    private func selectCommand(_ cmd: SlashCommandItem) {
+        input = "\(cmd.command) "
+        isPresented = false
     }
 }
 

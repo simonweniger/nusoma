@@ -24,8 +24,10 @@ struct MainView: View {
             VStack(spacing: 0) {
                 // Marketplace panel (above chat shell)
                 if appState.marketplaceOpen {
-                    MarketplacePlaceholder()
+                    MarketplaceView()
                         .frame(maxWidth: 720)
+                        .glassEffect(.regular)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                         .transition(.asymmetric(
                             insertion: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.98)),
                             removal: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.985))
@@ -35,8 +37,10 @@ struct MainView: View {
 
                 // PM panel (above chat shell)
                 if appState.pmOpen {
-                    PMPlaceholder()
+                    PMPanelView()
                         .frame(maxWidth: 720)
+                        .glassEffect(.regular)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                         .transition(.asymmetric(
                             insertion: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.98)),
                             removal: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.985))
@@ -173,6 +177,16 @@ struct MainView: View {
                 captureScreenshot()
             } label: {
                 Image(systemName: "camera")
+                    .font(.system(size: 15))
+            }
+            .buttonStyle(GlassCircleButtonStyle())
+            .disabled(appState.isRunning)
+
+            // Project Management
+            Button {
+                appState.togglePM()
+            } label: {
+                Image(systemName: "list.bullet.rectangle")
                     .font(.system(size: 15))
             }
             .buttonStyle(GlassCircleButtonStyle())
@@ -352,50 +366,6 @@ struct GlassCircleButtonStyle: ButtonStyle {
             .opacity(isEnabled ? (configuration.isPressed ? 0.7 : 1.0) : 0.4)
             .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
             .animation(NusomaAnimation.quick, value: configuration.isPressed)
-    }
-}
-
-// MARK: - Placeholders (to be replaced in later phases)
-
-struct MarketplacePlaceholder: View {
-    @Environment(AppState.self) private var appState
-
-    var body: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Text("Skills & Plugins")
-                    .font(.headline)
-                Spacer()
-                Button("Close") { appState.marketplaceOpen = false }
-                    .buttonStyle(.plain)
-            }
-            Text("Marketplace coming in Phase 6")
-                .foregroundStyle(.secondary)
-        }
-        .padding(20)
-        .glassEffect(.regular)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
-    }
-}
-
-struct PMPlaceholder: View {
-    @Environment(AppState.self) private var appState
-
-    var body: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Text("Project Management")
-                    .font(.headline)
-                Spacer()
-                Button("Close") { appState.pmOpen = false }
-                    .buttonStyle(.plain)
-            }
-            Text("PM panel coming in Phase 5")
-                .foregroundStyle(.secondary)
-        }
-        .padding(20)
-        .glassEffect(.regular)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
     }
 }
 
