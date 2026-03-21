@@ -44,7 +44,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 1. Become accessory app (no Dock icon) — like Spotlight/Raycast
         NSApp.setActivationPolicy(.accessory)
 
-        // 2. Set up SwiftData container
+        // 2. Set up SwiftData container with custom DB path
         do {
             let schema = Schema([PMProject.self, PMIssue.self, PMLabel.self, PMComment.self, PMSetting.self])
             let config = ModelConfiguration(
@@ -54,17 +54,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             )
             modelContainer = try ModelContainer(for: schema, configurations: [config])
         } catch {
-            print("[NusomaApp] Failed to create SwiftData container: \(error)")
+            print("[NusomaApp] Custom DB path failed, falling back to default: \(error)")
+            modelContainer = try? ModelContainer(for: PMProject.self, PMIssue.self, PMLabel.self, PMComment.self, PMSetting.self)
         }
 
         // 3. Create the floating panel with SwiftUI content
+        guard let container = modelContainer else {
+            fatalError("[NusomaApp] Cannot create SwiftData container")
+        }
         let contentView = MainView()
             .environment(appState)
             .environment(themeManager)
             .environment(voiceManager)
             .environment(sessionHistory)
-            .modelContainer(for: [PMProject.self, PMIssue.self, PMLabel.self, PMComment.self, PMSetting.self],
-                           isUndoEnabled: false)
+            .modelContainer(container)
 
         panelManager.createPanel(content: contentView)
         panelManager.show()

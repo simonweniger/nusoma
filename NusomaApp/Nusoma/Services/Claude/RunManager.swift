@@ -160,7 +160,7 @@ actor RunManager {
             let stdoutHandle = stdoutPipe.fileHandleForReading
 
             // Read stdout asynchronously
-            for try await data in stdoutHandle.bytes(forStream: stdoutHandle) {
+            for await data in stdoutHandle.bytes(forStream: stdoutHandle) {
                 let events = parser.feed(data)
                 for raw in events {
                     let normalized = normalizer.normalize(raw)

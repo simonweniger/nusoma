@@ -109,7 +109,7 @@ struct PermissionOption: Sendable {
     var kind: String?
 }
 
-struct PermissionRequest: Identifiable, Sendable {
+struct PermissionRequest: Identifiable, @unchecked Sendable {
     let id: String  // questionId
     let toolName: String
     var toolDescription: String?

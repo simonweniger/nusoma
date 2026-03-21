@@ -23,12 +23,10 @@ class TrayManager {
                 // Fallback: use SF Symbol
                 button.image = NSImage(systemSymbolName: "message.circle.fill", accessibilityDescription: "Nusoma")
             }
-            button.action = #selector(statusItemClicked(_:))
-            button.target = self
             button.toolTip = "Nusoma — Claude Code UI"
         }
 
-        // Context menu
+        // Context menu (shown on click since item.menu is set)
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "Show Nusoma", action: #selector(showClicked(_:)), keyEquivalent: ""))
         menu.items.last?.target = self
@@ -38,10 +36,6 @@ class TrayManager {
 
         item.menu = menu
         self.statusItem = item
-    }
-
-    @objc private func statusItemClicked(_ sender: Any?) {
-        toggleAction?()
     }
 
     @objc private func showClicked(_ sender: Any?) {
