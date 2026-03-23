@@ -1,0 +1,702 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		004AF340CF54A9BB505A645F /* SkillInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8369175A23421C8CAA50E903 /* SkillInstaller.swift */; };
+		044BB83CFC5A4080F8956C54 /* PanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D1E16690BE48E4E933E1F4 /* PanelController.swift */; };
+		13FDFA73935D16382DCE2827 /* GitHubSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8377D02936BF4EFA425865E4 /* GitHubSync.swift */; };
+		1437D2A6D4C0DEC187EBB5C3 /* MarketplaceTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CAC8B586886436A01E6B04D /* MarketplaceTypes.swift */; };
+		1961F675DF12F43016465AFE /* MarketplaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A3DBAA5A00CF784DADAB08A /* MarketplaceView.swift */; };
+		1AE5D25E89602C8C35920111 /* ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86EC07C7C443CEC50169B2B8 /* ConversationView.swift */; };
+		205D400F863327B30D17BDC2 /* ProjectSettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E13DCCD00ED49F15E80058 /* ProjectSettingsSheet.swift */; };
+		238E140C92194E617BC2E229 /* MarkdownRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F605FE6A44CB0840F64C3F3 /* MarkdownRenderer.swift */; };
+		2C609A5DF494EAD084D57D69 /* EventNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0AC1BE259A41149E7039C28 /* EventNormalizerTests.swift */; };
+		2CB4B325B418B60B0486CF0B /* VoiceInputManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0846FA4B104CE51A2D85372 /* VoiceInputManager.swift */; };
+		2D84693269789354BF22168C /* PMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CAABFCBE25E6042F38845DB /* PMService.swift */; };
+		3116855B1CA68148F5FF6561 /* CliEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = E216BA440F4FE8DD5AA58C74 /* CliEnvironment.swift */; };
+		31BA3C8230D5CD97670F45ED /* IssueDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2BBF2B9827A0194F1B80498 /* IssueDetailView.swift */; };
+		38B495071145C63D6920E4D9 /* TabState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DDB984608BBD069992DBEA4 /* TabState.swift */; };
+		3AC9FFD22771B97F30879482 /* EventNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23BBC1F4AE1AC255775CAE68 /* EventNormalizer.swift */; };
+		488DA9A370F09D125536B9DA /* StreamParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF129870F36945CD5F602C07 /* StreamParser.swift */; };
+		48D935F9D6912AEFC9393750 /* RunManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBA7A4172475ADB6A986DAAF /* RunManager.swift */; };
+		4B5F5346DA90F00A26056388 /* ClaudeTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F56B2AF1E0446960C1C27340 /* ClaudeTypes.swift */; };
+		4BD714802555F4BAF4E91CFF /* SyntaxTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DD654D19525BA5EFD1AB66 /* SyntaxTokenizer.swift */; };
+		4CED7C9468905298ACB5E964 /* notification.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 89AA63FC4BA9B33A05846CDB /* notification.mp3 */; };
+		4D87229506D179E740ADB36D /* StatusBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59FBC5D2D0C8ACCB1DD89976 /* StatusBarView.swift */; };
+		5085534370E95C6B9F0F0405 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9947B47AA70EC2755E5995 /* DesignTokens.swift */; };
+		54B2808C1A10909FA5538C85 /* StreamParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D03FC0B359468CF04BC767EB /* StreamParserTests.swift */; };
+		59FA1F4D78EAE5FAADE988A1 /* IssueListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D28E5A2DFE0315A04D44678E /* IssueListView.swift */; };
+		5D4749537A6D7AC3E466C375 /* icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6A84F37560BF3346561266BD /* icon.icns */; };
+		63D72902FEEDB4E8BCEAD688 /* NusomaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A44EF04A46F2574168DA18D /* NusomaApp.swift */; };
+		6E82030C4659D0029C7E7CE8 /* SessionHistoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD4E63A6B3C7800E8AC72615 /* SessionHistoryService.swift */; };
+		79AAE53FA9BD5F7E7CCF3FDC /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = A06FF6251AB947A115846ABD /* KeyboardShortcuts */; };
+		7F697C5D95DFD6D26A435506 /* InputBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B8588FB1F7BF73E0B02B30 /* InputBarView.swift */; };
+		846D177C981E2B8000B6A987 /* trayTemplate.png in Resources */ = {isa = PBXBuildFile; fileRef = ECEA49108EA14145B1294306 /* trayTemplate.png */; };
+		90D9E705485C9611027CBFC9 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67FA27065774E5B912191DD3 /* HotkeyManager.swift */; };
+		9DF75CE279B6ED3F9029A75A /* TabStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A9964442B21C26BA914A2C4 /* TabStripView.swift */; };
+		A5FBAF138D7ED7285AFBE18C /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E91689231BDCEDBD2FFB5E8 /* MainView.swift */; };
+		A8F4F4A903B4C42FCFB4506C /* PermissionHookServerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97DE93F0616BF7DB15EBCEBD /* PermissionHookServerTests.swift */; };
+		AAE154D3E30302C51DA7FA75 /* TrayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA4681498075557D9A81DED5 /* TrayManager.swift */; };
+		B0047B30F919694B9998720C /* CreateIssueSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46531F80B2393E4985E0F750 /* CreateIssueSheet.swift */; };
+		C583E01E3B9B41082BDC9632 /* trayTemplate@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F22833F928402E45E30CF16A /* trayTemplate@2x.png */; };
+		C9BC89BCE877FCF30F3D8D8B /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = E5EEB87169150628D7CB697E /* WhisperKit */; };
+		CC0149F83DD34A3303D554CB /* PMModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834AF12D435F3D0B381190F2 /* PMModels.swift */; };
+		CFBA5327DEEE7F060EF651C7 /* PMPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F74044C740A29D27358B879F /* PMPanelView.swift */; };
+		D64C665A082572D1CE976847 /* MarkdownView in Frameworks */ = {isa = PBXBuildFile; productRef = 669E17A363134F71CBAFB531 /* MarkdownView */; };
+		DCBDA54D9D4429F2A5BA7385 /* PMSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FED493C55C41C85CADEA5EC /* PMSidebarView.swift */; };
+		DD1215BB50670F2FD1035744 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D1430C10D4AA3D81F6A4CFD /* SettingsView.swift */; };
+		E4817775AA3A51931504BFC6 /* MarketplaceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ECEA6DBC4D3C99136B27628 /* MarketplaceService.swift */; };
+		EBF6344DBE704F2A6AC913DC /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3660A6E6E0DEDA71DECEB1 /* AppState.swift */; };
+		F1F8771A0405EE02519AC46C /* ControlPlane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60F5B432D76DB753FFF78E2B /* ControlPlane.swift */; };
+		F90ECDB11B9C8C29BB867240 /* PermissionHookServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1288F5E01253A719FF66E9 /* PermissionHookServer.swift */; };
+		FC031098AE8BE68D12AB3BC8 /* SessionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD9E0ED3B85EFFCB570D6FFB /* SessionHistoryView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		18B239958EEE4FAF2F36CBE4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D119410E90E3B5BBBF15186A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7C7DC6E499A5F768C576E802;
+			remoteInfo = Nusoma;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0CAABFCBE25E6042F38845DB /* PMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PMService.swift; sourceTree = "<group>"; };
+		0D1430C10D4AA3D81F6A4CFD /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		1A3DBAA5A00CF784DADAB08A /* MarketplaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceView.swift; sourceTree = "<group>"; };
+		1B9947B47AA70EC2755E5995 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
+		23BBC1F4AE1AC255775CAE68 /* EventNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventNormalizer.swift; sourceTree = "<group>"; };
+		2A9964442B21C26BA914A2C4 /* TabStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabStripView.swift; sourceTree = "<group>"; };
+		3F605FE6A44CB0840F64C3F3 /* MarkdownRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownRenderer.swift; sourceTree = "<group>"; };
+		46531F80B2393E4985E0F750 /* CreateIssueSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateIssueSheet.swift; sourceTree = "<group>"; };
+		4A44EF04A46F2574168DA18D /* NusomaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NusomaApp.swift; sourceTree = "<group>"; };
+		4E91689231BDCEDBD2FFB5E8 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		55DD654D19525BA5EFD1AB66 /* SyntaxTokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxTokenizer.swift; sourceTree = "<group>"; };
+		59FBC5D2D0C8ACCB1DD89976 /* StatusBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarView.swift; sourceTree = "<group>"; };
+		60F5B432D76DB753FFF78E2B /* ControlPlane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlPlane.swift; sourceTree = "<group>"; };
+		611034C8EBED2BA4DAE1AEAB /* Nusoma.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nusoma.entitlements; sourceTree = "<group>"; };
+		62E13DCCD00ED49F15E80058 /* ProjectSettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectSettingsSheet.swift; sourceTree = "<group>"; };
+		67FA27065774E5B912191DD3 /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
+		6A84F37560BF3346561266BD /* icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = icon.icns; sourceTree = "<group>"; };
+		6ECEA6DBC4D3C99136B27628 /* MarketplaceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceService.swift; sourceTree = "<group>"; };
+		6FED493C55C41C85CADEA5EC /* PMSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PMSidebarView.swift; sourceTree = "<group>"; };
+		74B8588FB1F7BF73E0B02B30 /* InputBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBarView.swift; sourceTree = "<group>"; };
+		7CAC8B586886436A01E6B04D /* MarketplaceTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceTypes.swift; sourceTree = "<group>"; };
+		7DDB984608BBD069992DBEA4 /* TabState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabState.swift; sourceTree = "<group>"; };
+		834AF12D435F3D0B381190F2 /* PMModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PMModels.swift; sourceTree = "<group>"; };
+		8369175A23421C8CAA50E903 /* SkillInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillInstaller.swift; sourceTree = "<group>"; };
+		8377D02936BF4EFA425865E4 /* GitHubSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubSync.swift; sourceTree = "<group>"; };
+		86EC07C7C443CEC50169B2B8 /* ConversationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationView.swift; sourceTree = "<group>"; };
+		89AA63FC4BA9B33A05846CDB /* notification.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = notification.mp3; sourceTree = "<group>"; };
+		97DE93F0616BF7DB15EBCEBD /* PermissionHookServerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionHookServerTests.swift; sourceTree = "<group>"; };
+		A0846FA4B104CE51A2D85372 /* VoiceInputManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceInputManager.swift; sourceTree = "<group>"; };
+		A8030BC7BB18FC94029B3288 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		AA3660A6E6E0DEDA71DECEB1 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		BB1288F5E01253A719FF66E9 /* PermissionHookServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionHookServer.swift; sourceTree = "<group>"; };
+		BF129870F36945CD5F602C07 /* StreamParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamParser.swift; sourceTree = "<group>"; };
+		D03FC0B359468CF04BC767EB /* StreamParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamParserTests.swift; sourceTree = "<group>"; };
+		D1D1E16690BE48E4E933E1F4 /* PanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelController.swift; sourceTree = "<group>"; };
+		D28E5A2DFE0315A04D44678E /* IssueListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueListView.swift; sourceTree = "<group>"; };
+		DD4E63A6B3C7800E8AC72615 /* SessionHistoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionHistoryService.swift; sourceTree = "<group>"; };
+		DD9E0ED3B85EFFCB570D6FFB /* SessionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionHistoryView.swift; sourceTree = "<group>"; };
+		E0AC1BE259A41149E7039C28 /* EventNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventNormalizerTests.swift; sourceTree = "<group>"; };
+		E216BA440F4FE8DD5AA58C74 /* CliEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CliEnvironment.swift; sourceTree = "<group>"; };
+		EBA7A4172475ADB6A986DAAF /* RunManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunManager.swift; sourceTree = "<group>"; };
+		ECEA49108EA14145B1294306 /* trayTemplate.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = trayTemplate.png; sourceTree = "<group>"; };
+		F22833F928402E45E30CF16A /* trayTemplate@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "trayTemplate@2x.png"; sourceTree = "<group>"; };
+		F2BBF2B9827A0194F1B80498 /* IssueDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDetailView.swift; sourceTree = "<group>"; };
+		F56B2AF1E0446960C1C27340 /* ClaudeTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeTypes.swift; sourceTree = "<group>"; };
+		F616BAC2519D5D2DDB572698 /* NusomaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NusomaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F74044C740A29D27358B879F /* PMPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PMPanelView.swift; sourceTree = "<group>"; };
+		F9D4DD99479B06ADB29D9EA5 /* Nusoma.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nusoma.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA4681498075557D9A81DED5 /* TrayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrayManager.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		472FF2E0C4768435CC9ACBC1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D64C665A082572D1CE976847 /* MarkdownView in Frameworks */,
+				C9BC89BCE877FCF30F3D8D8B /* WhisperKit in Frameworks */,
+				79AAE53FA9BD5F7E7CCF3FDC /* KeyboardShortcuts in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		054B584FA898649E492B29AD /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				86EC07C7C443CEC50169B2B8 /* ConversationView.swift */,
+				74B8588FB1F7BF73E0B02B30 /* InputBarView.swift */,
+				4E91689231BDCEDBD2FFB5E8 /* MainView.swift */,
+				3F605FE6A44CB0840F64C3F3 /* MarkdownRenderer.swift */,
+				1A3DBAA5A00CF784DADAB08A /* MarketplaceView.swift */,
+				DD9E0ED3B85EFFCB570D6FFB /* SessionHistoryView.swift */,
+				0D1430C10D4AA3D81F6A4CFD /* SettingsView.swift */,
+				59FBC5D2D0C8ACCB1DD89976 /* StatusBarView.swift */,
+				55DD654D19525BA5EFD1AB66 /* SyntaxTokenizer.swift */,
+				2A9964442B21C26BA914A2C4 /* TabStripView.swift */,
+				9C865CAEB3BE8120598AF604 /* PM */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		09D6C5251FC16C96D795DD73 /* NusomaTests */ = {
+			isa = PBXGroup;
+			children = (
+				E0AC1BE259A41149E7039C28 /* EventNormalizerTests.swift */,
+				97DE93F0616BF7DB15EBCEBD /* PermissionHookServerTests.swift */,
+				D03FC0B359468CF04BC767EB /* StreamParserTests.swift */,
+			);
+			path = NusomaTests;
+			sourceTree = "<group>";
+		};
+		24C63056675E8887035EAB59 /* Window */ = {
+			isa = PBXGroup;
+			children = (
+				67FA27065774E5B912191DD3 /* HotkeyManager.swift */,
+				D1D1E16690BE48E4E933E1F4 /* PanelController.swift */,
+				FA4681498075557D9A81DED5 /* TrayManager.swift */,
+			);
+			path = Window;
+			sourceTree = "<group>";
+		};
+		2742572E27DE82E1E460AFFA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F9D4DD99479B06ADB29D9EA5 /* Nusoma.app */,
+				F616BAC2519D5D2DDB572698 /* NusomaTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2A2C799663E93DCD22D97B50 = {
+			isa = PBXGroup;
+			children = (
+				D06EE3D98DA2EB2F808E060E /* Nusoma */,
+				09D6C5251FC16C96D795DD73 /* NusomaTests */,
+				2742572E27DE82E1E460AFFA /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		2ACC0216CEEC9D69EF264C82 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				1B9947B47AA70EC2755E5995 /* DesignTokens.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		3AE034C2ADE8310B989E9EFC /* Claude */ = {
+			isa = PBXGroup;
+			children = (
+				60F5B432D76DB753FFF78E2B /* ControlPlane.swift */,
+				23BBC1F4AE1AC255775CAE68 /* EventNormalizer.swift */,
+				BB1288F5E01253A719FF66E9 /* PermissionHookServer.swift */,
+				EBA7A4172475ADB6A986DAAF /* RunManager.swift */,
+				BF129870F36945CD5F602C07 /* StreamParser.swift */,
+			);
+			path = Claude;
+			sourceTree = "<group>";
+		};
+		51C81F3AC049DFB45156BBD8 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				E216BA440F4FE8DD5AA58C74 /* CliEnvironment.swift */,
+				8377D02936BF4EFA425865E4 /* GitHubSync.swift */,
+				6ECEA6DBC4D3C99136B27628 /* MarketplaceService.swift */,
+				0CAABFCBE25E6042F38845DB /* PMService.swift */,
+				DD4E63A6B3C7800E8AC72615 /* SessionHistoryService.swift */,
+				8369175A23421C8CAA50E903 /* SkillInstaller.swift */,
+				A0846FA4B104CE51A2D85372 /* VoiceInputManager.swift */,
+				3AE034C2ADE8310B989E9EFC /* Claude */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		9C865CAEB3BE8120598AF604 /* PM */ = {
+			isa = PBXGroup;
+			children = (
+				46531F80B2393E4985E0F750 /* CreateIssueSheet.swift */,
+				F2BBF2B9827A0194F1B80498 /* IssueDetailView.swift */,
+				D28E5A2DFE0315A04D44678E /* IssueListView.swift */,
+				F74044C740A29D27358B879F /* PMPanelView.swift */,
+				6FED493C55C41C85CADEA5EC /* PMSidebarView.swift */,
+				62E13DCCD00ED49F15E80058 /* ProjectSettingsSheet.swift */,
+			);
+			path = PM;
+			sourceTree = "<group>";
+		};
+		9FC773D439F47C923D10294B /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				6A84F37560BF3346561266BD /* icon.icns */,
+				89AA63FC4BA9B33A05846CDB /* notification.mp3 */,
+				ECEA49108EA14145B1294306 /* trayTemplate.png */,
+				F22833F928402E45E30CF16A /* trayTemplate@2x.png */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		AC4C3554C1C226608F4905DC /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				F56B2AF1E0446960C1C27340 /* ClaudeTypes.swift */,
+				7CAC8B586886436A01E6B04D /* MarketplaceTypes.swift */,
+				834AF12D435F3D0B381190F2 /* PMModels.swift */,
+				7DDB984608BBD069992DBEA4 /* TabState.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		D06EE3D98DA2EB2F808E060E /* Nusoma */ = {
+			isa = PBXGroup;
+			children = (
+				AA3660A6E6E0DEDA71DECEB1 /* AppState.swift */,
+				A8030BC7BB18FC94029B3288 /* Info.plist */,
+				611034C8EBED2BA4DAE1AEAB /* Nusoma.entitlements */,
+				4A44EF04A46F2574168DA18D /* NusomaApp.swift */,
+				AC4C3554C1C226608F4905DC /* Models */,
+				9FC773D439F47C923D10294B /* Resources */,
+				51C81F3AC049DFB45156BBD8 /* Services */,
+				2ACC0216CEEC9D69EF264C82 /* Theme */,
+				054B584FA898649E492B29AD /* Views */,
+				24C63056675E8887035EAB59 /* Window */,
+			);
+			path = Nusoma;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7C7DC6E499A5F768C576E802 /* Nusoma */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 94F795C8C0C21400C9AC8344 /* Build configuration list for PBXNativeTarget "Nusoma" */;
+			buildPhases = (
+				BBF8DC0F2F6088264F22B984 /* Sources */,
+				DB668428C14953CA618A0AEC /* Resources */,
+				472FF2E0C4768435CC9ACBC1 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Nusoma;
+			packageProductDependencies = (
+				669E17A363134F71CBAFB531 /* MarkdownView */,
+				E5EEB87169150628D7CB697E /* WhisperKit */,
+				A06FF6251AB947A115846ABD /* KeyboardShortcuts */,
+			);
+			productName = Nusoma;
+			productReference = F9D4DD99479B06ADB29D9EA5 /* Nusoma.app */;
+			productType = "com.apple.product-type.application";
+		};
+		FBBE261BBDAB1381FBEA1CC8 /* NusomaTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AC106223383AB6D92B0D16D2 /* Build configuration list for PBXNativeTarget "NusomaTests" */;
+			buildPhases = (
+				BA99FE13F86721D5881F0092 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0E033F47F53629151BD26997 /* PBXTargetDependency */,
+			);
+			name = NusomaTests;
+			packageProductDependencies = (
+			);
+			productName = NusomaTests;
+			productReference = F616BAC2519D5D2DDB572698 /* NusomaTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D119410E90E3B5BBBF15186A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2600;
+			};
+			buildConfigurationList = E2EC28B2A6A9781B6947B8C6 /* Build configuration list for PBXProject "Nusoma" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 2A2C799663E93DCD22D97B50;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				980808CEAF2A8FB7A0760580 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+				97DCA2AF30263B773DDA5529 /* XCRemoteSwiftPackageReference "MarkdownView" */,
+				0745D77E7D966B518AC23EFA /* XCRemoteSwiftPackageReference "WhisperKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 2742572E27DE82E1E460AFFA /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7C7DC6E499A5F768C576E802 /* Nusoma */,
+				FBBE261BBDAB1381FBEA1CC8 /* NusomaTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		DB668428C14953CA618A0AEC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5D4749537A6D7AC3E466C375 /* icon.icns in Resources */,
+				4CED7C9468905298ACB5E964 /* notification.mp3 in Resources */,
+				846D177C981E2B8000B6A987 /* trayTemplate.png in Resources */,
+				C583E01E3B9B41082BDC9632 /* trayTemplate@2x.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BA99FE13F86721D5881F0092 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2C609A5DF494EAD084D57D69 /* EventNormalizerTests.swift in Sources */,
+				A8F4F4A903B4C42FCFB4506C /* PermissionHookServerTests.swift in Sources */,
+				54B2808C1A10909FA5538C85 /* StreamParserTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BBF8DC0F2F6088264F22B984 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EBF6344DBE704F2A6AC913DC /* AppState.swift in Sources */,
+				4B5F5346DA90F00A26056388 /* ClaudeTypes.swift in Sources */,
+				3116855B1CA68148F5FF6561 /* CliEnvironment.swift in Sources */,
+				F1F8771A0405EE02519AC46C /* ControlPlane.swift in Sources */,
+				1AE5D25E89602C8C35920111 /* ConversationView.swift in Sources */,
+				B0047B30F919694B9998720C /* CreateIssueSheet.swift in Sources */,
+				5085534370E95C6B9F0F0405 /* DesignTokens.swift in Sources */,
+				3AC9FFD22771B97F30879482 /* EventNormalizer.swift in Sources */,
+				13FDFA73935D16382DCE2827 /* GitHubSync.swift in Sources */,
+				90D9E705485C9611027CBFC9 /* HotkeyManager.swift in Sources */,
+				7F697C5D95DFD6D26A435506 /* InputBarView.swift in Sources */,
+				31BA3C8230D5CD97670F45ED /* IssueDetailView.swift in Sources */,
+				59FA1F4D78EAE5FAADE988A1 /* IssueListView.swift in Sources */,
+				A5FBAF138D7ED7285AFBE18C /* MainView.swift in Sources */,
+				238E140C92194E617BC2E229 /* MarkdownRenderer.swift in Sources */,
+				E4817775AA3A51931504BFC6 /* MarketplaceService.swift in Sources */,
+				1437D2A6D4C0DEC187EBB5C3 /* MarketplaceTypes.swift in Sources */,
+				1961F675DF12F43016465AFE /* MarketplaceView.swift in Sources */,
+				63D72902FEEDB4E8BCEAD688 /* NusomaApp.swift in Sources */,
+				CC0149F83DD34A3303D554CB /* PMModels.swift in Sources */,
+				CFBA5327DEEE7F060EF651C7 /* PMPanelView.swift in Sources */,
+				2D84693269789354BF22168C /* PMService.swift in Sources */,
+				DCBDA54D9D4429F2A5BA7385 /* PMSidebarView.swift in Sources */,
+				044BB83CFC5A4080F8956C54 /* PanelController.swift in Sources */,
+				F90ECDB11B9C8C29BB867240 /* PermissionHookServer.swift in Sources */,
+				205D400F863327B30D17BDC2 /* ProjectSettingsSheet.swift in Sources */,
+				48D935F9D6912AEFC9393750 /* RunManager.swift in Sources */,
+				6E82030C4659D0029C7E7CE8 /* SessionHistoryService.swift in Sources */,
+				FC031098AE8BE68D12AB3BC8 /* SessionHistoryView.swift in Sources */,
+				DD1215BB50670F2FD1035744 /* SettingsView.swift in Sources */,
+				004AF340CF54A9BB505A645F /* SkillInstaller.swift in Sources */,
+				4D87229506D179E740ADB36D /* StatusBarView.swift in Sources */,
+				488DA9A370F09D125536B9DA /* StreamParser.swift in Sources */,
+				4BD714802555F4BAF4E91CFF /* SyntaxTokenizer.swift in Sources */,
+				38B495071145C63D6920E4D9 /* TabState.swift in Sources */,
+				9DF75CE279B6ED3F9029A75A /* TabStripView.swift in Sources */,
+				AAE154D3E30302C51DA7FA75 /* TrayManager.swift in Sources */,
+				2CB4B325B418B60B0486CF0B /* VoiceInputManager.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0E033F47F53629151BD26997 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7C7DC6E499A5F768C576E802 /* Nusoma */;
+			targetProxy = 18B239958EEE4FAF2F36CBE4 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		5BF87C03DA9BE11C3AD8ADDC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Nusoma/Nusoma.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Nusoma/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.nusoma.app;
+				PRODUCT_NAME = Nusoma;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		6683AF59F4BA4B3D1D3E53DF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		7195B9A106BF1B94391FBF38 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.nusoma.NusomaTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nusoma.app/Contents/MacOS/Nusoma";
+			};
+			name = Release;
+		};
+		CA7CE3F8BECB8D9860DD28E1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		D19163E7327C3A0946A71079 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.nusoma.NusomaTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nusoma.app/Contents/MacOS/Nusoma";
+			};
+			name = Debug;
+		};
+		E08ABBCB89967057DD1FC1EF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Nusoma/Nusoma.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Nusoma/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.nusoma.app;
+				PRODUCT_NAME = Nusoma;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		94F795C8C0C21400C9AC8344 /* Build configuration list for PBXNativeTarget "Nusoma" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E08ABBCB89967057DD1FC1EF /* Debug */,
+				5BF87C03DA9BE11C3AD8ADDC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		AC106223383AB6D92B0D16D2 /* Build configuration list for PBXNativeTarget "NusomaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D19163E7327C3A0946A71079 /* Debug */,
+				7195B9A106BF1B94391FBF38 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E2EC28B2A6A9781B6947B8C6 /* Build configuration list for PBXProject "Nusoma" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6683AF59F4BA4B3D1D3E53DF /* Debug */,
+				CA7CE3F8BECB8D9860DD28E1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0745D77E7D966B518AC23EFA /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/argmaxinc/WhisperKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.0;
+			};
+		};
+		97DCA2AF30263B773DDA5529 /* XCRemoteSwiftPackageReference "MarkdownView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/LiYanan2004/MarkdownView.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+		980808CEAF2A8FB7A0760580 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		669E17A363134F71CBAFB531 /* MarkdownView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 97DCA2AF30263B773DDA5529 /* XCRemoteSwiftPackageReference "MarkdownView" */;
+			productName = MarkdownView;
+		};
+		A06FF6251AB947A115846ABD /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 980808CEAF2A8FB7A0760580 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+		E5EEB87169150628D7CB697E /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0745D77E7D966B518AC23EFA /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = WhisperKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = D119410E90E3B5BBBF15186A /* Project object */;
+}
