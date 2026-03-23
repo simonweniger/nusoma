@@ -21,7 +21,7 @@ enum ControlPlaneEvent: Sendable {
 
 // MARK: - Tab Registry Entry
 
-struct TabRegistryEntry {
+struct TabRegistryEntry: Sendable {
     let tabId: String
     var claudeSessionId: String?
     var status: TabStatus = .idle
@@ -35,7 +35,8 @@ struct TabRegistryEntry {
 
 /// Manages the lifecycle of all Claude sessions across tabs.
 /// Provides an AsyncStream of events for the UI layer.
-class ControlPlane {
+@MainActor
+class ControlPlane: @unchecked Sendable {
     private let maxQueueDepth = 32
     private var tabs: [String: TabRegistryEntry] = [:]
     private let runManager = RunManager()
@@ -73,9 +74,10 @@ class ControlPlane {
         self.eventContinuation = continuation
 
         // Start the permission hook server
+        let server = permissionServer
         hookServerReady = Task {
             do {
-                let port = try await permissionServer.start()
+                let port = try await server.start()
                 print("[ControlPlane] Permission hook server ready on port \(port)")
                 return port
             } catch {
@@ -85,9 +87,9 @@ class ControlPlane {
         }
 
         // Wire permission server events → normalized events for UI
-        hookEventTask = Task { [weak self] in
+        hookEventTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            for await hookEvent in await self.permissionServer.events {
+            for await hookEvent in server.events {
                 self.handleHookPermissionEvent(hookEvent)
             }
         }
@@ -112,11 +114,13 @@ class ControlPlane {
 
         // Cancel active run
         if let requestId = tab.activeRequestId {
-            Task { await runManager.cancel(requestId) }
+            let rm = runManager
+            Task { await rm.cancel(requestId) }
 
             // Unregister run token (denies pending permissions)
             if let runToken = runTokens.removeValue(forKey: requestId) {
-                Task { await permissionServer.unregisterRun(runToken) }
+                let ps = permissionServer
+                Task { await ps.unregisterRun(runToken) }
             }
 
             requestToTab.removeValue(forKey: requestId)
@@ -136,9 +140,9 @@ class ControlPlane {
 
     func setPermissionMode(_ mode: PermissionMode) {
         permissionMode = mode
-        Task {
-            await permissionServer.setPermissionMode(mode.rawValue)
-        }
+        let ps = permissionServer
+        let raw = mode.rawValue
+        Task { await ps.setPermissionMode(raw) }
     }
 
     // MARK: - Submit Prompt
@@ -148,7 +152,7 @@ class ControlPlane {
         requestId: String,
         options: RunOptions
     ) async throws {
-        guard var tab = tabs[tabId] else {
+        guard let tab = tabs[tabId] else {
             throw ControlPlaneError.tabNotFound(tabId)
         }
 
@@ -178,15 +182,17 @@ class ControlPlane {
     @discardableResult
     func cancelTab(_ tabId: String) -> Bool {
         guard let tab = tabs[tabId], let requestId = tab.activeRequestId else { return false }
-        Task { await runManager.cancel(requestId) }
+        let rm = runManager
+        Task { await rm.cancel(requestId) }
         return true
     }
 
     // MARK: - Permission Response
 
     func respondToPermission(tabId: String, questionId: String, optionId: String) {
+        let ps = permissionServer
         Task {
-            let success = await permissionServer.respondToPermission(
+            let success = await ps.respondToPermission(
                 questionId: questionId,
                 decision: optionId,
                 reason: "User responded via UI"
@@ -242,9 +248,11 @@ class ControlPlane {
         requestToTab[requestId] = tabId
 
         // Wait for hook server to be ready before dispatching
+        print("[ControlPlane] dispatch: waiting for hook server...")
         if let serverTask = hookServerReady {
             let port = await serverTask.value
             hookServerPort = port
+            print("[ControlPlane] dispatch: hook server port = \(String(describing: port))")
         }
 
         // Register this run with the permission server and generate settings file
@@ -259,16 +267,19 @@ class ControlPlane {
             // Generate per-run settings file with hook URL
             let settingsPath = await permissionServer.generateSettingsFile(runToken: runToken)
             opts.hookSettingsPath = settingsPath
+            print("[ControlPlane] dispatch: settings file = \(settingsPath)")
         }
 
         // Start the run
+        print("[ControlPlane] dispatch: starting run for tab \(tabId), prompt: \(opts.prompt.prefix(50))...")
         let (_, eventStream) = try await runManager.startRun(
             requestId: requestId,
             options: opts
         )
+        print("[ControlPlane] dispatch: run started, listening for events...")
 
         // Listen to events from this run
-        let streamTask = Task { [weak self] in
+        let streamTask = Task { @MainActor [weak self] in
             for await event in eventStream {
                 guard let self else { break }
                 self.handleRunEvent(requestId: requestId, event: event)
@@ -287,25 +298,17 @@ class ControlPlane {
         // Verify tab still exists
         guard tabs[tabId] != nil else {
             // Tab closed — auto-deny
-            Task {
-                await permissionServer.respondToPermission(
-                    questionId: hookEvent.questionId,
-                    decision: "deny",
-                    reason: "Tab closed"
-                )
-            }
+            let ps = permissionServer
+            let qid = hookEvent.questionId
+            Task { await ps.respondToPermission(questionId: qid, decision: "deny", reason: "Tab closed") }
             return
         }
 
         // Auto mode: immediately allow without showing UI
         if permissionMode == .auto {
-            Task {
-                await permissionServer.respondToPermission(
-                    questionId: hookEvent.questionId,
-                    decision: "allow",
-                    reason: "Auto mode"
-                )
-            }
+            let ps = permissionServer
+            let qid = hookEvent.questionId
+            Task { await ps.respondToPermission(questionId: qid, decision: "allow", reason: "Auto mode") }
             return
         }
 
@@ -394,7 +397,8 @@ class ControlPlane {
 
         // Clean up per-run token
         if let runToken = runTokens.removeValue(forKey: requestId) {
-            Task { await permissionServer.unregisterRun(runToken) }
+            let ps = permissionServer
+            Task { await ps.unregisterRun(runToken) }
         }
 
         tabs[tabId]?.activeRequestId = nil
@@ -418,9 +422,9 @@ class ControlPlane {
         guard let idx = requestQueue.firstIndex(where: { $0.tabId == tabId }) else { return }
         let req = requestQueue.remove(at: idx)
 
-        Task {
+        Task { @MainActor [weak self] in
             do {
-                try await dispatch(tabId: tabId, requestId: req.requestId, options: req.options)
+                try await self?.dispatch(tabId: tabId, requestId: req.requestId, options: req.options)
                 req.continuation.resume()
             } catch {
                 req.continuation.resume(throwing: error)
@@ -431,21 +435,24 @@ class ControlPlane {
     // MARK: - Shutdown
 
     func shutdown() {
+        let rm = runManager
+        let ps = permissionServer
+
         // Cancel all active runs
         for (requestId, task) in activeStreams {
             task.cancel()
-            Task { await runManager.cancel(requestId) }
+            Task { await rm.cancel(requestId) }
         }
         activeStreams.removeAll()
 
         // Unregister all run tokens
-        for (requestId, runToken) in runTokens {
-            Task { await permissionServer.unregisterRun(runToken) }
+        for (_, runToken) in runTokens {
+            Task { await ps.unregisterRun(runToken) }
         }
         runTokens.removeAll()
 
         // Stop hook server
-        Task { await permissionServer.stop() }
+        Task { await ps.stop() }
         hookEventTask?.cancel()
 
         tabs.removeAll()

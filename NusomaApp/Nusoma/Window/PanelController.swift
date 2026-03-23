@@ -105,7 +105,7 @@ class NusomaPanel: NSPanel {
 /// - Show/hide/toggle
 /// - Click-through for transparent regions
 /// - Window dragging
-@Observable
+@MainActor @Observable
 class PanelManager {
     private(set) var panel: NusomaPanel?
     private(set) var isVisible: Bool = false
@@ -115,7 +115,7 @@ class PanelManager {
         self.panel = nusomaPanel
     }
 
-    func show() {
+	 func show() {
         guard let panel else { return }
         panel.positionOnCurrentDisplay()
 
@@ -127,12 +127,12 @@ class PanelManager {
         isVisible = true
     }
 
-    func hide() {
+	func hide() {
         panel?.orderOut(nil)
         isVisible = false
     }
 
-    func toggle() {
+	func toggle() {
         if isVisible {
             hide()
         } else {
@@ -140,7 +140,7 @@ class PanelManager {
         }
     }
 
-    func updateHeight(_ height: CGFloat) {
+	func updateHeight(_ height: CGFloat) {
         panel?.updateHeight(height)
     }
 }

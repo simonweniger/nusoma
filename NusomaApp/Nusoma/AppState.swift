@@ -61,12 +61,14 @@ class AppState {
 
     // MARK: - Init
 
+    @MainActor
     init() {
         self.controlPlane = ControlPlane()
         self.marketplaceService = MarketplaceService()
         let initialTab = TabState()
         self.tabs = [initialTab]
         self.activeTabId = initialTab.id
+        controlPlane.createTab(id: initialTab.id)
     }
 
     // MARK: - Startup
@@ -112,13 +114,11 @@ class AppState {
 
     // MARK: - Event Stream
 
-    private func startEventStream() {
-        eventTask = Task { [weak self] in
-            guard let self else { return }
-            for await event in self.controlPlane.events {
-                await MainActor.run {
-                    self.handleControlPlaneEvent(event)
-                }
+    @MainActor private func startEventStream() {
+        let controlPlane = self.controlPlane
+        eventTask = Task { @MainActor [weak self] in
+            for await event in controlPlane.events {
+                self?.handleControlPlaneEvent(event)
             }
         }
     }
@@ -280,17 +280,16 @@ class AppState {
             addDirs: tab.additionalDirs.isEmpty ? nil : tab.additionalDirs
         )
 
-        Task {
+        let tabId = tab.id
+        Task { @MainActor [weak self] in
             do {
-                try await controlPlane.submitPrompt(
-                    tabId: tab.id,
+                try await self?.controlPlane.submitPrompt(
+                    tabId: tabId,
                     requestId: requestId,
                     options: options
                 )
             } catch {
-                await MainActor.run {
-                    self.handleError(tabId: tab.id, message: error.localizedDescription)
-                }
+                self?.handleError(tabId: tabId, message: error.localizedDescription)
             }
         }
     }
@@ -353,7 +352,7 @@ class AppState {
         preferredModel = model
     }
 
-    func setPermissionMode(_ mode: PermissionMode) {
+	@MainActor func setPermissionMode(_ mode: PermissionMode) {
         permissionMode = mode
         controlPlane.setPermissionMode(mode)
     }

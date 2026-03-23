@@ -7,9 +7,15 @@ options:
   generateEmptyDirectories: true
 
 packages:
-  swift-markdown:
-    url: https://github.com/apple/swift-markdown
-    from: "0.4.0"
+  MarkdownView:
+    url: https://github.com/LiYanan2004/MarkdownView.git
+    branch: main
+  WhisperKit:
+    url: https://github.com/argmaxinc/WhisperKit.git
+    from: "0.9.0"
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts.git
+    from: "2.0.0"
 
 settings:
   base:
@@ -25,7 +31,12 @@ targets:
     resources:
       - path: Nusoma/Resources
     dependencies:
-      - package: swift-markdown
+      - package: MarkdownView
+        product: MarkdownView
+      - package: WhisperKit
+        product: WhisperKit
+      - package: KeyboardShortcuts
+        product: KeyboardShortcuts
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nusoma.app

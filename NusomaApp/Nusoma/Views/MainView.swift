@@ -15,74 +15,39 @@ struct MainView: View {
     @State private var conversationHeight: CGFloat = 400
     @State private var isDraggingResize: Bool = false
     @State private var isDropTargeted: Bool = false
+    @State private var buttonsVisible: Bool = false
+
+    private var anyPanelOpen: Bool {
+        appState.marketplaceOpen || appState.pmOpen || appState.historyOpen || appState.settingsOpen
+    }
+
+    private var cardWidth: CGFloat {
+        let isExpanded = appState.isExpanded
+        return isExpanded
+            ? (theme.expandedUI ? 700 : 460)
+            : (theme.expandedUI ? 670 : 430)
+    }
+
+    /// Total width of melting buttons row (4 buttons × circleSize + 3 gaps × spacing)
+    private var meltingButtonsWidth: CGFloat {
+        4 * Spacing.circleSize + 3 * 8
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
 
-            // Content column, centered
-            VStack(spacing: 0) {
-                // Marketplace panel (above chat shell)
-                if appState.marketplaceOpen {
-                    MarketplaceView()
-                        .frame(maxWidth: 720)
-                        .glassEffect(.regular)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.98)),
-                            removal: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.985))
-                        ))
-                        .padding(.bottom, 14)
-                }
-
-                // PM panel (above chat shell)
-                if appState.pmOpen {
-                    PMPanelView()
-                        .frame(maxWidth: 720)
-                        .glassEffect(.regular)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.98)),
-                            removal: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.985))
-                        ))
-                        .padding(.bottom, 14)
-                }
-
-                // Session history panel
-                if appState.historyOpen {
-                    SessionHistoryView()
-                        .frame(maxWidth: 720, maxHeight: 400)
-                        .glassEffect(.regular)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.98)),
-                            removal: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.985))
-                        ))
-                        .padding(.bottom, 14)
-                }
-
-                // Settings panel
-                if appState.settingsOpen {
-                    SettingsView()
-                        .frame(maxWidth: 720, maxHeight: 420)
-                        .glassEffect(.regular)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.98)),
-                            removal: .opacity.combined(with: .move(edge: .bottom)).combined(with: .scale(scale: 0.985))
-                        ))
-                        .padding(.bottom, 14)
-                }
-
-                // Chat shell (tabs + conversation)
-                chatShell
-                    .padding(.bottom, appState.isExpanded ? 10 : -14)
-
-                // Input row with action buttons
-                inputRow
-                    .padding(.bottom, 10)
+            HStack(alignment: .bottom, spacing: 10) {
+                unifiedCard
+                meltingActionButtons
+                    .padding(.bottom, 8)
             }
-            .frame(width: theme.expandedUI ? Spacing.expandedContentWidth : Spacing.contentWidth)
+            .padding(.bottom, 10)
+            .background(
+                GeometryReader { geo in
+                    Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
+                }
+            )
             .animation(NusomaAnimation.standard, value: appState.isExpanded)
             .animation(NusomaAnimation.standard, value: appState.marketplaceOpen)
             .animation(NusomaAnimation.standard, value: appState.pmOpen)
@@ -91,13 +56,12 @@ struct MainView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
-        .background(
-            GeometryReader { geo in
-                Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
-            }
-        )
         .onPreferenceChange(ContentHeightKey.self) { height in
             contentHeight = height
+            // Drive window height from content
+            if let window = NSApp.windows.first(where: { $0 is NusomaPanel }) as? NusomaPanel {
+                window.updateHeight(height + 30) // 30 = bottom padding + margin
+            }
         }
         // Drag-and-drop overlay for files
         .onDrop(of: [.fileURL, .image], isTargeted: $isDropTargeted) { providers in
@@ -111,96 +75,97 @@ struct MainView: View {
         }
     }
 
-    // MARK: - Chat Shell
+    // MARK: - Unified Card (Spotlight-style, reversed)
 
-    private var chatShell: some View {
-        let isExpanded = appState.isExpanded
-        let cardWidth: CGFloat = isExpanded
-            ? (theme.expandedUI ? 700 : 460)
-            : (theme.expandedUI ? 670 : 430)
+    private var unifiedCard: some View {
+        VStack(spacing: 0) {
+            // Panels (expand upward above conversation)
+            if appState.marketplaceOpen {
+                MarketplaceView()
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
 
-        return VStack(spacing: 0) {
+            if appState.pmOpen {
+                PMPanelView()
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
+            if appState.historyOpen {
+                SessionHistoryView()
+                    .frame(maxHeight: 400)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
+            if appState.settingsOpen {
+                SettingsView()
+                    .frame(maxHeight: 420)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
+            // Conversation (when expanded)
+            if appState.isExpanded {
+                ResizeHandle(height: $conversationHeight, isDragging: $isDraggingResize)
+
+                ConversationView()
+                    .frame(height: conversationHeight)
+
+                StatusBarView()
+            }
+
+            // Divider between content and bottom controls
+            if appState.isExpanded || anyPanelOpen {
+                Divider().opacity(0.3)
+            }
+
             // Tab strip
             TabStripView()
 
-            // Conversation body — collapses to zero height when not expanded
-            if isExpanded {
-                VStack(spacing: 0) {
-                    // Resize handle (top of conversation)
-                    ResizeHandle(height: $conversationHeight, isDragging: $isDraggingResize)
-
-                    ConversationView()
-                        .frame(height: conversationHeight)
-
-                    StatusBarView()
-                }
-                .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .bottom)))
-            }
+            // Input bar (always visible, at bottom of card)
+            InputBarView()
+                .padding(.horizontal, 4)
+                .padding(.bottom, 4)
         }
         .frame(width: cardWidth)
-        .glassEffect(.regular.interactive)
         .clipShape(RoundedRectangle(cornerRadius: Spacing.containerRadius))
-        .animation(NusomaAnimation.standard, value: isExpanded)
-    }
-
-    // MARK: - Input Row
-
-    private var inputRow: some View {
-        HStack(spacing: 12) {
-            // Action buttons
-            actionButtons
-
-            // Input pill
-            InputBarView()
-                .glassEffect(.regular.interactive)
-                .clipShape(Capsule())
+        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: Spacing.containerRadius))
+        .animation(NusomaAnimation.standard, value: appState.isExpanded)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                buttonsVisible = true
+            }
         }
-        .frame(minHeight: 50)
     }
 
-    // MARK: - Action Buttons
+    // MARK: - Melting Action Buttons
 
-    private var actionButtons: some View {
-        HStack(spacing: 8) {
-            // Attach file
-            Button {
-                openFilePicker()
-            } label: {
-                Image(systemName: "paperclip")
-                    .font(.system(size: 15))
-            }
-            .buttonStyle(GlassCircleButtonStyle())
-            .disabled(appState.isRunning)
+    private var meltingActionButtons: some View {
+        let buttons: [(icon: String, action: () -> Void)] = [
+            ("paperclip", { openFilePicker() }),
+            ("camera", { captureScreenshot() }),
+            ("list.bullet.rectangle", { appState.togglePM() }),
+            ("cpu", { appState.toggleMarketplace() }),
+        ]
 
-            // Screenshot
-            Button {
-                captureScreenshot()
-            } label: {
-                Image(systemName: "camera")
-                    .font(.system(size: 15))
+        return HStack(spacing: 8) {
+            ForEach(Array(buttons.enumerated()), id: \.offset) { index, def in
+                Button {
+                    def.action()
+                } label: {
+                    Image(systemName: def.icon)
+                        .font(.system(size: 15))
+                }
+                .buttonStyle(GlassCircleButtonStyle())
+                .disabled(appState.isRunning)
+                .opacity(buttonsVisible ? 1 : 0)
+                .scaleEffect(buttonsVisible ? 1 : 0.6)
+                // Each button slides further out — first button barely moves, last one travels most
+                .offset(x: buttonsVisible ? 0 : -(CGFloat(index + 1) * 15))
+                .animation(
+                    .spring(response: 0.5, dampingFraction: 0.7)
+                    .delay(0.15 + Double(index) * 0.08),
+                    value: buttonsVisible
+                )
             }
-            .buttonStyle(GlassCircleButtonStyle())
-            .disabled(appState.isRunning)
-
-            // Project Management
-            Button {
-                appState.togglePM()
-            } label: {
-                Image(systemName: "list.bullet.rectangle")
-                    .font(.system(size: 15))
-            }
-            .buttonStyle(GlassCircleButtonStyle())
-            .disabled(appState.isRunning)
-
-            // Skills & Plugins
-            Button {
-                appState.toggleMarketplace()
-            } label: {
-                Image(systemName: "cpu")
-                    .font(.system(size: 15))
-            }
-            .buttonStyle(GlassCircleButtonStyle())
-            .disabled(appState.isRunning)
         }
     }
 
@@ -361,8 +326,8 @@ struct GlassCircleButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .frame(width: Spacing.circleSize, height: Spacing.circleSize)
-            .glassEffect(.regular.interactive)
             .clipShape(Circle())
+            .glassEffect(.regular.interactive(), in: Circle())
             .opacity(isEnabled ? (configuration.isPressed ? 0.7 : 1.0) : 0.4)
             .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
             .animation(NusomaAnimation.quick, value: configuration.isPressed)
@@ -372,7 +337,7 @@ struct GlassCircleButtonStyle: ButtonStyle {
 // MARK: - Preference Key
 
 struct ContentHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 160
+    nonisolated(unsafe) static var defaultValue: CGFloat = 160
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
     }

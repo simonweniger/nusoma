@@ -80,7 +80,7 @@ private let validDecisions: Set<String> = ["allow", "allow-session", "allow-doma
 
 // MARK: - Data Types
 
-struct HookToolRequest {
+struct HookToolRequest: @unchecked Sendable {
     let sessionId: String
     let transcriptPath: String?
     let cwd: String?
@@ -124,7 +124,7 @@ private struct RunRegistration {
 
 // MARK: - Permission Event
 
-struct PermissionHookEvent {
+struct PermissionHookEvent: Sendable {
     let questionId: String
     let toolRequest: HookToolRequest
     let tabId: String
@@ -373,8 +373,15 @@ actor PermissionHookServer {
     // MARK: - Accept Loop
 
     private func acceptLoop() async {
-        while !Task.isCancelled && serverSocket >= 0 {
-            let clientSock = accept(serverSocket, nil, nil)
+        let sock = serverSocket
+        while !Task.isCancelled && sock >= 0 {
+            // Run blocking accept() on a background thread to avoid blocking the actor
+            let clientSock = await withCheckedContinuation { continuation in
+                DispatchQueue.global().async {
+                    let client = accept(sock, nil, nil)
+                    continuation.resume(returning: client)
+                }
+            }
             guard clientSock >= 0 else { continue }
 
             // Handle each connection in its own task

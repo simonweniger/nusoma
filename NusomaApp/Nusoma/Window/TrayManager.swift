@@ -5,6 +5,7 @@ import AppKit
 
 /// Manages the NSStatusItem (tray icon) in the macOS menu bar.
 /// Provides quick access to show/hide Nusoma and quit the app.
+@MainActor
 class TrayManager {
     private var statusItem: NSStatusItem?
     private var toggleAction: (() -> Void)?

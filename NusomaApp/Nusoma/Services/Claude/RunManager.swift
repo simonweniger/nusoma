@@ -41,7 +41,7 @@ let defaultAllowedTools = [
 // MARK: - Run Handle
 
 /// Tracks a single Claude CLI process execution.
-class RunHandle {
+final class RunHandle: @unchecked Sendable {
     let runId: String
     var sessionId: String?
     let process: Process
@@ -131,15 +131,28 @@ actor RunManager {
             }
         }
 
-        // The prompt itself
-        args += ["--print", options.prompt]
+        // -p enables print mode; prompt is a positional argument at the end
+        args += ["-p", options.prompt]
 
-        // Create the process
+        // Create the process — must launch via shell because the Bun-compiled
+        // claude binary doesn't load when spawned directly from a GUI app.
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: claudePath)
-        process.arguments = args
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+
+        // Expand ~ to home directory
+        let resolvedPath = options.projectPath == "~"
+            ? NSHomeDirectory()
+            : NSString(string: options.projectPath).expandingTildeInPath
+
+        // Build shell command: cd + exec claude (exec replaces the shell process)
+        let escapedArgs = args.map { arg in
+            "'" + arg.replacingOccurrences(of: "'", with: "'\\''") + "'"
+        }.joined(separator: " ")
+        let shellCommand = "cd '\(resolvedPath.replacingOccurrences(of: "'", with: "'\\''"))' && exec '\(claudePath)' \(escapedArgs)"
+        process.arguments = ["-c", shellCommand]
         process.environment = cliEnv.getCliEnv()
-        process.currentDirectoryURL = URL(fileURLWithPath: options.projectPath)
+        process.standardInput = FileHandle.nullDevice  // Prevent any stdin reads
+        print("[RunManager] Resolved working dir: \(resolvedPath)")
 
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
@@ -152,15 +165,20 @@ actor RunManager {
         // Create the event stream
         let (stream, continuation) = AsyncStream<NormalizedEvent>.makeStream()
 
-        // Start reading stdout
-        Task {
+        // Start reading stdout on a background dispatch queue (blocking read loop)
+        let stdoutHandle = stdoutPipe.fileHandleForReading
+        DispatchQueue.global(qos: .userInitiated).async {
             var parser = StreamParser()
             var normalizer = EventNormalizer()
 
-            let stdoutHandle = stdoutPipe.fileHandleForReading
-
-            // Read stdout asynchronously
-            for await data in stdoutHandle.bytes(forStream: stdoutHandle) {
+            print("[RunManager] Starting stdout reader (blocking)...")
+            while true {
+                let data = stdoutHandle.availableData
+                if data.isEmpty {
+                    print("[RunManager] stdout EOF")
+                    break
+                }
+                print("[RunManager] Got \(data.count) bytes from stdout")
                 let events = parser.feed(data)
                 for raw in events {
                     let normalized = normalizer.normalize(raw)
@@ -183,26 +201,52 @@ actor RunManager {
         }
 
         // Read stderr in background
-        Task {
-            let stderrHandle = stderrPipe.fileHandleForReading
+        let stderrHandle = stderrPipe.fileHandleForReading
+        let reqIdForStderr = requestId
+        DispatchQueue.global(qos: .utility).async {
             let data = stderrHandle.readDataToEndOfFile()
-            if let text = String(data: data, encoding: .utf8) {
-                for line in text.split(separator: "\n") {
-                    await self.appendStderr(requestId: requestId, line: String(line))
+            if let text = String(data: data, encoding: .utf8), !text.isEmpty {
+                print("[RunManager] STDERR: \(text.prefix(500))")
+                let lines = text.split(separator: "\n").map(String.init)
+                Task { [weak self] in
+                    for line in lines {
+                        await self?.appendStderr(requestId: reqIdForStderr, line: line)
+                    }
                 }
             }
         }
 
         // Handle process termination
+        let reqId = requestId
         process.terminationHandler = { [weak self] proc in
+            let exitCode = Int(proc.terminationStatus)
+            print("[RunManager] Process terminated, exit code: \(exitCode)")
             Task {
-                await self?.handleTermination(requestId: requestId, exitCode: Int(proc.terminationStatus))
+                await self?.handleTermination(requestId: reqId, exitCode: exitCode)
                 continuation.finish()
             }
         }
 
         // Launch
-        try process.run()
+        print("[RunManager] Launching: \(claudePath) \(args.joined(separator: " ").prefix(200))...")
+        print("[RunManager] Working dir: \(options.projectPath)")
+        do {
+            try process.run()
+            print("[RunManager] Process launched, PID: \(process.processIdentifier)")
+        } catch {
+            print("[RunManager] LAUNCH FAILED: \(error)")
+            continuation.finish()
+            throw error
+        }
+
+        // Check if process died immediately
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
+            if !process.isRunning {
+                let exit = process.terminationStatus
+                let stderr = String(data: stderrPipe.fileHandleForReading.availableData, encoding: .utf8) ?? ""
+                print("[RunManager] Process died immediately! Exit: \(exit), stderr: \(stderr.prefix(500))")
+            }
+        }
 
         return (handle, stream)
     }
@@ -210,12 +254,13 @@ actor RunManager {
     /// Cancel a running process.
     func cancel(_ requestId: String) -> Bool {
         guard let handle = activeRuns[requestId], handle.process.isRunning else { return false }
-        handle.process.interrupt() // SIGINT
+        let process = handle.process
+        process.interrupt() // SIGINT
         // Give it a moment, then force kill if still running
         Task {
             try? await Task.sleep(for: .seconds(2))
-            if handle.process.isRunning {
-                handle.process.terminate() // SIGTERM
+            if process.isRunning {
+                process.terminate() // SIGTERM
             }
         }
         return true

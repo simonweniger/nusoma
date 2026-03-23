@@ -120,7 +120,7 @@ let lightPalette = NusomaColors(
 
 // MARK: - Theme Manager
 
-@Observable
+@MainActor @Observable
 class ThemeManager {
     enum ThemeMode: String, CaseIterable, Codable {
         case system, light, dark

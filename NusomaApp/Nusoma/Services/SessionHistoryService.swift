@@ -6,8 +6,8 @@
 
 import Foundation
 
-@Observable
-class SessionHistoryService {
+@MainActor @Observable
+class SessionHistoryService: @unchecked Sendable {
     var sessions: [SessionMeta] = []
     var isLoading: Bool = false
     var loadedMessages: [SessionLoadMessage] = []

@@ -144,7 +144,7 @@ struct EventNormalizer {
     // MARK: - Assistant Event (assembled message)
 
     private func normalizeAssistantEvent(_ raw: [String: Any]) -> [NormalizedEvent] {
-        guard let message = raw["message"] as? [String: Any] else { return [] }
+        guard raw["message"] is [String: Any] else { return [] }
         // task_update equivalent — the full assembled message
         // The AppState handler uses this as a fallback if streaming didn't deliver text
         // We don't emit directly here; the ControlPlane handles the task_update pattern

@@ -1,18 +1,19 @@
-// VoiceInputManager.swift — Voice-to-text using macOS Speech framework
+// VoiceInputManager.swift — Voice-to-text using WhisperKit (on-device Whisper)
 // Phase 4 — Provides push-to-talk and toggle recording for voice input
 //
-// Uses SFSpeechRecognizer for on-device transcription (macOS 13+).
-// Falls back gracefully when permission is denied or unavailable.
+// Uses WhisperKit for fully on-device transcription via Core ML.
+// Records audio with AVAudioEngine, transcribes when recording stops.
 
 import Foundation
-import Speech
 import AVFoundation
+import WhisperKit
 
-@Observable
-class VoiceInputManager {
-    enum RecordingState: Equatable {
+@MainActor @Observable
+class VoiceInputManager: @unchecked Sendable {
+    enum RecordingState: Equatable, Sendable {
         case idle
         case requestingPermission
+        case loading        // WhisperKit model loading
         case recording
         case processing
         case error(String)
@@ -20,24 +21,27 @@ class VoiceInputManager {
 
     var state: RecordingState = .idle
     var transcript: String = ""
-    var isAvailable: Bool = false
+    var isAvailable: Bool = true
 
-    // Callback fired when transcription completes or updates
-    var onTranscript: ((String) -> Void)?
+    // Callback fired when transcription completes
+    var onTranscript: (@MainActor (String) -> Void)?
 
-    private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
-    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
-    private var recognitionTask: SFSpeechRecognitionTask?
+    private var whisperKit: WhisperKit?
     private let audioEngine = AVAudioEngine()
+    private var audioSamples: [Float] = []
+    private var loadTask: Task<Void, Never>?
 
     init() {
-        checkAvailability()
-    }
-
-    // MARK: - Availability
-
-    private func checkAvailability() {
-        isAvailable = speechRecognizer?.isAvailable ?? false
+        // Preload WhisperKit model in background
+        loadTask = Task { [weak self] in
+            do {
+                let kit = try await WhisperKit(WhisperKitConfig(model: "base"))
+                self?.whisperKit = kit
+            } catch {
+                print("[VoiceInput] WhisperKit init failed: \(error.localizedDescription)")
+                self?.isAvailable = false
+            }
+        }
     }
 
     // MARK: - Permissions
@@ -45,19 +49,6 @@ class VoiceInputManager {
     func requestPermissions() async -> Bool {
         state = .requestingPermission
 
-        // Speech recognition permission
-        let speechAuthorized = await withCheckedContinuation { continuation in
-            SFSpeechRecognizer.requestAuthorization { status in
-                continuation.resume(returning: status == .authorized)
-            }
-        }
-
-        guard speechAuthorized else {
-            state = .error("Speech recognition permission denied. Enable in System Settings > Privacy > Speech Recognition.")
-            return false
-        }
-
-        // Microphone permission
         let micAuthorized: Bool
         if #available(macOS 14.0, *) {
             micAuthorized = await AVAudioApplication.requestRecordPermission()
@@ -89,87 +80,75 @@ class VoiceInputManager {
     }
 
     func startRecording() {
-        // Check permissions first
-        let speechStatus = SFSpeechRecognizer.authorizationStatus()
-        guard speechStatus == .authorized else {
+        // Check mic permission
+        let micStatus: AVAuthorizationStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+        guard micStatus == .authorized else {
             Task {
                 let granted = await requestPermissions()
-                if granted {
-                    startRecording()
-                }
+                if granted { startRecording() }
             }
             return
         }
 
-        guard let speechRecognizer, speechRecognizer.isAvailable else {
-            state = .error("Speech recognition is not available on this device.")
+        // Wait for WhisperKit if still loading
+        guard whisperKit != nil else {
+            if loadTask != nil {
+                state = .loading
+                Task { [weak self] in
+                    await self?.loadTask?.value
+                    self?.loadTask = nil
+                    if self?.whisperKit != nil {
+                        self?.startRecording()
+                    } else {
+                        self?.state = .error("Failed to load speech model.")
+                    }
+                }
+            } else {
+                state = .error("Speech model not available.")
+            }
             return
         }
 
-        // Cancel any existing task
-        recognitionTask?.cancel()
-        recognitionTask = nil
-
-        // Configure audio session
+        // Configure audio engine
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
 
-        // Guard against zero-channel format (no mic connected)
         guard recordingFormat.channelCount > 0 else {
             state = .error("No microphone detected.")
             return
         }
 
-        // Create recognition request
-        let request = SFSpeechAudioBufferRecognitionRequest()
-        request.shouldReportPartialResults = true
+        audioSamples = []
+        transcript = ""
 
-        // Prefer on-device recognition when available
-        if #available(macOS 13, *) {
-            request.requiresOnDeviceRecognition = speechRecognizer.supportsOnDeviceRecognition
-        }
+        // Install tap — convert to mono 16kHz Float samples for Whisper
+        let targetSampleRate: Double = 16000
+        let srcSampleRate = recordingFormat.sampleRate
 
-        self.recognitionRequest = request
-        self.transcript = ""
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: recordingFormat) { [weak self] buffer, _ in
+            guard let channelData = buffer.floatChannelData?[0] else { return }
+            let frameCount = Int(buffer.frameLength)
 
-        // Start recognition task
-        recognitionTask = speechRecognizer.recognitionTask(with: request) { [weak self] result, error in
-            guard let self else { return }
-
-            if let result {
-                let text = result.bestTranscription.formattedString
-                DispatchQueue.main.async {
-                    self.transcript = text
-                    self.onTranscript?(text)
+            // Simple downsampling if needed
+            if srcSampleRate != targetSampleRate {
+                let ratio = srcSampleRate / targetSampleRate
+                let outputCount = Int(Double(frameCount) / ratio)
+                var downsampled = [Float](repeating: 0, count: outputCount)
+                for i in 0..<outputCount {
+                    let srcIdx = min(Int(Double(i) * ratio), frameCount - 1)
+                    downsampled[i] = channelData[srcIdx]
                 }
-
-                if result.isFinal {
-                    DispatchQueue.main.async {
-                        self.state = .idle
-                    }
-                    self.cleanupAudio()
+                Task { @MainActor in
+                    self?.audioSamples.append(contentsOf: downsampled)
                 }
-            }
-
-            if let error {
-                DispatchQueue.main.async {
-                    // Don't show error for user-initiated cancellation
-                    if (error as NSError).code != 216 { // Cancelled
-                        self.state = .error(error.localizedDescription)
-                    } else {
-                        self.state = .idle
-                    }
+            } else {
+                let samples = Array(UnsafeBufferPointer(start: channelData, count: frameCount))
+                Task { @MainActor in
+                    self?.audioSamples.append(contentsOf: samples)
                 }
-                self.cleanupAudio()
             }
         }
 
-        // Install audio tap
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
-            request.append(buffer)
-        }
-
-        // Start audio engine
         audioEngine.prepare()
         do {
             try audioEngine.start()
@@ -184,22 +163,37 @@ class VoiceInputManager {
         guard state == .recording else { return }
         state = .processing
 
-        // End the audio input — this triggers the final recognition result
-        recognitionRequest?.endAudio()
+        cleanupAudio()
 
-        // Stop after a brief delay to let final results arrive
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.cleanupAudio()
-            if self?.state == .processing {
+        let samples = audioSamples
+        let kit = whisperKit
+
+        Task { @MainActor [weak self] in
+            guard let kit, !samples.isEmpty else {
                 self?.state = .idle
+                return
             }
+
+            do {
+                let results = try await kit.transcribe(audioArray: samples)
+                let text = results.map { $0.text }.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
+                self?.transcript = text
+                if !text.isEmpty {
+                    self?.onTranscript?(text)
+                }
+            } catch {
+                self?.state = .error("Transcription failed: \(error.localizedDescription)")
+                return
+            }
+
+            self?.state = .idle
         }
     }
 
     func cancelRecording() {
-        recognitionTask?.cancel()
         cleanupAudio()
         transcript = ""
+        audioSamples = []
         state = .idle
     }
 
@@ -210,7 +204,5 @@ class VoiceInputManager {
             audioEngine.stop()
             audioEngine.inputNode.removeTap(onBus: 0)
         }
-        recognitionRequest = nil
-        recognitionTask = nil
     }
 }

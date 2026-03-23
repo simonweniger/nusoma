@@ -166,7 +166,8 @@ actor GitHubSync {
                 } else if ghUpdatedAt == nil || localUpdated > ghUpdatedAt! {
                     // Local is newer — push to GH
                     do {
-                        try await pushIssueToGitHub(owner: owner, repo: repo, issue: existing)
+                        guard let ghNum = existing.githubIssueNumber else { continue }
+                        try await pushIssueToGitHub(owner: owner, repo: repo, ghNumber: ghNum, title: existing.title, status: existing.status, description: existing.issueDescription)
                         pushedCount += 1
                     } catch {
                         errors.append("Push #\(existing.number): \(error.localizedDescription)")
@@ -243,14 +244,13 @@ actor GitHubSync {
         return allIssues
     }
 
-    private static func pushIssueToGitHub(owner: String, repo: String, issue: PMIssue) async throws {
-        guard let ghNumber = issue.githubIssueNumber else { return }
-        let state = (issue.status == "done" || issue.status == "cancelled") ? "closed" : "open"
+    private static func pushIssueToGitHub(owner: String, repo: String, ghNumber: Int, title: String, status: String, description: String?) async throws {
+        let state = (status == "done" || status == "cancelled") ? "closed" : "open"
         var body: [String: Any] = [
-            "title": issue.title,
+            "title": title,
             "state": state,
         ]
-        if let desc = issue.issueDescription {
+        if let desc = description {
             body["body"] = desc
         }
         let (_, response) = try await apiRequest(

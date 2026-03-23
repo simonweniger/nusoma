@@ -56,6 +56,19 @@ struct CliEnvironment {
             env["PATH"] = (missingPaths + [currentPath]).joined(separator: ":")
         }
 
+        // Ensure essential env vars are set for non-terminal context
+        if env["TERM"] == nil {
+            env["TERM"] = "dumb"
+        }
+        if env["HOME"] == nil {
+            env["HOME"] = NSHomeDirectory()
+        }
+        if env["USER"] == nil {
+            env["USER"] = NSUserName()
+        }
+        // Skip interactive prompts in print mode
+        env["CI"] = "1"
+
         return env
     }
 
@@ -66,7 +79,8 @@ struct CliEnvironment {
 
         async let version = runCommand(claudePath, args: ["-v"], env: env)
         async let authRaw = runCommand(claudePath, args: ["auth", "status"], env: env)
-        async let mcpRaw = runCommand(claudePath, args: ["mcp", "list"], env: env)
+        // MCP list fetched but not currently used
+		_ = await runCommand(claudePath, args: ["mcp", "list"], env: env)
 
         let versionResult = await version ?? "unknown"
 
@@ -87,6 +101,29 @@ struct CliEnvironment {
             projectPath: FileManager.default.currentDirectoryPath,
             homePath: NSHomeDirectory()
         )
+    }
+
+    /// Get PATH from user's login shell (cached).
+    func getShellPath() -> String? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        // Use -ilc to get an interactive login shell's PATH without blocking
+        process.arguments = ["-c", "echo $PATH"]
+        process.environment = ["HOME": NSHomeDirectory(), "USER": NSUserName()]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+        process.standardInput = FileHandle.nullDevice
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        } catch {
+            return nil
+        }
     }
 
     // MARK: - Private

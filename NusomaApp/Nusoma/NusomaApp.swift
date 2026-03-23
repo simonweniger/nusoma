@@ -28,6 +28,7 @@ struct NusomaApp: App {
 
 // MARK: - App Delegate
 
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     private let appState = AppState()
     private let themeManager = ThemeManager()

@@ -354,7 +354,9 @@ struct SyntaxTokenizer {
                 let matchRange = Range(match.range, in: code)!
                 guard matchRange.lowerBound == position else { continue }
 
-                if bestMatch == nil || matchRange.count > (bestMatch!.range.count) {
+                let matchLen = code.distance(from: matchRange.lowerBound, to: matchRange.upperBound)
+                let bestLen = bestMatch.map { code.distance(from: $0.range.lowerBound, to: $0.range.upperBound) } ?? 0
+                if bestMatch == nil || matchLen > bestLen {
                     bestMatch = (matchRange, rule.kind)
                 }
             }
